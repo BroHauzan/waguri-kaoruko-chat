@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="id">
+  <head>
+    <meta charset="UTF-8" />
+    <!-- viewport-fit=cover wajib supaya safe-area (notch & gesture bar) bisa
+         dibaca lewat env(safe-area-inset-*). Tanpa ini, layout akan
+         tertutup notch saat dibungkus jadi APK. -->
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
+    />
+    <!-- Kontrol tampilan saat dijalankan sebagai PWA / WebView Android -->
+    <meta name="theme-color" content="#0B0C0F" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#F4F5F7" media="(prefers-color-scheme: light)" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="format-detection" content="telephone=no" />
+    <title>Waguri Kaoruko - AI Character Chat</title>
+    <meta name="description" content="Mobile-first AI character chat app featuring dynamic mood, Gen Z Indonesian slang, memory summarization, and customizable characters powered by Gemini." />
+    <meta property="og:title" content="Waguri Kaoruko - AI Character Chat" />
+    <meta property="og:description" content="Mobile-first AI character chat app featuring dynamic mood, Gen Z Indonesian slang, memory summarization, and customizable characters powered by Gemini." />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet">
+  </head>
+  <body class="antialiased selection:bg-[#F5B838]/30 font-['Inter',-apple-system,sans-serif] bg-[#F4F5F7] dark:bg-[#0B0C0F] text-[#18181B] dark:text-[#F2F3F7]">
+    <script>
+      // No-flash theme bootstrap: resolve the saved theme BEFORE React mounts.
+      (function () {
+        try {
+          var raw = localStorage.getItem("waguri_v5_official_settings");
+          var mode = raw ? (JSON.parse(raw) || {}).theme : "dark";
+          if (mode === undefined || mode === null) mode = "dark";
+          var dark =
+            mode === "dark" ||
+            (mode === "auto" &&
+              window.matchMedia("(prefers-color-scheme: dark)").matches);
+          if (dark) document.documentElement.classList.add("dark");
+          document.documentElement.style.colorScheme = dark ? "dark" : "light";
+        } catch (e) {
+          document.documentElement.classList.add("dark");
+        }
+      })();
+    </script>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+

@@ -1,0 +1,368 @@
+@import "tailwindcss";
+
+/* ============================================================
+   Theme tokens — light & dark, Apple-style restraint.
+   Components consume these via Tailwind utilities:
+     bg-surface dark:bg-surface-dark  text-content dark:text-content-dark
+   ============================================================ */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  /* Brand */
+  --color-amber: #F5B838;
+  --color-amber-hover: #E5A929;
+
+  /* Semantic — light */
+  --color-app: #F4F5F7;
+  --color-app-frame: #E9EBEF;
+  --color-surface: #FFFFFF;
+  --color-surface-solid: #FFFFFF;
+  --color-surface-subtle: #F0F1F5;
+  --color-surface-2: #EAEBED;
+  --color-surface-3: #E5E7EB;
+  --color-content: #18181B;
+  --color-content-strong: #000000;
+  --color-content-muted: #8E8E93;
+  --color-content-2: #6B7280;
+  --color-line: rgba(0, 0, 0, 0.08);
+  --color-line-soft: rgba(0, 0, 0, 0.05);
+
+  /* Semantic — dark (liquid glass dark) */
+  --color-app-dark: #0B0C0F;
+  --color-app-frame-dark: #15161A;
+  --color-surface-dark: rgba(28, 28, 32, 0.72);
+  --color-surface-solid-dark: #16171B;
+  --color-surface-subtle-dark: rgba(255, 255, 255, 0.06);
+  --color-surface-2-dark: rgba(255, 255, 255, 0.10);
+  --color-surface-3-dark: rgba(255, 255, 255, 0.14);
+  --color-content-dark: #F2F3F7;
+  --color-content-strong-dark: #FFFFFF;
+  --color-content-muted-dark: #9B9BA3;
+  --color-content-2-dark: #71717A;
+  --color-line-dark: rgba(255, 255, 255, 0.10);
+  --color-line-soft-dark: rgba(255, 255, 255, 0.06);
+
+  /* Liquid glass blur scales */
+  --glass-blur: 22px;
+  --glass-blur-lg: 34px;
+  --glass-saturation: 180%;
+}
+
+@layer base {
+  :root {
+    color-scheme: light;
+  }
+  :root.dark {
+    color-scheme: dark;
+  }
+
+  body {
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  /* Apple: ease dark<->light theme changes — never abrupt.
+     Scoped to a temporary class so normal hover/press feedback stays
+     instant (Apple Design §1 — kill latency on the input path). */
+  html.theme-transition,
+  html.theme-transition *,
+  html.theme-transition *::before,
+  html.theme-transition *::after {
+    transition-property: background-color, border-color, color, fill, stroke !important;
+    transition-duration: 0.4s !important;
+    transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1) !important;
+  }
+
+  input, textarea, select, button {
+    font: inherit;
+  }
+}
+
+@layer utilities {
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-none {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+
+  /* Safe area */
+  .pt-safe {
+    padding-top: max(env(safe-area-inset-top), 0px);
+  }
+  .pb-safe {
+    padding-bottom: max(env(safe-area-inset-bottom), 0px);
+  }
+
+  /* ============================================================
+     LIQUID GLASS — Apple-style translucent material.
+     CSS-only recreation of the liquid-glass-studio look:
+     refraction-ish blur + saturation, a bright specular top
+     edge, and a soft rim. No WebGL needed.
+     ============================================================ */
+  .liquid-glass {
+    background-color: rgba(255, 255, 255, 0.66);
+    backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation));
+    -webkit-backdrop-filter: blur(var(--glass-blur)) saturate(var(--glass-saturation));
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    box-shadow:
+      inset 0 1px 1px rgba(255, 255, 255, 0.85),
+      inset 0 -1px 1px rgba(255, 255, 255, 0.25),
+      0 12px 32px -8px rgba(20, 20, 30, 0.28);
+  }
+  :root.dark .liquid-glass {
+    background-color: rgba(24, 24, 28, 0.62);
+    border-color: rgba(255, 255, 255, 0.12);
+    box-shadow:
+      inset 0 1px 1px rgba(255, 255, 255, 0.18),
+      inset 0 -1px 1px rgba(255, 255, 255, 0.05),
+      0 16px 40px -10px rgba(0, 0, 0, 0.65);
+  }
+
+  .liquid-glass-strong {
+    background-color: rgba(255, 255, 255, 0.8);
+    backdrop-filter: blur(var(--glass-blur-lg)) saturate(var(--glass-saturation));
+    -webkit-backdrop-filter: blur(var(--glass-blur-lg)) saturate(var(--glass-saturation));
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    box-shadow:
+      inset 0 1px 1.5px rgba(255, 255, 255, 0.9),
+      0 20px 48px -12px rgba(20, 20, 30, 0.32);
+  }
+  :root.dark .liquid-glass-strong {
+    background-color: rgba(28, 28, 32, 0.8);
+    border-color: rgba(255, 255, 255, 0.14);
+    box-shadow:
+      inset 0 1px 1.5px rgba(255, 255, 255, 0.2),
+      0 24px 56px -14px rgba(0, 0, 0, 0.7);
+  }
+
+  /* Nav pill — bigger surface reads as thicker glass */
+  .liquid-glass-nav {
+    background-color: rgba(255, 255, 255, 0.72);
+    backdrop-filter: blur(var(--glass-blur-lg)) saturate(190%);
+    -webkit-backdrop-filter: blur(var(--glass-blur-lg)) saturate(190%);
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    box-shadow:
+      inset 0 1px 1.5px rgba(255, 255, 255, 0.95),
+      inset 0 -1px 1.5px rgba(255, 255, 255, 0.3),
+      0 18px 42px -10px rgba(20, 20, 30, 0.3);
+  }
+  :root.dark .liquid-glass-nav {
+    background-color: rgba(26, 26, 30, 0.68);
+    border-color: rgba(255, 255, 255, 0.13);
+    box-shadow:
+      inset 0 1px 1.5px rgba(255, 255, 255, 0.2),
+      inset 0 -1px 1.5px rgba(255, 255, 255, 0.05),
+      0 22px 50px -12px rgba(0, 0, 0, 0.7);
+  }
+
+  /* Liquid glass button — light material layered on glass */
+  .liquid-glass-button {
+    background-color: rgba(255, 255, 255, 0.22);
+    backdrop-filter: blur(12px) saturate(150%);
+    -webkit-backdrop-filter: blur(12px) saturate(150%);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.6);
+  }
+  :root.dark .liquid-glass-button {
+    background-color: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.18);
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.16);
+  }
+
+  /* Liquid glass sheet — bottom sheet / modal */
+  .liquid-glass-sheet {
+    background-color: rgba(255, 255, 255, 0.78);
+    backdrop-filter: blur(var(--glass-blur-lg)) saturate(var(--glass-saturation));
+    -webkit-backdrop-filter: blur(var(--glass-blur-lg)) saturate(var(--glass-saturation));
+    border-top: 1px solid rgba(255, 255, 255, 0.6);
+    box-shadow:
+      inset 0 1px 2px rgba(255, 255, 255, 0.9),
+      0 -20px 60px -15px rgba(20, 20, 30, 0.35);
+  }
+  :root.dark .liquid-glass-sheet {
+    background-color: rgba(22, 22, 26, 0.82);
+    border-top-color: rgba(255, 255, 255, 0.14);
+    box-shadow:
+      inset 0 1px 2px rgba(255, 255, 255, 0.2),
+      0 -24px 70px -18px rgba(0, 0, 0, 0.75);
+  }
+
+  /* Glass highlight sweep — the "glare" of liquid glass */
+  .liquid-glass-sheen {
+    position: relative;
+    overflow: hidden;
+  }
+  .liquid-glass-sheen::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.28) 38%,
+      rgba(255, 255, 255, 0) 55%
+    );
+    mix-blend-mode: overlay;
+  }
+  :root.dark .liquid-glass-sheen::after {
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0) 0%,
+      rgba(255, 255, 255, 0.16) 38%,
+      rgba(255, 255, 255, 0) 55%
+    );
+  }
+
+  /* Card surface — theme-aware */
+  .surface-card {
+    background-color: var(--color-surface);
+    border: 1px solid var(--color-line-soft);
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+  }
+  :root.dark .surface-card {
+    background-color: var(--color-surface-solid-dark);
+    border-color: var(--color-line-dark);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
+  }
+}
+
+/* ============================================================
+   Animations
+   ============================================================ */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.96);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.2s ease-out forwards;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.animate-slide-down {
+  animation: slideDown 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes messageIn {
+  0% {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.animate-message-in {
+  animation: messageIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Page transition — spring-feeling cross-fade + subtle rise */
+@keyframes pageIn {
+  0% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.985);
+    filter: blur(4px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+  }
+}
+
+.animate-page-in {
+  animation: pageIn 0.42s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+/* ============================================================
+   Range slider — theme-aware
+   ============================================================ */
+input[type=range] {
+  -webkit-appearance: none;
+  appearance: none;
+  background: var(--color-surface-3);
+  height: 6px;
+  border-radius: 3px;
+}
+:root.dark input[type=range] {
+  background: rgba(255, 255, 255, 0.14);
+}
+input[type=range]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  height: 22px;
+  width: 22px;
+  border-radius: 50%;
+  background: #F5B838;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  cursor: pointer;
+  margin-top: -8px;
+  border: 2px solid #FFFFFF;
+}
+:root.dark input[type=range]::-webkit-slider-thumb {
+  border-color: rgba(255, 255, 255, 0.9);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+}
+
+/* ============================================================
+   Reduced motion & reduced transparency (Apple Design §14)
+   ============================================================ */
+@media (prefers-reduced-motion: reduce) {
+  .animate-page-in,
+  .animate-slide-up,
+  .animate-slide-down,
+  .animate-message-in {
+    animation: fadeIn 0.2s ease-out forwards;
+  }
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .liquid-glass,
+  .liquid-glass-strong,
+  .liquid-glass-nav,
+  .liquid-glass-button,
+  .liquid-glass-sheet {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+  .liquid-glass { background-color: rgba(255, 255, 255, 0.96); }
+  .liquid-glass-strong { background-color: #FFFFFF; }
+  .liquid-glass-nav { background-color: rgba(255, 255, 255, 0.97); }
+  .liquid-glass-button { background-color: #FFFFFF; }
+  .liquid-glass-sheet { background-color: #FFFFFF; }
+  :root.dark .liquid-glass { background-color: #16171B; }
+  :root.dark .liquid-glass-strong { background-color: #14151A; }
+  :root.dark .liquid-glass-nav { background-color: #181920; }
+  :root.dark .liquid-glass-button { background-color: #1C1D22; }
+  :root.dark .liquid-glass-sheet { background-color: #14151A; }
+}

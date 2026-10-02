@@ -1,0 +1,8 @@
+{
+  "name": "Waguri Kaoruko - AI Character Chat",
+  "description": "Mobile-first AI character chat app featuring dynamic mood, Gen Z Indonesian slang, memory summarization, and customizable characters powered by Gemini.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
