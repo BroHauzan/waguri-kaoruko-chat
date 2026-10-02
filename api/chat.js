@@ -19,9 +19,11 @@ export default async function handler(req, res) {
     return res.status(200).json(result);
   } catch (err) {
     console.error("API /api/chat error:", err);
+    // Return detailed error for debugging
     return res.status(500).json({
       error: "Failed to generate chat response",
       details: err?.message || String(err),
+      stack: err?.stack
     });
   }
 }

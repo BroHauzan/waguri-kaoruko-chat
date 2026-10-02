@@ -19,9 +19,11 @@ export default async function handler(req, res) {
     return res.status(200).json(result);
   } catch (err) {
     console.error("API /api/summarize error:", err);
+    // Return detailed error for debugging
     return res.status(500).json({
       error: "Failed to summarize chat",
       details: err?.message || String(err),
+      stack: err?.stack
     });
   }
 }
