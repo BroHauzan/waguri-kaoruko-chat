@@ -1,4 +1,4 @@
-const { GoogleGenAI, Type } = require("@google/genai");
+import { GoogleGenAI, Type } from "@google/genai";
 
 const GEMINI_DEFAULT_MODEL = "gemini-3.1-flash-lite";
 
@@ -6,7 +6,7 @@ const GEMINI_DEFAULT_MODEL = "gemini-3.1-flash-lite";
 // Helpers
 // ============================================================
 
-function extractJson(text) {
+export function extractJson(text) {
   const trimmed = text.trim();
   const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
   if (fenced) return fenced[1].trim();
@@ -18,7 +18,7 @@ function extractJson(text) {
   return trimmed;
 }
 
-function normalizePayload(raw) {
+export function normalizePayload(raw) {
   if (!raw || typeof raw !== "object") return null;
   const candidate = raw.messages ? raw : raw.response || raw.data || raw.result;
   if (!candidate || !Array.isArray(candidate.messages)) return null;
@@ -36,7 +36,7 @@ function normalizePayload(raw) {
   };
 }
 
-function dropRepeatedBubbles(payload, history) {
+export function dropRepeatedBubbles(payload, history) {
   const recentModelTexts = history
     .filter((h) => h.role === "model")
     .slice(-6)
@@ -68,7 +68,7 @@ function dropRepeatedBubbles(payload, history) {
 // Prompt building
 // ============================================================
 
-function buildSystemInstruction(req) {
+export function buildSystemInstruction(req) {
   const examplesText =
     req.exampleDialogues && req.exampleDialogues.length > 0
       ? req.exampleDialogues
@@ -159,7 +159,7 @@ ${examplesText}
 Return ONLY valid JSON matching the provided schema.`;
 }
 
-function buildOpenAIMessages(req) {
+export function buildOpenAIMessages(req) {
   const messages = [{ role: "system", content: "" }];
   for (const item of req.history.slice(-25)) {
     messages.push({
@@ -194,13 +194,13 @@ function buildOpenAIMessages(req) {
   return messages;
 }
 
-const IMAGE_INSTRUCTION =
+export const IMAGE_INSTRUCTION =
   "\n\n# IMAGE INPUT\nPesan terakhir dari pengguna menyertakan sebuah GAMBAR. Lihat gambarnya dengan saksama dan tanggapi isinya secara natural sesuai karaktermu — komentari apa yang benar-benar terlihat di gambar (orang, benda, makanan, tempat, teks, suasana). Jangan mengabaikan gambarnya, jangan mengarang isi yang tidak ada, dan jangan menyebut bahwa kamu menerima \"file\" atau \"lampiran\".";
 
-const AUDIO_INSTRUCTION =
+export const AUDIO_INSTRUCTION =
   "\n\n# VOICE MESSAGE INPUT\nPesan terakhir dari pengguna adalah PESAN SUARA. Dengarkan isinya dan tanggapi seperti orang yang baru mendengar ucapan langsung — jawab ISI pembicaraannya (pertanyaan, cerita, atau perasaannya), bukan sekadar mengakui bahwa kamu menerima suara. Jangan menyebut \"voice note\", \"rekaman\", \"audio\", atau \"transkrip\". Kalau ucapannya kurang jelas, minta diulang dengan santai.";
 
-const RESPONSE_SCHEMA_HINT = `{
+export const RESPONSE_SCHEMA_HINT = `{
   "messages": ["1 to 5 short texting chat bubbles. DEFAULT TO 1 BUBBLE for simple or short remarks. Only 2-5 bubbles when there is genuinely a lot to express (max 5)."],
   "emotion": "one of: happy | sad | angry | annoyed | excited | shy | jealous | bored | worried | neutral | playful",
   "intensity": 1
@@ -210,7 +210,7 @@ const RESPONSE_SCHEMA_HINT = `{
 // Gemini Provider
 // ============================================================
 
-async function callGemini(req, cfg, systemInstruction, temperature) {
+export async function callGemini(req, cfg, systemInstruction, temperature) {
   const apiKey = (cfg.apiKey?.trim() || process.env.GEMINI_API_KEY || "").trim();
   if (!apiKey || apiKey === "MY_GEMINI_API_KEY") {
     throw new Error(
@@ -295,7 +295,7 @@ async function callGemini(req, cfg, systemInstruction, temperature) {
 // OpenAI-compatible Provider
 // ============================================================
 
-async function callOpenAICompatible(req, cfg, systemInstruction, temperature) {
+export async function callOpenAICompatible(req, cfg, systemInstruction, temperature) {
   const baseUrl = (cfg.baseUrl || "").trim().replace(/\/+$/, "");
   if (!baseUrl) {
     throw new Error("Base URL provider belum diisi. Contoh: https://openrouter.ai/api/v1");
@@ -371,7 +371,7 @@ async function callOpenAICompatible(req, cfg, systemInstruction, temperature) {
 // Entry Points
 // ============================================================
 
-async function handleChatTurn(req) {
+export async function handleChatTurn(req) {
   const cfg = req.provider || { type: "gemini" };
   let systemInstruction = buildSystemInstruction(req);
   if (req.image?.base64) systemInstruction += IMAGE_INSTRUCTION;
@@ -396,7 +396,7 @@ async function handleChatTurn(req) {
   };
 }
 
-async function handleSummarize(req) {
+export async function handleSummarize(req) {
   const transcript = req.messagesToSummarize
     .map((m) => `${m.role === "user" ? req.userName : req.charName}: ${m.text}`)
     .join("\n");
@@ -442,5 +442,3 @@ Task: Write a concise 2-4 sentence summary of what was discussed, personal detai
     return { summary: req.existingSummary || "" };
   }
 }
-
-module.exports = { handleChatTurn, handleSummarize };
