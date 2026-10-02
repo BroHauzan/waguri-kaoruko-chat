@@ -1,4 +1,4 @@
-import { handleChatTurn } from "../server/geminiService";
+import { handleChatTurn } from "../lib/gemini.js";
 
 export default async function handler(req, res) {
   // CORS headers untuk Capacitor WebView
@@ -19,7 +19,6 @@ export default async function handler(req, res) {
     return res.status(200).json(result);
   } catch (err) {
     console.error("API /api/chat error:", err);
-    // Return detailed error for debugging
     return res.status(500).json({
       error: "Failed to generate chat response",
       details: err?.message || String(err),
