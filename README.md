@@ -22,6 +22,7 @@ Aplikasi chat AI interaktif berbasis web untuk karakter **Waguri Kaoruko** (dari
 | **Multi-Provider AI** | Built-in Google Gemini API + Custom OpenAI-compatible (OpenRouter, Ollama, DeepSeek, dll.) |
 | **Auto-Fetch Lore (Search Grounding)** | Riset otomatis biodata kanon, kepribadian, gaya bicara, dan profil visual karakter dari internet via Google Search Grounding |
 | **In-Character Photo / PAP (Imagen 3)** | AI dapat mengirim foto selfie/PAP karakter portrait (9:16) saat diminta user menggunakan Imagen 3 & referensi profil visual |
+| **Hierarki Pengaturan WhatsApp-Style** | Tata letak pengaturan terpusat dengan top action bar, profile header tengah, dan flat list menu bersih dengan modal terpadu |
 | **PWA Ready & Notifikasi** | Installable di homescreen mobile/desktop dengan dukungan push-like notification banner |
 
 ---

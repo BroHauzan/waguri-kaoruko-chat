@@ -296,6 +296,7 @@ export default function App() {
             settings={settings}
             characters={characters}
             chats={chats}
+            onBack={() => setCurrentTab("chats")}
             onSaveSettings={handleSaveSettings}
             onClearAllData={handleClearAllData}
           />
