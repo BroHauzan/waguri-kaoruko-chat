@@ -1,24 +1,27 @@
 # Waguri Kaoruko — AI Character Chat
 
-Aplikasi chat AI berbasis web untuk karakter **Waguri Kaoruko** (dari anime/manga *Kanojo mo Kanojo*). Dibangun dengan React + Vite + Tailwind CSS, backend API pakai Vercel Functions (Gemini) atau server lokal (Express).
+Aplikasi chat AI interaktif berbasis web untuk karakter **Waguri Kaoruko** (dari anime/manga *The Fragrant Flower Blooms with Dignity* / *Kaoru Hana wa Rin to Saku* & *Kanojo mo Kanojo*). Dibangun dengan React + Vite + Tailwind CSS, backend API pakai Vercel Functions (Gemini) atau server lokal (Express).
 
 ---
 
-## ✨ Fitur
+## ✨ Fitur Utama
 
 | Fitur | Deskripsi |
 |-------|-----------|
-| **Chat Real-time** | Balasan streaming bubble-per-bubble dengan typing indicator |
-| **Multi-Provider AI** | Built-in Gemini + Custom OpenAI-compatible (OpenRouter, Ollama, dll) |
-| **Kirim Gambar** | Upload foto → AI "melihat" dan merespons isi gambar |
-| **Voice Note** | Rekam suara (WAV 16kHz mono) → AI transkrip & balas isi ucapan |
-| **Reply & Quote** | Swipe kanan untuk reply, long-press untuk context menu |
-| **Read Receipts** | Centang 1 = terkirim, Centang 2 (amber) = dibaca |
-| **Emoji Picker** | 400+ emoji, kategori + search |
-| **Custom Instructions** | Atur gaya bicara, aturan khusus per karakter |
-| **Memory & Summary** | Ringkasan percakapan otomatis untuk konteks jangka panjang |
-| **Dark/Light Mode** | Otomatis mengikuti sistem / manual toggle |
-| **PWA Ready** | Installable, service worker (notif di browser) |
+| **Chat Real-time & Responsif** | Balasan streaming bubble-per-bubble dengan typing indicator halus dan auto-scroll yang nyaman |
+| **Auto-Growing Input (WhatsApp-Style)** | Kolom chat elastis dinamis (1–5 baris teks) yang membesar dan menciut otomatis tanpa teks terpotong |
+| **Kamera Langsung & Galeri (WhatsApp-Style)** | Pop-up menu untuk mengambil foto langsung dari kamera HP (`capture="environment"`) atau memilih dari galeri |
+| **Kompresi Gambar Otomatis** | Gambar dari kamera atau galeri dikompresi otomatis di sisi browser sebelum dikirim untuk menghemat bandwidth |
+| **Upload Foto Profil Karakter** | Dukungan upload foto langsung dari galeri lokal dengan auto-compress selain input URL gambar |
+| **Multi-Bahasa (i18n)** | Pilihan bahasa tampilan antarmuka: **Bahasa Indonesia** dan **English** |
+| **Mode Tampilan (Theme)** | Pilihan tema **Terang (Light)**, **Gelap (Dark)**, atau **Otomatis (Auto)** yang sinkron langsung dengan tema perangkat |
+| **Minimalist Mood Indicator** | Indikator emosi karakter yang bersih dan minimalis tanpa elemen dekoratif berlebih (*anti-slop design*) |
+| **Voice Note (Pesan Suara)** | Rekam suara (WAV 16kHz mono) → AI transkrip & balas isi percakapan |
+| **Reply & Quote Message** | Geser pesan ke kanan untuk membalas (*swipe-to-reply*) atau *long-press* untuk context menu |
+| **Read Receipts** | Centang satu = terkirim, Centang ganda = tersampaikan/dibaca |
+| **Multi-Provider AI** | Built-in Google Gemini API + Custom OpenAI-compatible (OpenRouter, Ollama, DeepSeek, dll.) |
+| **Custom Instructions & Memory** | Atur kepribadian, latar belakang cerita, dan rangkuman otomatis (*auto-summarize*) percakapan harian |
+| **PWA Ready & Notifikasi** | Installable di homescreen mobile/desktop dengan dukungan push-like notification banner |
 
 ---
 
@@ -26,14 +29,12 @@ Aplikasi chat AI berbasis web untuk karakter **Waguri Kaoruko** (dari anime/mang
 
 | Layer | Teknologi |
 |-------|-----------|
-| **Frontend** | React 19, Vite 8, Tailwind CSS v4, Motion (Framer Motion) |
-| **State** | React hooks + localStorage (chat history) + IndexedDB (background queue) |
-| **Backend (Dev)** | Express + TypeScript (`server.ts`) — jalan di port 3001 |
-| **Backend (Prod)** | Vercel Functions (`api/chat.js`, `api/summarize.js`) — Node.js 20 |
-| **AI** | Google Gemini (`@google/genai`), support OpenAI-compatible API |
-| **Audio** | Web Audio API → WAV 16kHz mono conversion di browser |
-| **Build** | `npm run build` → output `dist/` (static SPA) |
-| **Deploy** | Vercel (auto-deploy dari GitHub) |
+| **Frontend** | React 19, Vite 8, Tailwind CSS v4, Motion (Framer Motion), Lucide React |
+| **State & Storage** | React hooks, LocalStorage (riwayat chat & settings), IndexedDB (antrean background processor) |
+| **Backend (Dev)** | Express + TypeScript (`server.ts`) — port 3001 |
+| **Backend (Prod)** | Vercel Serverless Functions (`api/chat.js`, `api/summarize.js`) — Node.js 20 ESM |
+| **AI Integration** | Google Gemini SDK (`@google/genai`) & OpenAI-Compatible REST client |
+| **Audio & Media** | Web Audio API (downsampling WAV mono 16kHz) & HTML5 Canvas Image Resizer/Compressor |
 
 ---
 
@@ -43,136 +44,119 @@ Aplikasi chat AI berbasis web untuk karakter **Waguri Kaoruko** (dari anime/mang
 - Node.js 20+
 - npm / pnpm / yarn
 
-### Install
+### 1. Clone & Install
 ```bash
 git clone https://github.com/BroHauzan/waguri-kaoruko-chat.git
 cd waguri-kaoruko-chat
 npm install
 ```
 
-### Environment
-Buat file `.env` di root:
+### 2. Konfigurasi Environment
+Buat file `.env` di direktori root:
 ```env
-# API Key Gemini (wajib)
-GEMINI_API_KEY=AQ.xxxxxxxxxxxx
+# API Key Gemini dari Google AI Studio (wajib)
+GEMINI_API_KEY=AIzaSy...
 
-# Kosongkan untuk dev lokal (pakai proxy /api ke server.ts:3001)
+# Kosongkan untuk dev lokal (otomatis proxy /api ke server.ts:3001)
 VITE_API_BASE_URL=""
 
-# URL app (opsional)
+# URL aplikasi (opsional)
 APP_URL=http://localhost:3000
 ```
 
-### Jalankan (butuh 2 terminal)
+### 3. Menjalankan Server Lokal (2 Terminal)
 
-**Terminal 1 — Backend API (port 3001):**
+**Terminal 1 — Backend Express API (port 3001):**
 ```bash
 npm run start
-# Server listening on port 3001
+# Server API aktif di http://localhost:3001
 ```
 
-**Terminal 2 — Frontend (port 3000 + proxy):**
+**Terminal 2 — Frontend Vite Client (port 3000):**
 ```bash
 npm run dev
-# Vite running on http://localhost:3000
+# Vite aktif di http://localhost:3000
 ```
 
-Buka browser: **http://localhost:3000**
+Buka browser kamu di: **http://localhost:3000**
 
 ---
 
-## 📦 Build Production
+## 📦 Build & Production
 
 ```bash
+# Jalankan kompilasi TypeScript dan bundling Vite
 npm run build
-# Output di folder dist/
 ```
-
-Deploy ke Vercel:
-1. Push ke GitHub
-2. Import project di Vercel Dashboard
-3. Set Environment Variable: `GEMINI_API_KEY` (Production + Preview + Development)
-4. Deploy — selesai!
+Output hasil build akan berada di direktori `dist/` sebagai Static SPA.
 
 ---
 
-## 📁 Struktur Project
+## 🌐 Panduan Deploy ke Vercel
+
+1. Push repository ke GitHub.
+2. Buka dashboard [Vercel](https://vercel.com/) dan pilih **Add New Project** → Import repo ini.
+3. Konfigurasikan **Environment Variables**:
+   - `GEMINI_API_KEY`: Masukkan API Key Gemini kamu (centang Production, Preview, Development).
+4. Klik **Deploy**. Selesai!
+
+### Serverless Endpoints:
+- `POST /api/chat` — Menangani interaksi chat (teks, gambar, audio, reply).
+- `POST /api/summarize` — Menangani pembuatan rangkuman memori percakapan.
+
+---
+
+## 📁 Struktur Direktori
 
 ```
 waguri-kaoruko-chat/
-├── api/                    # Vercel Functions
-│   ├── chat.js             # POST /api/chat
-│   ├── summarize.js        # POST /api/summarize
-│   └── lib/gemini.js       # Shared Gemini logic (ESM)
-├── lib/                    # Shared untuk Vercel (copy dari server/)
-├── server/                 # Local dev server (Express)
-│   ├── apiRouter.ts        # Route handler
-│   └── geminiService.ts    # Full Gemini logic (TypeScript)
+├── api/                    # Vercel Serverless Functions
+│   ├── chat.js             # Handler POST /api/chat
+│   ├── summarize.js        # Handler POST /api/summarize
+│   └── lib/gemini.js       # Core Gemini logic untuk Vercel
+├── server/                 # Backend lokal Express (Development)
+│   ├── apiRouter.ts        # Route handler API
+│   └── geminiService.ts    # Service logic Gemini & provider
 ├── src/
-│   ├── components/         # React components
-│   ├── lib/                # Client utils (geminiClient, storage, audio, image)
-│   ├── types/              # TypeScript types
-│   └── main.tsx            # Entry point
-├── .env                    # Local env (VITE_API_BASE_URL="")
-├── .env.example
-├── vercel.json             # Vercel config (proxy, rewrites)
-├── package.json
-├── vite.config.ts          # Vite + proxy /api -> localhost:3001
-└── server.ts               # Express dev server (port 3001)
+│   ├── components/         # Komponen React (Chat, Picker, Forms, dll.)
+│   │   ├── ChatImagePicker.tsx       # Ambil foto kamera langsung & galeri
+│   │   ├── ChatScreen.tsx            # Layar obrolan & input auto-growing
+│   │   ├── SettingsScreen.tsx        # Pengaturan tema, bahasa, akun
+│   │   └── ...
+│   ├── lib/                # Helper & utility client
+│   │   ├── i18n.ts                   # Modul kamus multi-bahasa (ID/EN)
+│   │   ├── imageUtils.ts             # Kompresi & pemrosesan gambar
+│   │   ├── audioUtils.ts             # Recorder & konverter audio WAV
+│   │   └── ...
+│   ├── types/              # Deklarasi antarmuka TypeScript
+│   └── main.tsx            # Entry point aplikasi React
+├── server.ts               # Server Express dev entry point
+├── vite.config.ts          # Konfigurasi Vite & proxy backend
+└── package.json
 ```
 
 ---
 
-## 🔧 Scripts
+## 🎯 Pengaturan Custom AI Provider (OpenAI-compatible)
 
-| Command | Fungsi |
-|---------|--------|
-| `npm run dev` | Frontend dev server (port 3000, proxy `/api` → 3001) |
-| `npm run start` | Backend Express server (port 3001) |
-| `npm run build` | Build production ke `dist/` |
-| `npm run preview` | Preview build production |
-| `npm run lint` | TypeScript type-check |
-
----
-
-## 🌐 Deploy ke Vercel (Production)
-
-1. **Push ke GitHub** → repo public/private
-2. **Vercel Dashboard** → Import Project
-3. **Environment Variables** → Tambah:
-   - `GEMINI_API_KEY` = key Gemini kamu (centang Production, Preview, Development)
-4. **Deploy** → Dapat URL `https://<project>.vercel.app`
-
-**API Endpoints:**
-- `POST /api/chat` — Kirim pesan (support text, image, audio, reply)
-- `POST /api/summarize` — Ringkasan percakapan
-
----
-
-## 🎯 Custom Provider (OpenAI-compatible)
-
-Di UI: **Pengaturan → Provider AI** → Tambah provider:
+Aplikasi ini mendukung model selain Gemini. Di halaman **Pengaturan → Provider AI**, tambahkan provider:
 - **Type**: `openai-compatible`
-- **Base URL**: Contoh `https://openrouter.ai/api/v1` atau `http://localhost:11434/v1` (Ollama)
-- **API Key**: Key provider
-- **Model**: Nama model (misal `openrouter/auto`, `llama3.2`, dll)
+- **Base URL**: Contoh `https://openrouter.ai/api/v1` atau `http://localhost:11434/v1` (Ollama lokal)
+- **API Key**: Kunci API provider yang sesuai
+- **Model**: Identifier model (misal `openrouter/auto`, `llama3.2`, dll.)
 
 ---
 
 ## 📝 License
 
-MIT License — bebas dipakai, dimodifikasi, didistribusikan.
+MIT License — Bebas digunakan, dipelajari, dan dikembangkan lebih lanjut.
 
 ---
 
-## 🙏 Credits
+## 🙏 Credits & Apresiasi
 
-- **Character**: Waguri Kaoruko (由 *Kanojo mo Kanojo* / *Girlfriend, Girlfriend*)
-- **AI**: Google Gemini API
-- **Icons**: Lucide React
-- **Animation**: Motion (Framer Motion)
-- **Styling**: Tailwind CSS v4
-
----
-
-**Dibuat dengan ❤️ untuk komunitas fans Kaoruko.**
+- **Character Concept**: Waguri Kaoruko
+- **AI Core**: Google Gemini API (`@google/genai`)
+- **Icons**: [Lucide React](https://lucide.dev/)
+- **Animation**: [Motion](https://motion.dev/) (Framer Motion)
+- **Styling**: [Tailwind CSS](https://tailwindcss.com/)
