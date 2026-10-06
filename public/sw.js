@@ -11,6 +11,11 @@ self.addEventListener('activate', (event) => {
   event.waitUntil(self.clients.claim());
 });
 
+// Fetch listener to meet PWA installability criteria
+self.addEventListener('fetch', (event) => {
+  // Let the browser handle standard requests (network-first/pass-through)
+});
+
 // Handle incoming messages from the main thread / background queue processor
 self.addEventListener('message', (event) => {
   if (!event.data) return;

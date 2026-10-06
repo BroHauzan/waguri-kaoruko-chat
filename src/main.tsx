@@ -1,11 +1,18 @@
 import {createRoot} from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
-import { registerServiceWorker } from './lib/pushNotification';
-
-// Register Service Worker for background notifications & offline task handling
-registerServiceWorker().catch((err) => {
-  console.warn('SW registration failed:', err);
-});
+// Register Service Worker for PWA installability & background notifications
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker
+      .register('/sw.js')
+      .then((reg) => {
+        console.log('ServiceWorker registered with scope:', reg.scope);
+      })
+      .catch((err) => {
+        console.error('ServiceWorker registration failed:', err);
+      });
+  });
+}
 
 createRoot(document.getElementById('root')!).render(<App />);

@@ -1,0 +1,25 @@
+{
+  "name": "Waguri Chat",
+  "short_name": "Waguri",
+  "description": "Interactive AI Companion Chat",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#0b141a",
+  "theme_color": "#0b141a",
+  "icons": [
+    {
+      "src": "/waguri-pfp.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/waguri-pfp.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "any maskable"
+    }
+  ]
+}

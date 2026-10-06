@@ -9,12 +9,15 @@
       name="viewport"
       content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover"
     />
-    <!-- Kontrol tampilan saat dijalankan sebagai PWA / WebView Android -->
-    <meta name="theme-color" content="#0B0C0F" media="(prefers-color-scheme: dark)" />
-    <meta name="theme-color" content="#F4F5F7" media="(prefers-color-scheme: light)" />
+    <!-- Web App Manifest -->
+    <link rel="manifest" href="/manifest.json" />
+
+    <!-- PWA Mobile Meta Tags -->
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="theme-color" content="#0b141a" />
+    <link rel="apple-touch-icon" href="/waguri-pfp.jpg" />
     <meta name="format-detection" content="telephone=no" />
     <title>Waguri Kaoruko - AI Character Chat</title>
     <meta name="description" content="Mobile-first AI character chat app featuring dynamic mood, Gen Z Indonesian slang, memory summarization, and customizable characters powered by Gemini." />
@@ -52,6 +55,20 @@
           document.documentElement.setAttribute("data-theme", "dark");
         }
       })();
+    </script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', function () {
+          navigator.serviceWorker
+            .register('/sw.js')
+            .then(function (reg) {
+              console.log('ServiceWorker registered with scope:', reg.scope);
+            })
+            .catch(function (err) {
+              console.error('ServiceWorker registration failed:', err);
+            });
+        });
+      }
     </script>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
