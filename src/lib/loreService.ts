@@ -39,16 +39,21 @@ export async function fetchCharacterLore(
       if (data && data.name) {
         return data as CharacterLoreResult;
       }
+    } else {
+      const errData = await res.json().catch(() => null);
+      if (errData?.details || errData?.error) {
+        console.warn("Backend /api/lore returned error:", errData);
+      }
     }
   } catch (backendErr) {
     console.warn("Backend /api/lore unreachable, attempting client SDK direct call...", backendErr);
   }
 
-  // 2. Client-side fallback jika backend tidak tersedia tapi apiKey tersedia
+  // 2. Client-side fallback jika backend gagal atau tidak tersedia tapi apiKey tersedia
   const keyToUse = apiKey || "";
   if (!keyToUse) {
     throw new Error(
-      "Gagal menghubungi server untuk pencarian lore. Pastikan server dev berjalan atau isi API Key di Pengaturan."
+      "Gagal mengambil lore dari server. Pastikan server dev berjalan atau masukkan API Key di Pengaturan > Provider AI."
     );
   }
 
@@ -57,44 +62,87 @@ export async function fetchCharacterLore(
   const prompt = `Cari informasi resmi atau kanon anime/manga/game tentang karakter: "${trimmedName}".
 Dapatkan kepribadian, gaya bicara, latar belakang (nama sekolah/organisasi), dan ciri fisik lengkap (rambut, mata, seragam sekolah atau pakaian khas).`;
 
-  const response = await ai.models.generateContent({
-    model: "gemini-3.8-flash",
-    contents: prompt,
-    config: {
-      tools: [{ googleSearch: {} }],
-      responseMimeType: "application/json",
-      responseSchema: {
-        type: Type.OBJECT,
-        properties: {
-          name: { type: Type.STRING },
-          tagline: { type: Type.STRING },
-          personality: { type: Type.STRING },
-          speechStyle: { type: Type.STRING },
-          firstMessage: { type: Type.STRING },
-          visualProfile: {
-            type: Type.OBJECT,
-            properties: {
-              hair: { type: Type.STRING, description: "Hair style and color in English" },
-              eyes: { type: Type.STRING, description: "Eye color in English" },
-              schoolName: { type: Type.STRING, description: "Name of school or affiliation" },
-              schoolUniform: { type: Type.STRING, description: "Detailed uniform or main outfit in English" },
-              generalLook: { type: Type.STRING, description: "General visual aesthetic" },
+  let responseText = "";
+  try {
+    const response = await ai.models.generateContent({
+      model: "gemini-3.8-flash",
+      contents: prompt,
+      config: {
+        tools: [{ googleSearch: {} }],
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            name: { type: Type.STRING },
+            tagline: { type: Type.STRING },
+            personality: { type: Type.STRING },
+            speechStyle: { type: Type.STRING },
+            firstMessage: { type: Type.STRING },
+            visualProfile: {
+              type: Type.OBJECT,
+              properties: {
+                hair: { type: Type.STRING, description: "Hair style and color in English" },
+                eyes: { type: Type.STRING, description: "Eye color in English" },
+                schoolName: { type: Type.STRING, description: "Name of school or affiliation" },
+                schoolUniform: { type: Type.STRING, description: "Detailed uniform or main outfit in English" },
+                generalLook: { type: Type.STRING, description: "General visual aesthetic" },
+              },
+              required: ["hair", "eyes", "schoolName", "schoolUniform", "generalLook"],
             },
-            required: ["hair", "eyes", "schoolName", "schoolUniform", "generalLook"],
           },
+          required: [
+            "name",
+            "tagline",
+            "personality",
+            "speechStyle",
+            "firstMessage",
+            "visualProfile",
+          ],
         },
-        required: [
-          "name",
-          "tagline",
-          "personality",
-          "speechStyle",
-          "firstMessage",
-          "visualProfile",
-        ],
       },
-    },
-  });
+    });
+    responseText = response.text || "";
+  } catch (searchGroundingErr: any) {
+    console.warn("Client search grounding failed, falling back to gemini-3.1-flash-lite...", searchGroundingErr?.message || searchGroundingErr);
+    const fallbackResponse = await ai.models.generateContent({
+      model: "gemini-3.1-flash-lite",
+      contents: prompt,
+      config: {
+        responseMimeType: "application/json",
+        responseSchema: {
+          type: Type.OBJECT,
+          properties: {
+            name: { type: Type.STRING },
+            tagline: { type: Type.STRING },
+            personality: { type: Type.STRING },
+            speechStyle: { type: Type.STRING },
+            firstMessage: { type: Type.STRING },
+            visualProfile: {
+              type: Type.OBJECT,
+              properties: {
+                hair: { type: Type.STRING, description: "Hair style and color in English" },
+                eyes: { type: Type.STRING, description: "Eye color in English" },
+                schoolName: { type: Type.STRING, description: "Name of school or affiliation" },
+                schoolUniform: { type: Type.STRING, description: "Detailed uniform or main outfit in English" },
+                generalLook: { type: Type.STRING, description: "General visual aesthetic" },
+              },
+              required: ["hair", "eyes", "schoolName", "schoolUniform", "generalLook"],
+            },
+          },
+          required: [
+            "name",
+            "tagline",
+            "personality",
+            "speechStyle",
+            "firstMessage",
+            "visualProfile",
+          ],
+        },
+      },
+    });
+    responseText = fallbackResponse.text || "";
+  }
 
-  const parsed = JSON.parse(response.text || "{}");
+  const parsed = JSON.parse(responseText || "{}");
   return parsed as CharacterLoreResult;
 }
