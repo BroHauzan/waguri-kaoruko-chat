@@ -98,6 +98,7 @@ const INITIAL_CHARACTERS: Character[] = [
 const DEFAULT_SETTINGS: Settings = {
   userName: "Rizky",
   model: "gemini-3.1-flash-lite",
+  imageModel: "gemini-3.1-flash-lite-image",
   temperature: 0.9,
   replyLength: "Sedang",
   hapticFeedback: true,
@@ -384,6 +385,18 @@ export const storage = {
       // dan user tidak punya cara memilih sumber model sama sekali.
       if (!Array.isArray(merged.providers) || merged.providers.length === 0) {
         merged.providers = [BUILTIN_GEMINI_PROVIDER];
+      } else {
+        // Backfill imageModel untuk provider builtin atau yang belum punya imageModel
+        merged.providers = merged.providers.map((p) => {
+          if (!p.imageModel && p.type === "gemini") {
+            return { ...p, imageModel: "gemini-3.1-flash-lite-image" };
+          }
+          return p;
+        });
+      }
+
+      if (!merged.imageModel) {
+        merged.imageModel = "gemini-3.1-flash-lite-image";
       }
 
       // Pastikan tema dan bahasa valid

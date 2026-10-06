@@ -8,10 +8,13 @@ import {
   Server,
   Eye,
   EyeOff,
+  Image as ImageIcon,
+  MessageSquare,
 } from "lucide-react";
 import { AIProvider, ProviderType, Settings } from "../types";
 import {
   GEMINI_MODEL_PRESETS,
+  GEMINI_IMAGE_MODEL_PRESETS,
   getActiveProvider,
   getProviderList,
   makeProviderId,
@@ -32,6 +35,7 @@ const EMPTY_FORM = {
   baseUrl: "",
   apiKey: "",
   model: "",
+  imageModel: "gemini-3.1-flash-lite-image",
 };
 
 /** Contoh base URL supaya user tahu format yang benar. */
@@ -86,6 +90,7 @@ export const ProviderManager: React.FC<ProviderManagerProps> = ({
       baseUrl: provider.baseUrl,
       apiKey: provider.apiKey,
       model: provider.model,
+      imageModel: provider.imageModel || "gemini-3.1-flash-lite-image",
     });
     setShowKey(false);
     setIsEditing(true);
@@ -131,7 +136,8 @@ export const ProviderManager: React.FC<ProviderManagerProps> = ({
       type: form.type,
       baseUrl: form.baseUrl.trim().replace(/\/+$/, ""),
       apiKey: form.apiKey.trim(),
-      model: form.model.trim(),
+      model: form.model.trim() || "gemini-3.1-flash-lite",
+      imageModel: form.imageModel.trim() || "gemini-3.1-flash-lite-image",
       isBuiltin: form.id
         ? providers.find((p) => p.id === form.id)?.isBuiltin
         : false,
@@ -209,12 +215,16 @@ export const ProviderManager: React.FC<ProviderManagerProps> = ({
                       </span>
                     )}
                   </div>
-                  <span className="text-[11px] text-neutral-500 dark:text-[#8A8A93] truncate block mt-0.5">
-                    {provider.type === "gemini"
-                      ? "Google Gemini"
-                      : provider.baseUrl || "OpenAI-compatible"}
-                    {provider.model ? ` · ${provider.model}` : ""}
-                  </span>
+                  <div className="flex flex-col gap-0.5 mt-1">
+                    <span className="text-[11px] text-neutral-600 dark:text-[#A1A1AA] truncate flex items-center gap-1">
+                      <MessageSquare size={11} className="text-[#F5B838] shrink-0" />
+                      <span>Teks: {provider.model || "gemini-3.1-flash-lite"}</span>
+                    </span>
+                    <span className="text-[11px] text-neutral-600 dark:text-[#A1A1AA] truncate flex items-center gap-1">
+                      <ImageIcon size={11} className="text-pink-400 shrink-0" />
+                      <span>Gambar: {provider.imageModel || "gemini-3.1-flash-lite-image"}</span>
+                    </span>
+                  </div>
                 </button>
 
                 <div className="flex items-center gap-1 shrink-0">
@@ -370,10 +380,11 @@ export const ProviderManager: React.FC<ProviderManagerProps> = ({
             </div>
           </div>
 
-          {/* Model */}
+          {/* Model Teks (Chat) */}
           <div className="flex flex-col gap-1.5">
-            <label className="text-[11px] font-semibold text-neutral-500 dark:text-[#8A8A93]">
-              Model
+            <label className="text-[11px] font-semibold text-neutral-500 dark:text-[#8A8A93] flex items-center gap-1.5">
+              <MessageSquare size={13} className="text-[#F5B838]" />
+              <span>Model Teks (Chat)</span>
             </label>
             <input
               type="text"
@@ -400,6 +411,33 @@ export const ProviderManager: React.FC<ProviderManagerProps> = ({
                 ))}
               </div>
             )}
+          </div>
+
+          {/* Model Khusus Gambar (Foto / PAP) */}
+          <div className="flex flex-col gap-1.5">
+            <label className="text-[11px] font-semibold text-neutral-500 dark:text-[#8A8A93] flex items-center gap-1.5">
+              <ImageIcon size={13} className="text-pink-400" />
+              <span>Model Khusus Gambar (Foto / PAP)</span>
+            </label>
+            <input
+              type="text"
+              value={form.imageModel}
+              onChange={(e) => setForm({ ...form, imageModel: e.target.value })}
+              placeholder="gemini-3.1-flash-lite-image"
+              className="bg-[#F0F1F5] dark:bg-white/[0.06] text-sm text-neutral-900 dark:text-[#F2F3F7] placeholder:text-neutral-400 dark:placeholder:text-white/35 rounded-2xl px-4 py-2.5 border-none focus:outline-none focus:ring-2 focus:ring-[#F5B838]/50"
+            />
+            <div className="flex flex-wrap gap-1.5 pt-0.5">
+              {GEMINI_IMAGE_MODEL_PRESETS.map((im) => (
+                <button
+                  key={im}
+                  type="button"
+                  onClick={() => setForm({ ...form, imageModel: im })}
+                  className="px-2 py-1 rounded-full text-[10px] font-medium bg-black/[0.04] dark:bg-white/[0.06] border border-black/[0.06] dark:border-white/10 text-neutral-600 dark:text-[#9B9BA3] hover:text-neutral-900 dark:hover:text-white transition-colors cursor-pointer"
+                >
+                  {im}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Actions */}

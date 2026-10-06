@@ -12,15 +12,24 @@ export const BUILTIN_GEMINI_PROVIDER: AIProvider = {
   baseUrl: "",
   apiKey: "",
   model: "gemini-3.1-flash-lite",
+  imageModel: "gemini-3.1-flash-lite-image",
   isBuiltin: true,
   createdAt: 0,
 };
 
-/** Pintasan model Gemini yang sering dipakai, buat tombol cepat di editor. */
+/** Pintasan model teks Gemini yang sering dipakai */
 export const GEMINI_MODEL_PRESETS = [
   "gemini-3.1-flash-lite",
   "gemini-3.8-flash",
   "gemini-flash-latest",
+];
+
+/** Pintasan model gambar Gemini / Imagen yang sering dipakai */
+export const GEMINI_IMAGE_MODEL_PRESETS = [
+  "gemini-3.1-flash-lite-image",
+  "gemini-3.1-flash-image",
+  "gemini-2.5-flash-image",
+  "imagen-3.0-generate-002",
 ];
 
 /** Selalu mengembalikan minimal satu provider supaya UI tidak pernah kosong. */

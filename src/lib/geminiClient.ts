@@ -42,6 +42,7 @@ function providerPayload(settings: Settings) {
     baseUrl: provider.baseUrl,
     apiKey: provider.apiKey,
     model: provider.model || settings.model,
+    imageModel: provider.imageModel || settings.imageModel || "gemini-3.1-flash-lite-image",
   };
 }
 

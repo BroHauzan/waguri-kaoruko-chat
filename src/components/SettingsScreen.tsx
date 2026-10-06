@@ -262,7 +262,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       id: "model" as const,
       icon: Sparkles,
       title: language === "en" ? "AI Model & Provider" : "Model & Provider AI",
-      subtitle: `${activeProvider.name} • ${activeProvider.model || model}`,
+      subtitle: `${activeProvider.name} • Teks: ${activeProvider.model || model} • Gambar: ${activeProvider.imageModel || settings.imageModel || "gemini-3.1-flash-lite-image"}`,
       onClick: () => setActiveModal("model"),
     },
     {

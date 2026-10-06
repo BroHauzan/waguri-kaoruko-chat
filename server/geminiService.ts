@@ -13,6 +13,7 @@ export interface ProviderConfig {
   baseUrl?: string;
   apiKey?: string;
   model?: string;
+  imageModel?: string;
 }
 
 export interface CharacterVisualProfile {
@@ -351,7 +352,8 @@ async function generatePhotoHelper(
   visualProfile: CharacterVisualProfile | undefined,
   sceneDescription: string,
   apiKey: string,
-  avatarUrl?: string
+  avatarUrl?: string,
+  imageModel?: string
 ): Promise<string> {
   const visual = visualProfile;
   const visualPrompt = visual
@@ -366,39 +368,63 @@ async function generatePhotoHelper(
     "clean lines, vibrant colors",
   ].join(", ");
 
-  // 1. Coba Imagen 3 / Gemini Image API jika kuota/model mengizinkan
-  if (apiKey && apiKey !== "MY_GEMINI_API_KEY") {
-    try {
-      const ai = new GoogleGenAI({ apiKey });
-      const result = await ai.models.generateImages({
-        model: "imagen-3.0-generate-002",
-        prompt: finalPrompt,
-        config: {
-          numberOfImages: 1,
-          aspectRatio: "9:16",
-          outputMimeType: "image/jpeg",
-        },
-      });
+  const selectedImageModel = (imageModel || "gemini-3.1-flash-lite-image").trim();
 
-      const base64Data = result?.generatedImages?.[0]?.image?.imageBytes;
-      if (base64Data) {
-        return `data:image/jpeg;base64,${base64Data}`;
-      }
-    } catch (err: any) {
-      console.warn("Imagen 3 generateImages error in server:", err?.message || err);
+  // 1. Coba panggil model gambar yang dipilih / default (misal gemini-3.1-flash-lite-image atau Imagen)
+  if (apiKey && apiKey !== "MY_GEMINI_API_KEY") {
+    const ai = new GoogleGenAI({ apiKey });
+
+    // Jika model bertipe Imagen
+    if (selectedImageModel.startsWith("imagen")) {
       try {
-        const ai = new GoogleGenAI({ apiKey });
-        const fallbackResponse = await ai.models.generateContent({
-          model: "gemini-3.1-flash-image",
+        const result = await ai.models.generateImages({
+          model: selectedImageModel,
+          prompt: finalPrompt,
+          config: {
+            numberOfImages: 1,
+            aspectRatio: "9:16",
+            outputMimeType: "image/jpeg",
+          },
+        });
+
+        const base64Data = result?.generatedImages?.[0]?.image?.imageBytes;
+        if (base64Data) {
+          return `data:image/jpeg;base64,${base64Data}`;
+        }
+      } catch (err: any) {
+        console.warn(`${selectedImageModel} generateImages error in server:`, err?.message || err);
+      }
+    } else {
+      // Model Gemini generateContent (seperti gemini-3.1-flash-lite-image atau gemini-3.1-flash-image)
+      try {
+        const response = await ai.models.generateContent({
+          model: selectedImageModel,
           contents: finalPrompt,
         });
-        for (const part of fallbackResponse.candidates?.[0]?.content?.parts || []) {
+        for (const part of response.candidates?.[0]?.content?.parts || []) {
+          if (part.inlineData?.data) {
+            return `data:${part.inlineData.mimeType || "image/png"};base64,${part.inlineData.data}`;
+          }
+        }
+      } catch (geminiImgErr: any) {
+        console.warn(`${selectedImageModel} generateContent error in server:`, geminiImgErr?.message || geminiImgErr);
+      }
+    }
+
+    // Secondary attempt jika model pertama beda dari default gemini-3.1-flash-lite-image
+    if (selectedImageModel !== "gemini-3.1-flash-lite-image") {
+      try {
+        const fallbackRes = await ai.models.generateContent({
+          model: "gemini-3.1-flash-lite-image",
+          contents: finalPrompt,
+        });
+        for (const part of fallbackRes.candidates?.[0]?.content?.parts || []) {
           if (part.inlineData?.data) {
             return `data:${part.inlineData.mimeType || "image/png"};base64,${part.inlineData.data}`;
           }
         }
       } catch (fallbackErr) {
-        console.warn("Gemini image fallback also failed:", fallbackErr);
+        console.warn("Secondary image fallback failed:", fallbackErr);
       }
     }
   }
@@ -548,7 +574,8 @@ async function callGemini(
               req.visualProfile,
               parsed.send_photo.sceneDescription,
               apiKey,
-              req.avatarUrl
+              req.avatarUrl,
+              cfg.imageModel
             );
             payload.photo = {
               dataUrl: photoDataUrl,

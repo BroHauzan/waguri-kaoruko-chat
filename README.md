@@ -19,9 +19,9 @@ Aplikasi chat AI interaktif berbasis web untuk karakter **Waguri Kaoruko** (dari
 | **Voice Note (Pesan Suara)** | Rekam suara (WAV 16kHz mono) → AI transkrip & balas isi percakapan |
 | **Reply & Quote Message** | Geser pesan ke kanan untuk membalas (*swipe-to-reply*) atau *long-press* untuk context menu |
 | **Read Receipts** | Centang satu = terkirim, Centang ganda = tersampaikan/dibaca |
-| **Multi-Provider AI** | Built-in Google Gemini API + Custom OpenAI-compatible (OpenRouter, Ollama, DeepSeek, dll.) |
+| **Multi-Provider AI & Dual Model** | Built-in Google Gemini API + Custom OpenAI-compatible dengan pemisahan Model Teks (default: `gemini-3.1-flash-lite`) dan Model Khusus Gambar/PAP (default: `gemini-3.1-flash-lite-image`) |
 | **Auto-Fetch Lore (Search Grounding)** | Riset otomatis biodata kanon, kepribadian, gaya bicara, dan profil visual karakter dari internet via Google Search Grounding |
-| **In-Character Photo / PAP (Imagen 3)** | AI dapat mengirim foto selfie/PAP karakter portrait (9:16) saat diminta user menggunakan Imagen 3 & referensi profil visual |
+| **In-Character Photo / PAP (Dual Model)** | AI dapat mengirim foto selfie/PAP karakter portrait (9:16) saat diminta user menggunakan model generasi gambar khusus & referensi profil visual |
 | **Hierarki Pengaturan WhatsApp-Style** | Tata letak pengaturan terpusat dengan top action bar, profile header tengah, dan flat list menu bersih dengan modal terpadu |
 | **PWA Ready & Notifikasi** | Installable di homescreen mobile/desktop dengan dukungan push-like notification banner |
 
@@ -139,13 +139,24 @@ waguri-kaoruko-chat/
 
 ---
 
-## 🎯 Pengaturan Custom AI Provider (OpenAI-compatible)
+## 🎯 Pengaturan AI Provider & Konfigurasi Dual Model
 
-Aplikasi ini mendukung model selain Gemini. Di halaman **Pengaturan → Provider AI**, tambahkan provider:
+Aplikasi ini mendukung arsitektur **Dual Model**, di mana model untuk teks chat dan model untuk pembuatan gambar foto/PAP dapat dikonfigurasi secara terpisah:
+
+1. **Model Teks (Chat)**: Digunakan untuk percakapan chat, reasoning persona karakter, audio voice notes, dan summarization memori.
+   - Default: `gemini-3.1-flash-lite` (sangat cepat, hemat biaya, dan responsif).
+   - Opsi lain: `gemini-2.5-flash`, `gemini-1.5-flash`, atau custom model jika menggunakan OpenAI-compatible.
+2. **Model Khusus Gambar (Foto / PAP)**: Digunakan saat AI mengeksekusi function call untuk mengirim foto selfie/PAP in-character.
+   - Default: `gemini-3.1-flash-lite-image`.
+   - Opsi lain: `gemini-3.1-flash-image`, `gemini-2.5-flash-image`, atau `imagen-3.0-generate-002`.
+
+### Provider Kustom (OpenAI-compatible)
+Di halaman **Pengaturan → Model & Provider AI**, Anda juga dapat menambahkan provider OpenAI-compatible:
 - **Type**: `openai-compatible`
 - **Base URL**: Contoh `https://openrouter.ai/api/v1` atau `http://localhost:11434/v1` (Ollama lokal)
 - **API Key**: Kunci API provider yang sesuai
-- **Model**: Identifier model (misal `openrouter/auto`, `llama3.2`, dll.)
+- **Model Teks**: Identifier model chat (misal `openrouter/auto`, `llama3.2`, dll.)
+- **Model Gambar**: Model gambar yang didukung atau fallback otomatis ke preset Gemini/Avatar.
 
 ---
 

@@ -122,7 +122,10 @@ export interface AIProvider {
   baseUrl: string;
   /** Kosong pada provider Gemini bawaan = pakai GEMINI_API_KEY dari server. */
   apiKey: string;
+  /** Model teks chat (default: gemini-3.1-flash-lite) */
   model: string;
+  /** Model khusus generasi foto/gambar (default: gemini-3.1-flash-lite-image) */
+  imageModel?: string;
   /** Provider bawaan tidak bisa dihapus. */
   isBuiltin?: boolean;
   createdAt: number;
@@ -133,6 +136,7 @@ export type AppLanguage = 'id' | 'en';
 export interface Settings {
   userName: string;
   model: string;
+  imageModel?: string;
   temperature: number;
   replyLength: 'Pendek' | 'Sedang' | 'Panjang';
   apiKey?: string;
