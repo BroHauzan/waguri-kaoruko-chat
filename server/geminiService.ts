@@ -13,6 +13,14 @@ export interface ProviderConfig {
   model?: string;
 }
 
+export interface CharacterVisualProfile {
+  hair: string;
+  eyes: string;
+  schoolName: string;
+  schoolUniform: string;
+  generalLook: string;
+}
+
 export interface ChatTurnRequest {
   charName: string;
   userName: string;
@@ -24,6 +32,7 @@ export interface ChatTurnRequest {
   currentIntensity: number;
   summary?: string;
   customInstructions?: string;
+  visualProfile?: CharacterVisualProfile;
   exampleDialogues: Array<{ user: string; char: string }>;
   history: Array<{ role: "user" | "model"; text: string }>;
   message: string;
@@ -45,6 +54,10 @@ export interface ChatTurnResponse {
   messages: string[];
   emotion: string;
   intensity: number;
+  photo?: {
+    dataUrl: string;
+    caption?: string;
+  };
 }
 
 /** Bentuk respons yang diminta dari model, dipakai untuk validasi. */
@@ -52,6 +65,10 @@ interface ModelPayload {
   messages: string[];
   emotion: string;
   intensity: number;
+  photo?: {
+    dataUrl: string;
+    caption?: string;
+  };
 }
 
 const GEMINI_DEFAULT_MODEL = "gemini-3.1-flash-lite";
@@ -119,6 +136,19 @@ Relationship with ${req.userName}: ${req.relationship || "Close friend"}
 - You have real moods and they persist between messages. Current mood: ${req.currentEmotion || "neutral"} (intensity ${req.currentIntensity || 5}/10).
 - Mood changes gradually based on how ${req.userName} treats you: kindness, compliments, jokes, sharing food/interests, and attention make you happier; rudeness, teasing, being ignored, or being lied to make you annoyed, pouty, or angry; you can stay upset until ${req.userName} makes it right or apologizes.
 - Show emotion through word choice, message length, and punctuation (short curt replies when angry or sulking, rambling/exclamation marks when excited or happy).
+
+# PHOTO & SELFIE CAPABILITY (CRITICAL)
+- Kamu BISA dan SENANG mengambil foto/selfie/PAP (Post a Picture) ketika ${req.userName} memintanya (seperti: "coba pap dong", "lagi di mana? fotoin dong", "pap di kelas", "kirim selfie", "pap kamu dong").
+- JIKA ${req.userName} meminta foto atau selfie:
+  1. JANGAN PERNAH menolak atau beralasan tidak bisa mengirim foto!
+  2. Kamu WAJIB menyertakan field \`send_photo\` di JSON responsmu dengan:
+     - \`sceneDescription\`: Deskripsi situasi, latar tempat, dan gayamu dalam bahasa Inggris yang detail untuk model gambar (misal: "sitting at classroom desk, smiling softly at phone camera, holding a pen, natural daylight").
+     - \`caption\`: Pesan teks yang kamu ucapkan saat mengirim foto tersebut sesuai kepribadianmu.
+- Ciri fisik visualmu: ${
+  req.visualProfile
+    ? `Rambut: ${req.visualProfile.hair}, Mata: ${req.visualProfile.eyes}, Sekolah/Latar: ${req.visualProfile.schoolName}, Pakaian/Seragam: ${req.visualProfile.schoolUniform}, Penampilan: ${req.visualProfile.generalLook}`
+    : "Gadis anime cantik dan manis, natural candid mobile photo"
+}.
 
 # BEHAVIOR RULES
 - Stay in character at all times. Do not break the fourth wall.
@@ -313,6 +343,60 @@ function dropRepeatedBubbles(
   return { ...payload, messages: fresh };
 }
 
+async function generatePhotoHelper(
+  charName: string,
+  visualProfile: CharacterVisualProfile | undefined,
+  sceneDescription: string,
+  apiKey: string
+): Promise<string> {
+  const ai = new GoogleGenAI({ apiKey });
+  const visual = visualProfile;
+  const visualPrompt = visual
+    ? `${charName}, ${visual.hair}, ${visual.eyes}, wearing ${visual.schoolUniform}, ${visual.generalLook}`
+    : `${charName}, high quality anime aesthetic`;
+
+  const finalPrompt = [
+    "masterpiece, anime aesthetic, high quality key visual, solo",
+    visualPrompt,
+    `scene: ${sceneDescription}`,
+    `POV phone camera selfie / candid mobile snapshot, natural daylight, depth of field`,
+    "clean lines, vibrant colors",
+  ].join(", ");
+
+  try {
+    const result = await ai.models.generateImages({
+      model: "imagen-3.0-generate-002",
+      prompt: finalPrompt,
+      config: {
+        numberOfImages: 1,
+        aspectRatio: "9:16",
+        outputMimeType: "image/jpeg",
+      },
+    });
+
+    const base64Data = result?.generatedImages?.[0]?.image?.imageBytes;
+    if (base64Data) {
+      return `data:image/jpeg;base64,${base64Data}`;
+    }
+  } catch (err: any) {
+    console.warn("Imagen 3 generateImages error in server:", err?.message || err);
+    try {
+      const fallbackResponse = await ai.models.generateContent({
+        model: "gemini-3.1-flash-image",
+        contents: finalPrompt,
+      });
+      for (const part of fallbackResponse.candidates?.[0]?.content?.parts || []) {
+        if (part.inlineData?.data) {
+          return `data:${part.inlineData.mimeType || "image/png"};base64,${part.inlineData.data}`;
+        }
+      }
+    } catch (fallbackErr) {
+      console.error("All image generation fallbacks failed:", fallbackErr);
+    }
+  }
+  throw new Error("Gagal menghasilkan foto karakter.");
+}
+
 // ---------------------------------------------------------------------------
 // Gemini provider
 // ---------------------------------------------------------------------------
@@ -404,6 +488,23 @@ async function callGemini(
                 },
                 emotion: { type: Type.STRING },
                 intensity: { type: Type.INTEGER },
+                send_photo: {
+                  type: Type.OBJECT,
+                  description:
+                    "Isi HANYA JIKA pengguna meminta foto, selfie, PAP, atau foto suasana di sekitarmu.",
+                  properties: {
+                    sceneDescription: {
+                      type: Type.STRING,
+                      description:
+                        "Deskripsi situasi/tempat/latar foto dalam bahasa Inggris untuk Imagen 3 (misal: sitting in high school classroom, holding a notebook, smiling shyly).",
+                    },
+                    caption: {
+                      type: Type.STRING,
+                      description:
+                        "Pesan teks yang diucapkan karakter saat mengirim foto ini (sesuai persona).",
+                    },
+                  },
+                },
               },
               required: ["messages", "emotion", "intensity"],
             },
@@ -413,6 +514,34 @@ async function callGemini(
         const parsed = JSON.parse(extractJson(response.text?.trim() || ""));
         const payload = normalizePayload(parsed);
         if (!payload) throw new Error("Respons model tidak berisi array messages.");
+
+        // Jika model mengindikasikan pengiriman foto / selfie (send_photo)
+        if (parsed.send_photo?.sceneDescription) {
+          try {
+            const photoDataUrl = await generatePhotoHelper(
+              req.charName,
+              req.visualProfile,
+              parsed.send_photo.sceneDescription,
+              apiKey
+            );
+            payload.photo = {
+              dataUrl: photoDataUrl,
+              caption: parsed.send_photo.caption || payload.messages[0] || "",
+            };
+            if (parsed.send_photo.caption) {
+              payload.messages = [parsed.send_photo.caption];
+            }
+          } catch (photoErr: any) {
+            console.warn("Generating character photo failed gracefully:", photoErr?.message || photoErr);
+            if (!payload.messages.length) {
+              payload.messages = [
+                parsed.send_photo.caption ||
+                  "Aduh sinyalku barusan agak lemot nih pas mau kirim foto hehe. Nanti aku fotoin lagi yaa!",
+              ];
+            }
+          }
+        }
+
         return payload;
       } catch (error: any) {
         lastError = error;
@@ -589,6 +718,7 @@ export async function handleChatTurn(
     messages: deduped.messages,
     emotion: deduped.emotion || req.currentEmotion || "happy",
     intensity: deduped.intensity,
+    photo: deduped.photo,
   };
 }
 
@@ -670,3 +800,86 @@ Task: Write a concise 2-4 sentence summary of what was discussed, personal detai
     return { summary: req.existingSummary || "" };
   }
 }
+
+export interface LoreRequest {
+  characterName: string;
+  apiKey?: string;
+}
+
+export async function handleFetchLore(req: LoreRequest) {
+  const apiKey = (req.apiKey?.trim() || process.env.GEMINI_API_KEY || "").trim();
+  if (!apiKey || apiKey === "MY_GEMINI_API_KEY") {
+    throw new Error(
+      "GEMINI_API_KEY belum diset. Masukkan API key di Pengaturan atau file .env server."
+    );
+  }
+
+  const ai = new GoogleGenAI({ apiKey });
+  const prompt = `Cari informasi resmi atau kanon anime/manga/game tentang karakter: "${req.characterName}".
+Dapatkan kepribadian, gaya bicara, latar belakang (nama sekolah/organisasi), dan ciri fisik lengkap (rambut, mata, seragam sekolah atau pakaian khas).`;
+
+  const response = await ai.models.generateContent({
+    model: "gemini-3.8-flash",
+    contents: prompt,
+    config: {
+      tools: [{ googleSearch: {} }],
+      responseMimeType: "application/json",
+      responseSchema: {
+        type: Type.OBJECT,
+        properties: {
+          name: { type: Type.STRING },
+          tagline: { type: Type.STRING },
+          personality: { type: Type.STRING },
+          speechStyle: { type: Type.STRING },
+          firstMessage: { type: Type.STRING },
+          visualProfile: {
+            type: Type.OBJECT,
+            properties: {
+              hair: { type: Type.STRING, description: "Hair style and color in English" },
+              eyes: { type: Type.STRING, description: "Eye color in English" },
+              schoolName: { type: Type.STRING, description: "Name of school or affiliation" },
+              schoolUniform: { type: Type.STRING, description: "Detailed uniform or main outfit in English" },
+              generalLook: { type: Type.STRING, description: "General visual aesthetic" },
+            },
+            required: ["hair", "eyes", "schoolName", "schoolUniform", "generalLook"],
+          },
+        },
+        required: [
+          "name",
+          "tagline",
+          "personality",
+          "speechStyle",
+          "firstMessage",
+          "visualProfile",
+        ],
+      },
+    },
+  });
+
+  const parsed = JSON.parse(extractJson(response.text?.trim() || "{}"));
+  return parsed;
+}
+
+export interface GeneratePhotoApiRequest {
+  charName: string;
+  visualProfile?: CharacterVisualProfile;
+  sceneDescription: string;
+  apiKey?: string;
+}
+
+export async function handleGeneratePhoto(req: GeneratePhotoApiRequest) {
+  const apiKey = (req.apiKey?.trim() || process.env.GEMINI_API_KEY || "").trim();
+  if (!apiKey || apiKey === "MY_GEMINI_API_KEY") {
+    throw new Error("GEMINI_API_KEY belum diset.");
+  }
+
+  const dataUrl = await generatePhotoHelper(
+    req.charName,
+    req.visualProfile,
+    req.sceneDescription,
+    apiKey
+  );
+
+  return { dataUrl };
+}
+

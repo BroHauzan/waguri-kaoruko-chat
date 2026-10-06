@@ -6,6 +6,7 @@ import {
   MoreHorizontal,
   Smile,
   Image as ImageIcon,
+  Camera,
   Plus,
   Send,
   Mic,
@@ -123,6 +124,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
   const [isPreparingImage, setIsPreparingImage] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isPreparingAudio, setIsPreparingAudio] = useState(false);
+  const [isGeneratingPhoto, setIsGeneratingPhoto] = useState(false);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -303,6 +305,11 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
       status: "processing",
     }).catch((e) => console.warn("Task error", e));
 
+    const isPhotoRequest = /\b(pap|foto|selfie|potret|pic|photo|fotoin)\b/i.test(textToSend);
+    if (isPhotoRequest) {
+      setIsGeneratingPhoto(true);
+    }
+
     try {
       const response = await sendMessageToGemini({
         character,
@@ -313,6 +320,8 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
         audio: audioToSend,
         replyToText: replyTo?.text || null,
       });
+
+      setIsGeneratingPhoto(false);
 
       const incomingList =
         response.messages && response.messages.length > 0
@@ -337,6 +346,16 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
           id: `msg_char_${Date.now()}_${idx}`,
           role: "char",
           text,
+          image:
+            response.photo?.dataUrl && idx === 0
+              ? {
+                  id: `img_${Date.now()}`,
+                  dataUrl: response.photo.dataUrl,
+                  base64: response.photo.dataUrl.split(",")[1] || "",
+                  mimeType: "image/jpeg",
+                  size: Math.round((response.photo.dataUrl.length * 3) / 4),
+                }
+              : undefined,
           emotion: response.emotion || character.defaultMood,
           intensity: response.intensity || 6,
           timestamp: Date.now() + idx * 10,
@@ -467,10 +486,22 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
           return;
         }
 
+        let photoAttachment: ImageAttachment | undefined;
+        if (response.photo?.dataUrl && i === 0) {
+          photoAttachment = {
+            id: `img_${Date.now()}`,
+            dataUrl: response.photo.dataUrl,
+            base64: response.photo.dataUrl.split(",")[1] || "",
+            mimeType: "image/jpeg",
+            size: Math.round((response.photo.dataUrl.length * 3) / 4),
+          };
+        }
+
         const newCharMsg: Message = {
           id: `msg_char_${Date.now()}_${i}`,
           role: "char",
           text,
+          image: photoAttachment,
           emotion: response.emotion || character.defaultMood,
           intensity: response.intensity || 6,
           timestamp: Date.now(),
@@ -521,6 +552,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
       onTypingChange?.(character.id, false);
       if (isMountedRef.current) {
         setIsTyping(false);
+        setIsGeneratingPhoto(false);
       }
     }
   };
@@ -1171,21 +1203,35 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
           );
         })}
 
-          {/* Typing Indicator — the CHARACTER is typing, so this must sit on
-              the character's side (left) and reuse the character bubble style.
-              It previously used items-end + amber + rounded-tr, which is the
-              user's own bubble treatment and read as "you are typing". */}
-          {isTyping && (
-            <div className="flex flex-col items-start animate-message-in">
-              <div className="bg-white dark:bg-[#1F2025] text-neutral-900 dark:text-[#F2F3F7] rounded-[12px] rounded-bl-[0px] border border-black/5 dark:border-white/10 px-3 py-2 shadow-2xs flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-neutral-400 dark:bg-[#8A8A93] animate-bounce" style={{ animationDelay: "0ms" }} />
-                <span className="w-2 h-2 rounded-full bg-neutral-400 dark:bg-[#8A8A93] animate-bounce" style={{ animationDelay: "150ms" }} />
-                <span className="w-2 h-2 rounded-full bg-neutral-400 dark:bg-[#8A8A93] animate-bounce" style={{ animationDelay: "300ms" }} />
+          {/* Skeleton Loading State untuk Generasi Foto / PAP */}
+          {isGeneratingPhoto ? (
+            <div className="flex flex-col items-start animate-fade-in">
+              <div className="bg-white dark:bg-[#1F2025] rounded-[16px] rounded-bl-[0px] border border-black/5 dark:border-white/10 p-2.5 shadow-2xs w-52 flex flex-col gap-2 animate-pulse">
+                <div className="w-full aspect-[9/16] max-h-52 bg-neutral-100 dark:bg-white/[0.08] rounded-xl flex flex-col items-center justify-center text-neutral-400 dark:text-neutral-500 gap-2 border border-black/5 dark:border-white/5">
+                  <Camera className="w-7 h-7 animate-bounce text-pink-400" />
+                  <span className="text-[11px] font-semibold text-neutral-600 dark:text-neutral-300">
+                    Sedang mengambil foto... 📷
+                  </span>
+                </div>
+                <div className="h-2 w-2/3 bg-neutral-200 dark:bg-white/10 rounded-full" />
               </div>
               <span className="text-[11px] text-neutral-400 dark:text-[#71717A] mt-1 px-1">
-                {character.name.split(" ")[0]} sedang mengetik...
+                {character.name.split(" ")[0]} sedang mengambil foto... 📷
               </span>
             </div>
+          ) : (
+            isTyping && (
+              <div className="flex flex-col items-start animate-message-in">
+                <div className="bg-white dark:bg-[#1F2025] text-neutral-900 dark:text-[#F2F3F7] rounded-[12px] rounded-bl-[0px] border border-black/5 dark:border-white/10 px-3 py-2 shadow-2xs flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-neutral-400 dark:bg-[#8A8A93] animate-bounce" style={{ animationDelay: "0ms" }} />
+                  <span className="w-2 h-2 rounded-full bg-neutral-400 dark:bg-[#8A8A93] animate-bounce" style={{ animationDelay: "150ms" }} />
+                  <span className="w-2 h-2 rounded-full bg-neutral-400 dark:bg-[#8A8A93] animate-bounce" style={{ animationDelay: "300ms" }} />
+                </div>
+                <span className="text-[11px] text-neutral-400 dark:text-[#71717A] mt-1 px-1">
+                  {character.name.split(" ")[0]} sedang mengetik...
+                </span>
+              </div>
+            )
           )}
 
           {/* Spacer ekstra di bawah agar pesan terakhir & typing indicator tidak terpotong oleh footer yang fixed */}

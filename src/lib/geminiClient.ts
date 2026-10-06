@@ -26,6 +26,10 @@ export interface SendMessageResult {
   messages: string[];
   emotion: string;
   intensity: number;
+  photo?: {
+    dataUrl: string;
+    caption?: string;
+  };
 }
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "";
@@ -76,6 +80,7 @@ export async function sendMessageToGemini({
     currentIntensity: chat.currentMood.intensity,
     summary: chat.summary,
     customInstructions: character.customInstructions,
+    visualProfile: character.visualProfile,
     exampleDialogues: character.exampleDialogues,
     history,
     message: userMessage,

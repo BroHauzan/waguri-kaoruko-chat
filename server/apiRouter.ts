@@ -1,5 +1,14 @@
 import type { IncomingMessage, ServerResponse } from "http";
-import { handleChatTurn, handleSummarize, ChatTurnRequest, SummarizeRequest } from "./geminiService";
+import {
+  handleChatTurn,
+  handleSummarize,
+  handleFetchLore,
+  handleGeneratePhoto,
+  ChatTurnRequest,
+  SummarizeRequest,
+  LoreRequest,
+  GeneratePhotoApiRequest,
+} from "./geminiService";
 
 /** Batas ukuran body request. Payload berisi gambar base64 bisa besar,
  *  jadi longgar — tapi tetap dibatasi supaya request raksasa tidak
@@ -95,6 +104,36 @@ export async function handleApiRequest(
       console.error("API /api/summarize error:", err);
       sendJsonResponse(res, 500, {
         error: "Failed to summarize chat",
+        details: err?.message || String(err),
+      });
+    }
+    return true;
+  }
+
+  if (url === "/api/lore" && req.method === "POST") {
+    try {
+      const body = await parseJsonBody<LoreRequest>(req);
+      const result = await handleFetchLore(body);
+      sendJsonResponse(res, 200, result);
+    } catch (err: any) {
+      console.error("API /api/lore error:", err);
+      sendJsonResponse(res, 500, {
+        error: "Failed to fetch character lore",
+        details: err?.message || String(err),
+      });
+    }
+    return true;
+  }
+
+  if (url === "/api/photo" && req.method === "POST") {
+    try {
+      const body = await parseJsonBody<GeneratePhotoApiRequest>(req);
+      const result = await handleGeneratePhoto(body);
+      sendJsonResponse(res, 200, result);
+    } catch (err: any) {
+      console.error("API /api/photo error:", err);
+      sendJsonResponse(res, 500, {
+        error: "Failed to generate character photo",
         details: err?.message || String(err),
       });
     }

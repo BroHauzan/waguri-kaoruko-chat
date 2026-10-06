@@ -1,8 +1,10 @@
 import React, { useState, useRef } from "react";
-import { Check, ChevronLeft, Camera, Plus, Upload, Loader2 } from "lucide-react";
-import { Character, CharacterCategory } from "../types";
-import { PRESET_AVATARS } from "../lib/storage";
+import { Check, ChevronLeft, Camera, Plus, Upload, Loader2, Globe, Sparkles, ChevronDown, ChevronUp } from "lucide-react";
+import { Character, CharacterCategory, CharacterVisualProfile } from "../types";
+import { PRESET_AVATARS, storage } from "../lib/storage";
 import { compressAvatarImage } from "../lib/imageUtils";
+import { fetchCharacterLore } from "../lib/loreService";
+import { getActiveProvider } from "../lib/providers";
 
 interface CharacterFormProps {
   initialCharacter?: Character | null;
@@ -39,6 +41,15 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({
   const [personality, setPersonality] = useState(initialCharacter?.personality || "");
   const [speakingStyle, setSpeakingStyle] = useState(initialCharacter?.speakingStyle || "");
   const [firstMsg, setFirstMsg] = useState(initialCharacter?.greeting || "");
+  const [hair, setHair] = useState(initialCharacter?.visualProfile?.hair || "");
+  const [eyes, setEyes] = useState(initialCharacter?.visualProfile?.eyes || "");
+  const [schoolName, setSchoolName] = useState(initialCharacter?.visualProfile?.schoolName || "");
+  const [schoolUniform, setSchoolUniform] = useState(initialCharacter?.visualProfile?.schoolUniform || "");
+  const [generalLook, setGeneralLook] = useState(initialCharacter?.visualProfile?.generalLook || "");
+  const [isFetchingLore, setIsFetchingLore] = useState(false);
+  const [loreNotice, setLoreNotice] = useState<{ type: "success" | "error"; message: string } | null>(null);
+  const [showVisualDetails, setShowVisualDetails] = useState(Boolean(initialCharacter?.visualProfile));
+
   const [avatarUrl, setAvatarUrl] = useState(
     initialCharacter?.avatarUrl || PRESET_AVATARS[1]?.url || PRESET_AVATARS[0].url
   );
@@ -48,6 +59,56 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({
   const [avatarError, setAvatarError] = useState<string | null>(null);
   const [isSaved, setIsSaved] = useState(false);
   const avatarFileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleAutoFetchLore = async () => {
+    if (!name.trim()) {
+      setNameError("Ketik nama karakter terlebih dahulu sebelum mencari di internet.");
+      return;
+    }
+    setNameError("");
+    setIsFetchingLore(true);
+    setLoreNotice(null);
+
+    try {
+      const settings = storage.getSettings();
+      const activeProvider = getActiveProvider(settings);
+      const apiKey = activeProvider.apiKey || settings.providers?.find((p) => p.apiKey)?.apiKey || "";
+
+      const lore = await fetchCharacterLore(name.trim(), apiKey);
+
+      if (lore) {
+        if (lore.name) setName(lore.name);
+        if (lore.tagline) setBio(lore.tagline);
+        if (lore.personality) setPersonality(lore.personality);
+        if (lore.speechStyle) setSpeakingStyle(lore.speechStyle);
+        if (lore.firstMessage) setFirstMsg(lore.firstMessage);
+
+        if (lore.visualProfile) {
+          setHair(lore.visualProfile.hair || "");
+          setEyes(lore.visualProfile.eyes || "");
+          setSchoolName(lore.visualProfile.schoolName || "");
+          setSchoolUniform(lore.visualProfile.schoolUniform || "");
+          setGeneralLook(lore.visualProfile.generalLook || "");
+          setShowVisualDetails(true);
+        }
+
+        setLoreNotice({
+          type: "success",
+          message: `Berhasil mengambil lore & ciri kanon untuk "${lore.name || name}"!`,
+        });
+        setTimeout(() => setLoreNotice(null), 5000);
+      }
+    } catch (err: any) {
+      console.error("Auto fetch lore failed:", err);
+      setLoreNotice({
+        type: "error",
+        message: err?.message || "Gagal mengambil data dari internet. Coba periksa koneksi atau API key.",
+      });
+      setTimeout(() => setLoreNotice(null), 6000);
+    } finally {
+      setIsFetchingLore(false);
+    }
+  };
 
   const handleAvatarFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -99,6 +160,17 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({
     }
     setNameError("");
 
+    const visualProfile: CharacterVisualProfile | undefined =
+      hair || eyes || schoolName || schoolUniform || generalLook
+        ? {
+            hair: hair.trim(),
+            eyes: eyes.trim(),
+            schoolName: schoolName.trim(),
+            schoolUniform: schoolUniform.trim(),
+            generalLook: generalLook.trim(),
+          }
+        : initialCharacter?.visualProfile;
+
     const newChar: Character = {
       id: initialCharacter?.id || `char_${Date.now()}`,
       name: name.trim(),
@@ -113,6 +185,7 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({
       exampleDialogues: initialCharacter?.exampleDialogues || [],
       defaultMood: initialCharacter?.defaultMood || "happy",
       customInstructions: initialCharacter?.customInstructions || "",
+      visualProfile,
       createdAt: initialCharacter?.createdAt || Date.now(),
     };
 
@@ -257,9 +330,30 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({
           <div className="bg-white dark:bg-[#16171B] rounded-3xl p-5 border border-black/5 dark:border-white/10 shadow-xs flex flex-col gap-4">
             {/* Nama */}
             <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-neutral-700 dark:text-[#C9CAD1]">
-                Nama Karakter
-              </label>
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold text-neutral-700 dark:text-[#C9CAD1]">
+                  Nama Karakter
+                </label>
+                <button
+                  type="button"
+                  disabled={isFetchingLore}
+                  onClick={handleAutoFetchLore}
+                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-[#F5B838]/15 hover:bg-[#F5B838]/25 text-[#9E6E08] dark:text-[#F5B838] transition-colors cursor-pointer disabled:opacity-50"
+                  title="Cari profil, kepribadian, dan ciri fisik kanon dari internet via Google Search Grounding"
+                >
+                  {isFetchingLore ? (
+                    <>
+                      <Loader2 size={13} className="animate-spin" />
+                      <span>Mencari di Internet...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span>🌐</span>
+                      <span>Isi Otomatis dari Internet</span>
+                    </>
+                  )}
+                </button>
+              </div>
               <input
                 type="text"
                 value={name}
@@ -273,6 +367,24 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({
               />
               {nameError && (
                 <span className="text-xs font-semibold text-red-500 mt-0.5">{nameError}</span>
+              )}
+              {loreNotice && (
+                <div
+                  className={`text-xs px-3.5 py-2.5 rounded-2xl mt-1 font-medium flex items-center justify-between animate-fade-in ${
+                    loreNotice.type === "success"
+                      ? "bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 border border-emerald-500/25"
+                      : "bg-red-500/15 text-red-700 dark:text-red-300 border border-red-500/25"
+                  }`}
+                >
+                  <span>{loreNotice.message}</span>
+                  <button
+                    type="button"
+                    onClick={() => setLoreNotice(null)}
+                    className="opacity-70 hover:opacity-100 ml-2"
+                  >
+                    ✕
+                  </button>
+                </div>
               )}
             </div>
 
@@ -381,6 +493,113 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({
                 className="bg-[#F0F1F5] dark:bg-white/[0.06] text-sm text-neutral-900 dark:text-[#F2F3F7] placeholder:text-neutral-400 dark:placeholder:text-white/35 rounded-2xl p-3.5 border-none focus:outline-none focus:ring-2 focus:ring-[#F5B838]/50 resize-none"
               />
             </div>
+          </div>
+
+          {/* Profil Visual & Seragam Card (Untuk PAP / Foto) */}
+          <div className="bg-white dark:bg-[#16171B] rounded-3xl p-5 border border-black/5 dark:border-white/10 shadow-xs flex flex-col gap-3">
+            <button
+              type="button"
+              onClick={() => setShowVisualDetails((prev) => !prev)}
+              className="flex items-center justify-between w-full text-left cursor-pointer"
+            >
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl bg-pink-500/10 text-pink-500 dark:text-pink-400 flex items-center justify-center shrink-0">
+                  <Camera size={16} />
+                </div>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-neutral-800 dark:text-[#E4E5EA]">
+                      Profil Visual & Seragam
+                    </span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-pink-500/15 text-pink-600 dark:text-pink-300">
+                      Foto PAP (Imagen 3)
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-neutral-500 dark:text-[#8A8A93]">
+                    {hair || schoolUniform
+                      ? "Ciri fisik sudah terisi"
+                      : "Digunakan saat karakter mengirim foto di chat"}
+                  </p>
+                </div>
+              </div>
+              <div className="text-neutral-400 dark:text-[#71717A]">
+                {showVisualDetails ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
+              </div>
+            </button>
+
+            {showVisualDetails && (
+              <div className="pt-2 flex flex-col gap-3.5 border-t border-neutral-100 dark:border-white/5 animate-fade-in">
+                {/* Rambut */}
+                <div className="flex flex-col gap-1">
+                  <label className="text-[11px] font-semibold text-neutral-600 dark:text-[#A1A1AA]">
+                    Ciri Rambut (Hair)
+                  </label>
+                  <input
+                    type="text"
+                    value={hair}
+                    onChange={(e) => setHair(e.target.value)}
+                    placeholder="Contoh: dark wavy hair with gentle bangs, shoulder length"
+                    className="bg-[#F0F1F5] dark:bg-white/[0.06] text-xs text-neutral-900 dark:text-[#F2F3F7] placeholder:text-neutral-400 dark:placeholder:text-white/35 rounded-xl px-3.5 py-2.5 border-none focus:outline-none focus:ring-2 focus:ring-pink-500/30"
+                  />
+                </div>
+
+                {/* Mata */}
+                <div className="flex flex-col gap-1">
+                  <label className="text-[11px] font-semibold text-neutral-600 dark:text-[#A1A1AA]">
+                    Ciri Mata (Eyes)
+                  </label>
+                  <input
+                    type="text"
+                    value={eyes}
+                    onChange={(e) => setEyes(e.target.value)}
+                    placeholder="Contoh: warm expressive amber brown eyes"
+                    className="bg-[#F0F1F5] dark:bg-white/[0.06] text-xs text-neutral-900 dark:text-[#F2F3F7] placeholder:text-neutral-400 dark:placeholder:text-white/35 rounded-xl px-3.5 py-2.5 border-none focus:outline-none focus:ring-2 focus:ring-pink-500/30"
+                  />
+                </div>
+
+                {/* Sekolah / Latar */}
+                <div className="flex flex-col gap-1">
+                  <label className="text-[11px] font-semibold text-neutral-600 dark:text-[#A1A1AA]">
+                    Sekolah / Organisasi (School / Setting)
+                  </label>
+                  <input
+                    type="text"
+                    value={schoolName}
+                    onChange={(e) => setSchoolName(e.target.value)}
+                    placeholder="Contoh: Kikyo Girls' High School"
+                    className="bg-[#F0F1F5] dark:bg-white/[0.06] text-xs text-neutral-900 dark:text-[#F2F3F7] placeholder:text-neutral-400 dark:placeholder:text-white/35 rounded-xl px-3.5 py-2.5 border-none focus:outline-none focus:ring-2 focus:ring-pink-500/30"
+                  />
+                </div>
+
+                {/* Seragam / Pakaian Khas */}
+                <div className="flex flex-col gap-1">
+                  <label className="text-[11px] font-semibold text-neutral-600 dark:text-[#A1A1AA]">
+                    Seragam / Pakaian Khas (Outfit / Uniform)
+                  </label>
+                  <input
+                    type="text"
+                    value={schoolUniform}
+                    onChange={(e) => setSchoolUniform(e.target.value)}
+                    placeholder="Contoh: prestigious navy blazer, ribbon tie, neat pleated skirt"
+                    className="bg-[#F0F1F5] dark:bg-white/[0.06] text-xs text-neutral-900 dark:text-[#F2F3F7] placeholder:text-neutral-400 dark:placeholder:text-white/35 rounded-xl px-3.5 py-2.5 border-none focus:outline-none focus:ring-2 focus:ring-pink-500/30"
+                  />
+                </div>
+
+                {/* Ciri Khas Umum */}
+                <div className="flex flex-col gap-1">
+                  <label className="text-[11px] font-semibold text-neutral-600 dark:text-[#A1A1AA]">
+                    Penampilan Umum (General Look)
+                  </label>
+                  <input
+                    type="text"
+                    value={generalLook}
+                    onChange={(e) => setGeneralLook(e.target.value)}
+                    placeholder="Contoh: petite, charming cute smile, gentle and expressive"
+                    className="bg-[#F0F1F5] dark:bg-white/[0.06] text-xs text-neutral-900 dark:text-[#F2F3F7] placeholder:text-neutral-400 dark:placeholder:text-white/35 rounded-xl px-3.5 py-2.5 border-none focus:outline-none focus:ring-2 focus:ring-pink-500/30"
+                  />
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Submit Button */}

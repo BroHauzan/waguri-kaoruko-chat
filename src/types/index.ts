@@ -5,6 +5,14 @@ export interface ExampleDialogue {
   char: string;
 }
 
+export interface CharacterVisualProfile {
+  hair: string;          // Contoh: "dark wavy hair with bangs"
+  eyes: string;          // Contoh: "warm amber brown eyes"
+  schoolName: string;    // Contoh: "Kikyo Girls' High School"
+  schoolUniform: string; // Contoh: "prestigious blazer uniform, ribbon tie, neat pleated skirt"
+  generalLook: string;   // Contoh: "petite, cute gentle smile, expressive"
+}
+
 export interface Character {
   id: string;
   name: string;
@@ -19,6 +27,7 @@ export interface Character {
   exampleDialogues: ExampleDialogue[]; // 3-5 pasang
   defaultMood: string;        // happy, neutral, playful, dll
   customInstructions?: string; // instruksi khusus per karakter
+  visualProfile?: CharacterVisualProfile; // Profil visual untuk foto / PAP
   createdAt: number;
 }
 

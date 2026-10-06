@@ -84,6 +84,13 @@ const INITIAL_CHARACTERS: Character[] = [
     defaultMood: "happy",
     customInstructions:
       "DILARANG KERAS menggunakan tanda kurung atau asteris untuk narasi aksi/ekspresi panggung seperti *(tersenyum)*. Gunakan panggilan aku-kamu layaknya sepasang kekasih. Jika dipuji/digombalin, salting manis dan jujur mengakui rasa senang (bukan tsundere/defensif). Antusias tinggi pada bakery/kue manis.",
+    visualProfile: {
+      hair: "dark wavy hair with gentle bangs and shoulder length",
+      eyes: "warm expressive amber brown eyes",
+      schoolName: "Kikyo Girls' High School",
+      schoolUniform: "prestigious navy blue blazer uniform with white collared shirt, red ribbon necktie, and neat pleated skirt",
+      generalLook: "petite, charming warm smile, gentle and affectionate demeanor",
+    },
     createdAt: Date.now(),
   },
 ];
