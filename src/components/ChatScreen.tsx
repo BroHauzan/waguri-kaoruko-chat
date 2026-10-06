@@ -1,9 +1,8 @@
 import React, { useState, useEffect, useRef } from "react";
 import { AnimatePresence } from "motion/react";
+import { createPortal } from "react-dom";
 import {
   ChevronLeft,
-  Phone,
-  Video,
   MoreHorizontal,
   Smile,
   Image as ImageIcon,
@@ -16,7 +15,7 @@ import {
   Edit3,
   Trash2,
   Sliders,
-  Sparkles,
+  BarChart2,
   X,
 } from "lucide-react";
 import {
@@ -27,7 +26,10 @@ import {
   ImageAttachment,
   AudioAttachment,
 } from "../types";
-import { sendMessageToGemini } from "../lib/geminiClient";
+import {
+  sendMessageToGemini,
+  checkAndAutoSummarizeDayTransition,
+} from "../lib/geminiClient";
 import {
   ACCEPTED_IMAGE_TYPES,
   fileToImageAttachment,
@@ -51,6 +53,8 @@ import { backgroundQueue } from "../lib/backgroundQueueProcessor";
 import { sendPushLikeNotification } from "../lib/pushNotification";
 import { NotificationPermissionBanner } from "./NotificationPermissionBanner";
 import { CharacterDetailSheet } from "./CharacterDetailSheet";
+import { formatDateSeparator, isSameDay } from "../lib/dateUtils";
+import { getMoodTheme } from "../lib/moodConfig";
 
 interface ChatScreenProps {
   character: Character;
@@ -81,6 +85,9 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
 }) => {
   const [inputText, setInputText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const moodTheme = getMoodTheme(
+    chat.currentMood?.emotion || character.defaultMood || "neutral"
+  );
   const [showDetailSheet, setShowDetailSheet] = useState(false);
   const [showActionMenu, setShowActionMenu] = useState(false);
   const [showCustomInstructions, setShowCustomInstructions] = useState(false);
@@ -113,8 +120,6 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
   const [isPreparingImage, setIsPreparingImage] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isPreparingAudio, setIsPreparingAudio] = useState(false);
-  /** Nama fitur yang belum tersedia, untuk toast "segera hadir". */
-  const [comingSoon, setComingSoon] = useState<string | null>(null);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -123,10 +128,17 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
 
   useEffect(() => {
     isMountedRef.current = true;
+    // Auto-summarize di background saat berganti hari jika ada obrolan kemarin yang belum dirangkum
+    checkAndAutoSummarizeDayTransition({
+      character,
+      chat,
+      settings,
+      onUpdateChat,
+    });
     return () => {
       isMountedRef.current = false;
     };
-  }, []);
+  }, [chat.characterId]);
 
   const scrollToBottom = (smooth = true) => {
     if (messagesEndRef.current) {
@@ -799,17 +811,6 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
     setMenuAnchor(null);
   };
 
-  /**
-   * Tombol panggilan sengaja dibiarkan ada sebagai penanda rencana fitur,
-   * tapi belum tersedia. Beri umpan balik yang jujur alih-alih diam atau
-   * membuka layar yang salah.
-   */
-  const showComingSoon = (feature: string) => {
-    haptics.light(settings.hapticFeedback !== false);
-    setComingSoon(feature);
-    setTimeout(() => setComingSoon(null), 2600);
-  };
-
   // Play simulated voice note using SpeechSynthesis or beep
   const handlePlayVoice = (text: string) => {
     if ("speechSynthesis" in window) {
@@ -835,13 +836,13 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
   return (
     <div className="relative flex flex-col min-h-screen text-[#18181B] dark:text-[#F2F3F7] bg-[#F4F5F7] dark:bg-[#0B0C0F] antialiased">
       {/* Top Header Matching Screen 3 (Right Phone in Reference Image) */}
-      <header className="fixed top-0 inset-x-0 z-40 bg-white/80 dark:bg-[#16171B]/80 backdrop-blur-md border-b border-black/[0.06] dark:border-white/10 pt-safe max-w-md mx-auto shadow-2xs">
+      <header className="fixed top-0 inset-x-0 z-40 bg-white/80 dark:bg-[#16171B]/80 backdrop-blur-md border-b border-black/[0.06] dark:border-white/10 pt-safe max-w-md lg:max-w-none mx-auto shadow-2xs">
         <div className="h-[62px] px-4 flex items-center justify-between">
           {/* Left: Back Arrow + Avatar + Character Name + "Online" */}
           <div className="flex items-center gap-2.5 min-w-0">
             <button
               aria-label="Kembali"
-              className="w-9 h-9 rounded-full hover:bg-neutral-100 dark:hover:bg-white/[0.08] flex items-center justify-center text-neutral-800 dark:text-[#E4E5EA] active:scale-95 transition-all cursor-pointer shrink-0"
+              className="lg:hidden w-9 h-9 rounded-full hover:bg-neutral-100 dark:hover:bg-white/[0.08] flex items-center justify-center text-neutral-800 dark:text-[#E4E5EA] active:scale-95 transition-all cursor-pointer shrink-0"
               onClick={onBack}
               type="button"
             >
@@ -861,7 +862,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
               <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white dark:border-[#16171B]" />
             </div>
 
-            {/* Name & Online Status */}
+            {/* Name & Online Status + Mood Indicator */}
             <div
               onClick={() => setShowDetailSheet(true)}
               className="flex flex-col min-w-0 cursor-pointer"
@@ -869,47 +870,33 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
               <span className="text-[15px] font-bold text-neutral-900 dark:text-[#F2F3F7] tracking-tight truncate leading-tight">
                 {character.name}
               </span>
-              <span className="text-[12px] font-medium text-emerald-600 dark:text-emerald-400 leading-tight flex items-center gap-1">
-                <span>Online</span>
-              </span>
+              <div className="flex items-center gap-1.5 leading-tight mt-0.5">
+                <span className="text-[12px] font-medium text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
+                  <span>Online</span>
+                </span>
+                <span className="text-neutral-300 dark:text-neutral-700 text-[10px]">•</span>
+                <span
+                  className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10.5px] font-medium border ${moodTheme.badgeStyle}`}
+                  title={`Mood saat ini: ${moodTheme.label}`}
+                >
+                  <span>{moodTheme.emoji}</span>
+                  <span>{moodTheme.label}</span>
+                </span>
+              </div>
             </div>
           </div>
 
-          {/* Right Action Icons in Circles (Screen 3) */}
+          {/* Right Action Menu */}
           <div className="flex items-center gap-1.5 shrink-0">
-            {/* Phone Call Button — fitur belum ada, ditandai jelas */}
-            <button
-              type="button"
-              onClick={() => showComingSoon("Panggilan suara")}
-              title="Panggilan Suara (belum tersedia)"
-              aria-label="Panggilan suara, belum tersedia"
-              className="relative w-9 h-9 rounded-full bg-[#F0F1F5] dark:bg-white/[0.08] hover:bg-neutral-200 dark:hover:bg-white/[0.14] text-neutral-400 dark:text-[#71717A] flex items-center justify-center active:scale-95 transition-all cursor-pointer"
-            >
-              <Phone size={17} />
-              {/* Titik kecil = penanda "belum aktif" */}
-              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-neutral-300 dark:bg-white/25 border border-white dark:border-[#16171B]" />
-            </button>
-
-            {/* Video Call Button — fitur belum ada, ditandai jelas */}
-            <button
-              type="button"
-              onClick={() => showComingSoon("Panggilan video")}
-              title="Panggilan Video (belum tersedia)"
-              aria-label="Panggilan video, belum tersedia"
-              className="relative w-9 h-9 rounded-full bg-[#F0F1F5] dark:bg-white/[0.08] hover:bg-neutral-200 dark:hover:bg-white/[0.14] text-neutral-400 dark:text-[#71717A] flex items-center justify-center active:scale-95 transition-all cursor-pointer"
-            >
-              <Video size={17} />
-              <span className="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-neutral-300 dark:bg-white/25 border border-white dark:border-[#16171B]" />
-            </button>
-
-            {/* Options Button -> Opens Character Profile / Detail View (Screen 1) */}
+            {/* Options Button -> Opens Character Profile / Detail View */}
             <button
               type="button"
               onClick={() => setShowActionMenu(!showActionMenu)}
               title="Menu Tindakan"
-              className="w-9 h-9 rounded-full bg-[#F0F1F5] dark:bg-white/[0.08] hover:bg-neutral-200 dark:hover:bg-white/[0.14] text-neutral-700 dark:text-[#C9CAD1] flex items-center justify-center active:scale-95 transition-all cursor-pointer"
+              aria-label="Menu Tindakan"
+              className="w-10 h-10 rounded-full bg-[#F0F1F5] dark:bg-white/[0.08] hover:bg-neutral-200 dark:hover:bg-white/[0.14] text-neutral-700 dark:text-[#C9CAD1] flex items-center justify-center active:scale-95 transition-all cursor-pointer"
             >
-              <MoreHorizontal size={18} />
+              <MoreHorizontal size={19} />
             </button>
           </div>
         </div>
@@ -935,7 +922,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                 }}
                 className="w-full px-3 py-2 text-left text-xs font-semibold text-neutral-800 dark:text-[#E4E5EA] hover:bg-neutral-100 dark:hover:bg-white/[0.08] rounded-xl flex items-center gap-2.5 cursor-pointer"
               >
-                <Sparkles size={15} className="text-[#F5B838]" />
+                <BarChart2 size={15} className="text-[#F5B838]" />
                 <span>Statistik & Tren Mood</span>
               </button>
               <button
@@ -964,15 +951,6 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
 
       {/* Main Conversation Stream */}
       <main className="flex-1 flex flex-col relative w-full pt-[74px] pb-24 min-h-screen">
-        {/* Toast "segera hadir" untuk fitur yang belum tersedia */}
-        {comingSoon && (
-          <div className="fixed top-[74px] inset-x-0 z-50 flex justify-center pointer-events-none px-4 animate-slide-down">
-            <div className="px-4 py-2.5 rounded-full text-xs font-semibold shadow-lg bg-neutral-900 dark:bg-[#2A2B31] text-white flex items-center gap-2">
-              <Sparkles size={14} className="text-[#F5B838]" />
-              <span>{comingSoon} belum tersedia — segera hadir!</span>
-            </div>
-          </div>
-        )}
 
         {/* Banner notices */}
         {errorNotice && (
@@ -1002,14 +980,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
         {/* Message Thread.
             Margin 8pt di sisi kiri-kanan mengikuti spec WhatsApp: bubble
             lebih rapat ke tepi layar daripada elemen UI lain (16pt). */}
-        <div className="flex flex-col px-2 py-3 max-w-md w-full mx-auto" id="chat-thread">
-          {/* Centered Date Label: "Today" Matching Screen 3 */}
-          <div className="flex items-center justify-center py-2">
-            <span className="text-[12px] font-medium text-neutral-500 dark:text-[#8A8A93]">
-              Today
-            </span>
-          </div>
-
+        <div className="flex flex-col px-2 lg:px-6 py-3 max-w-md lg:max-w-3xl w-full mx-auto" id="chat-thread">
           {/* Messages Loop */}
           {chat.messages.map((message, index) => {
             const isUser = message.role === "user";
@@ -1019,62 +990,76 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
             // (terasa seperti satu rangkaian), 8pt kalau berganti pengirim.
             const prev = index > 0 ? chat.messages[index - 1] : null;
             const isSameSender = prev?.role === message.role;
-            const gapClass = index === 0 ? "" : isSameSender ? "mt-[2px]" : "mt-2";
+            const showDateSeparator =
+              index === 0 || !isSameDay(message.timestamp, prev!.timestamp);
+            const gapClass =
+              index === 0 || showDateSeparator ? "" : isSameSender ? "mt-[2px]" : "mt-2";
 
             return (
-              <div
-                key={message.id}
-                className={`flex flex-col ${isUser ? "items-end" : "items-start"} animate-message-in ${gapClass}`}
-              >
-                {/* Message Bubble Container — long-press membuka menu konteks.
-                    Sudut lancip (tail) ada di BAWAH, mengikuti WhatsApp: sisi
-                    keluar di kanan-bawah, sisi masuk di kiri-bawah. */}
+              <React.Fragment key={message.id}>
+                {/* Pemisah tanggal WhatsApp style (Hari ini, Kemarin, nama hari, dsb.) */}
+                {showDateSeparator && (
+                  <div className="flex items-center justify-center py-2.5 my-1">
+                    <span className="text-[11px] font-medium tracking-tight text-neutral-600 dark:text-[#A1A1AA] bg-neutral-200/70 dark:bg-neutral-800/80 px-3 py-0.5 rounded-full shadow-2xs">
+                      {formatDateSeparator(message.timestamp)}
+                    </span>
+                  </div>
+                )}
+
                 <div
-                  style={{
-                    transform: `translateX(${swipeOffsets[message.id] || 0}px)`,
-                    transition: swipeOffsets[message.id]
-                      ? "none"
-                      : "transform 220ms cubic-bezier(0.22, 1, 0.36, 1)",
-                  }}
-                  onPointerDown={(e) => startLongPress(message, e)}
-                  onPointerUp={() => endSwipe(message)}
-                  onPointerLeave={clearLongPress}
-                  onPointerCancel={() => endSwipe(message)}
-                  onPointerMove={moveLongPress}
-                  onContextMenu={(e) => e.preventDefault()}
-                  className={`relative max-w-[80%] px-3 py-2 cursor-pointer select-none touch-manipulation transition-[transform,opacity] duration-150 active:scale-[0.99] ${
-                    isUser
-                      ? "bg-[#F5B838] text-neutral-900 rounded-[12px] rounded-br-[0px] shadow-2xs"
-                      : "bg-white dark:bg-[#1F2025] text-neutral-900 dark:text-[#F2F3F7] rounded-[12px] rounded-bl-[0px] border border-black/5 dark:border-white/10 shadow-2xs"
-                  } ${
-                    // Sembunyikan HANYA kalau preview pengganti benar-benar
-                    // dirender. Kalau tidak, bubble (mis. berisi gambar) akan
-                    // hilang tanpa ada yang menggantikannya.
-                    isSelected &&
-                    menuAnchor &&
-                    message.text &&
-                    message.text !== "[Foto]" &&
-                    !message.image
-                      ? "opacity-0"
-                      : "opacity-100"
-                  }`}
+                  className={`flex flex-col ${isUser ? "items-end" : "items-start"} animate-message-in ${gapClass}`}
                 >
-                  {/* Kutipan pesan yang dibalas, seperti WhatsApp */}
-                  {message.replyTo && (
-                    <div
-                      className={`flex flex-col gap-0.5 mb-1.5 pl-2 py-1 rounded-r-md border-l-[3px] ${
-                        isUser
-                          ? "border-neutral-900/40 bg-neutral-900/[0.07]"
-                          : "border-[#F5B838] bg-black/[0.04] dark:bg-white/[0.05]"
-                      }`}
-                    >
-                      <span
-                        className={`text-[11px] font-semibold ${
+                  {/* Message Bubble Container — long-press membuka menu konteks.
+                      Sudut lancip (tail) ada di BAWAH, mengikuti WhatsApp: sisi
+                      keluar di kanan-bawah, sisi masuk di kiri-bawah. */}
+                  <div
+                    style={{
+                      transform: `translateX(${swipeOffsets[message.id] || 0}px)`,
+                      transition: swipeOffsets[message.id]
+                        ? "none"
+                        : "transform 220ms cubic-bezier(0.22, 1, 0.36, 1)",
+                    }}
+                    onPointerDown={(e) => startLongPress(message, e)}
+                    onPointerUp={() => endSwipe(message)}
+                    onPointerLeave={clearLongPress}
+                    onPointerCancel={() => endSwipe(message)}
+                    onPointerMove={moveLongPress}
+                    onContextMenu={(e) => e.preventDefault()}
+                    className={`relative max-w-[80%] lg:max-w-[65%] px-3 py-2 cursor-pointer select-none touch-manipulation transition-[transform,opacity] duration-150 active:scale-[0.99] ${
+                      isUser
+                        ? `${moodTheme.userBubbleBg} rounded-[12px] rounded-br-[0px] shadow-2xs`
+                        : "bg-white dark:bg-[#1F2025] text-neutral-900 dark:text-[#F2F3F7] rounded-[12px] rounded-bl-[0px] border border-black/5 dark:border-white/10 shadow-2xs"
+                    } ${
+                      // Sembunyikan HANYA kalau preview pengganti benar-benar
+                      // dirender. Kalau tidak, bubble (mis. berisi gambar) akan
+                      // hilang tanpa ada yang menggantikannya.
+                      isSelected &&
+                      menuAnchor &&
+                      message.text &&
+                      message.text !== "[Foto]" &&
+                      !message.image
+                        ? "opacity-0"
+                        : "opacity-100"
+                    }`}
+                  >
+                    {/* Kutipan pesan yang dibalas, seperti WhatsApp */}
+                    {message.replyTo && (
+                      <div
+                        style={!isUser ? { borderLeftColor: moodTheme.accentColor } : undefined}
+                        className={`flex flex-col gap-0.5 mb-1.5 pl-2 py-1 rounded-r-md border-l-[3px] ${
                           isUser
-                            ? "text-neutral-900/80"
-                            : "text-[#E5A929]"
+                            ? "border-neutral-900/40 bg-neutral-900/[0.07]"
+                            : "border-[#F5B838] bg-black/[0.04] dark:bg-white/[0.05]"
                         }`}
                       >
+                        <span
+                          style={!isUser ? { color: moodTheme.accentHover || moodTheme.accentColor } : undefined}
+                          className={`text-[11px] font-semibold ${
+                            isUser
+                              ? "text-neutral-900/80"
+                              : "text-[#E5A929]"
+                          }`}
+                        >
                         {message.replyTo.isUser
                           ? "Kamu"
                           : character.name.split(" ")[0]}
@@ -1158,8 +1143,9 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
 
                 {/* Menu konteks dirender sekali di luar loop, bukan per pesan */}
               </div>
-            );
-          })}
+            </React.Fragment>
+          );
+        })}
 
           {/* Typing Indicator — the CHARACTER is typing, so this must sit on
               the character's side (left) and reuse the character bubble style.
@@ -1183,6 +1169,9 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
       </main>
 
       {/* Menu konteks pesan ala WhatsApp iOS */}
+      {/* Portal ke body: panel desktop memakai transform, yang akan menggeser
+          koordinat `fixed` menu ini dari koordinat layar. */}
+      {createPortal(
       <AnimatePresence>
         {selectedMessage && menuAnchor && (
           <MessageContextMenu
@@ -1191,6 +1180,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
             hasImage={Boolean(selectedMessage.image)}
             imageUrl={selectedMessage.image?.dataUrl}
             isUser={selectedMessage.role === "user"}
+            userBubbleBg={moodTheme.userBubbleBg}
             anchorRect={menuAnchor}
             actions={contextMenuActions}
             quickReactions={["❤️", "😂", "😮", "😢", "🙏"]}
@@ -1206,7 +1196,9 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
             }}
           />
         )}
-      </AnimatePresence>
+      </AnimatePresence>,
+      document.body
+      )}
 
       {/* Perekam suara */}
       {isRecording && (
@@ -1227,7 +1219,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
 
       {/* Editing Message Banner */}
       {editingMessage && (
-        <div className="fixed bottom-[74px] inset-x-0 z-30 max-w-md mx-auto px-4">
+        <div className="fixed bottom-[74px] inset-x-0 z-30 max-w-md lg:max-w-3xl mx-auto px-4">
           <div className="bg-amber-50 dark:bg-[#F5B838]/15 border border-amber-200 dark:border-[#F5B838]/30 rounded-2xl p-2.5 flex items-center justify-between text-xs text-amber-900 dark:text-amber-200 shadow-md">
             <span className="truncate pr-2">Mengedit: "{editingMessage.text}"</span>
             <button
@@ -1244,13 +1236,19 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
       )}
 
       {/* Bottom Input Bar Matching Screen 3 (Right Phone) */}
-      <footer className="fixed bottom-0 inset-x-0 z-40 bg-white/85 dark:bg-[#16171B]/85 backdrop-blur-md border-t border-black/[0.06] dark:border-white/10 pb-safe max-w-md mx-auto shadow-sm">
+      <footer className="fixed bottom-0 inset-x-0 z-40 bg-white/85 dark:bg-[#16171B]/85 backdrop-blur-md border-t border-black/[0.06] dark:border-white/10 pb-safe max-w-md lg:max-w-none mx-auto shadow-sm">
         {/* Kutipan balasan, seperti WhatsApp */}
         {replyTo && (
           <div className="px-3.5 pt-3 animate-fade-in">
-            <div className="flex items-start gap-2 pl-2.5 py-1.5 rounded-r-lg border-l-[3px] border-[#F5B838] bg-black/[0.04] dark:bg-white/[0.05]">
+            <div
+              style={{ borderLeftColor: moodTheme.accentColor }}
+              className="flex items-start gap-2 pl-2.5 py-1.5 rounded-r-lg border-l-[3px] bg-black/[0.04] dark:bg-white/[0.05]"
+            >
               <div className="flex flex-col min-w-0 flex-1">
-                <span className="text-[11px] font-semibold text-[#E5A929]">
+                <span
+                  style={{ color: moodTheme.accentHover || moodTheme.accentColor }}
+                  className="text-[11px] font-semibold"
+                >
                   {replyTo.role === "user"
                     ? "Kamu"
                     : character.name.split(" ")[0]}
@@ -1392,10 +1390,13 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                 }
                 setIsRecording(true);
               }}
+              style={{
+                backgroundColor: isPreparingAudio ? undefined : moodTheme.accentColor,
+              }}
               className={`w-11 h-11 rounded-full text-neutral-950 flex items-center justify-center shadow-xs active:scale-95 transition-all cursor-pointer disabled:opacity-50 ${
                 isPreparingAudio
                   ? "bg-neutral-300 dark:bg-white/20"
-                  : "bg-[#F5B838] hover:bg-[#E5A929]"
+                  : "hover:brightness-95"
               }`}
               title={
                 inputText.trim() || attachedImage
@@ -1422,6 +1423,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
       {showDetailSheet && (
         <CharacterDetailSheet
           character={character}
+          chat={chat}
           onClose={() => setShowDetailSheet(false)}
           onStartChat={() => setShowDetailSheet(false)}
           onOpenMoodStats={() => {

@@ -86,6 +86,8 @@ export interface Chat {
     intensity: number;
   };
   updatedAt: number;
+  lastSummarizedMessageId?: string; // ID pesan terakhir yang sudah masuk ringkasan memori
+  lastSummarizedDate?: string;      // Tanggal terakhir ringkasan otomatis dijalankan (YYYY-MM-DD)
 }
 
 export type MoodColorPreset =
@@ -151,4 +153,18 @@ export interface MoodMeta {
   glowColor: string;
   bgGradient: string;
   badgeStyle: string;
+}
+
+export interface MoodTheme {
+  themeName: string;
+  accentColor: string;
+  accentHover: string;
+  accentSubtle: string;
+  accentBorder: string;
+  userBubbleBg: string;
+  userBubbleText: string;
+  label: string;
+  emoji: string;
+  badgeStyle: string;
+  glowColor: string;
 }

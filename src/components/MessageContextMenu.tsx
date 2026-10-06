@@ -22,8 +22,8 @@ interface MessageContextMenuProps {
   /** Emoji reaksi cepat, ditiru dari baris reaksi WhatsApp. */
   quickReactions?: string[];
   onReact?: (emoji: string) => void;
-  /** Apakah bubble asli disembunyikan karena ada salinan yang terangkat.
-   *  Dihitung pemanggil supaya bubble tidak pernah hilang tanpa pengganti. */
+  /** Warna latar bubble user (mengikuti mood theme dinamis). */
+  userBubbleBg?: string;
   hideOriginalBubble: boolean;
   onClose: () => void;
 }
@@ -47,6 +47,7 @@ export const MessageContextMenu: React.FC<MessageContextMenuProps> = ({
   actions,
   quickReactions,
   onReact,
+  userBubbleBg,
   hideOriginalBubble,
   onClose,
 }) => {
@@ -169,7 +170,7 @@ export const MessageContextMenu: React.FC<MessageContextMenuProps> = ({
             }}
             className={`px-4 py-3 rounded-[20px] shadow-2xl pointer-events-none ${
               isUser
-                ? "bg-[#F5B838] text-neutral-900 rounded-tr-[4px]"
+                ? `${userBubbleBg || "bg-[#F5B838] text-neutral-900"} rounded-tr-[4px]`
                 : "bg-white dark:bg-[#1F2025] text-neutral-900 dark:text-[#F2F3F7] rounded-tl-[4px]"
             }`}
           >

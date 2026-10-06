@@ -1,6 +1,6 @@
 import React from "react";
 import { motion, AnimatePresence } from "motion/react";
-import { Home, MessageSquare, Plus, Heart, User } from "lucide-react";
+import { MessageSquare, Plus, User } from "lucide-react";
 
 export type NavTab = "chats" | "create" | "settings";
 
@@ -13,7 +13,7 @@ interface NavigationProps {
 interface NavItem {
   id: NavTab;
   label: string;
-  icon: typeof Home;
+  icon: typeof MessageSquare;
   title: string;
 }
 
@@ -24,8 +24,7 @@ const NAV_ITEMS: NavItem[] = [
 ];
 
 // Apple Design: critically damped spring, no overshoot.
-// damping 1.0 / response ~0.35 — graceful, non-distracting.
-const SPRING = { type: "spring" as const, bounce: 0, duration: 0.4 };
+const SPRING = { type: "spring" as const, bounce: 0, duration: 0.35 };
 
 export const Navigation: React.FC<NavigationProps> = ({
   currentTab,
@@ -34,19 +33,8 @@ export const Navigation: React.FC<NavigationProps> = ({
 }) => {
   return (
     <nav className="fixed bottom-4 inset-x-0 z-50 pointer-events-none pb-safe flex justify-center px-4">
-      {/* Liquid Glass pill — translucent material, content scrolls under it */}
-      <div className="liquid-glass-nav liquid-glass-sheen rounded-full h-[58px] px-3.5 flex items-center gap-2 pointer-events-auto">
-        {/* Static accent icons (no pill) */}
-        <button
-          onClick={() => onTabChange("chats")}
-          className="w-10 h-10 rounded-full flex items-center justify-center text-neutral-400 dark:text-white/40 hover:text-neutral-700 dark:hover:text-white/70 active:scale-90 transition-all cursor-pointer"
-          type="button"
-          title="Beranda"
-          aria-label="Beranda"
-        >
-          <Home size={20} strokeWidth={1.8} />
-        </button>
-
+      {/* Floating Tab Bar — restrained translucent pill */}
+      <div className="liquid-glass-nav rounded-full h-[58px] px-2.5 flex items-center gap-1 pointer-events-auto shadow-md">
         {NAV_ITEMS.map((item) => {
           const isActive = currentTab === item.id;
           const Icon = item.icon;
@@ -55,7 +43,7 @@ export const Navigation: React.FC<NavigationProps> = ({
             <button
               key={item.id}
               onClick={() => onTabChange(item.id)}
-              className="relative min-w-[42px] h-[42px] px-3 rounded-full flex items-center justify-center gap-1.5 cursor-pointer text-neutral-400 dark:text-white/40 hover:text-neutral-700 dark:hover:text-white/70"
+              className="relative min-w-[56px] min-h-[44px] h-[44px] px-3.5 rounded-full flex items-center justify-center gap-1.5 cursor-pointer text-neutral-500 dark:text-white/45 hover:text-neutral-800 dark:hover:text-white/80 transition-colors"
               type="button"
               title={item.title}
               aria-label={item.title}
@@ -65,25 +53,24 @@ export const Navigation: React.FC<NavigationProps> = ({
                 <motion.div
                   layoutId="activeTabPill"
                   transition={SPRING}
-                  className="absolute inset-0 rounded-full bg-[#F5B838] shadow-sm"
+                  className="absolute inset-0 rounded-full bg-[#F5B838] shadow-xs"
                 />
               )}
 
               {/* Icon + label sit above the pill */}
               <motion.span
-                whileTap={{ scale: 0.9 }}
-                whileHover={{ scale: 1.08 }}
+                whileTap={{ scale: 0.94 }}
                 transition={SPRING}
                 className={`relative z-10 flex items-center justify-center gap-1.5 ${
                   isActive
-                    ? "text-neutral-900 font-semibold"
+                    ? "text-neutral-950 font-semibold"
                     : "text-inherit"
                 }`}
               >
                 <Icon
-                  size={item.id === "create" ? 20 : 19}
-                  strokeWidth={isActive ? 2.4 : 1.8}
-                  className={isActive && item.id === "chats" ? "fill-neutral-900/15" : ""}
+                  size={item.id === "create" ? 19 : 18}
+                  strokeWidth={isActive ? 2.4 : 1.9}
+                  className={isActive && item.id === "chats" ? "fill-neutral-950/15" : ""}
                 />
                 {isActive && (
                   <span className="text-[12px] tracking-tight font-medium pr-0.5">
@@ -94,7 +81,7 @@ export const Navigation: React.FC<NavigationProps> = ({
 
               {/* Unread badge */}
               <AnimatePresence>
-                {activeChatsCount > 0 && !isActive && (
+                {activeChatsCount > 0 && !isActive && item.id === "chats" && (
                   <motion.span
                     initial={{ scale: 0, opacity: 0 }}
                     animate={{ scale: 1, opacity: 1 }}
@@ -107,17 +94,6 @@ export const Navigation: React.FC<NavigationProps> = ({
             </button>
           );
         })}
-
-        {/* Static accent icon (no pill) */}
-        <button
-          onClick={() => onTabChange("chats")}
-          className="w-10 h-10 rounded-full flex items-center justify-center text-neutral-400 dark:text-white/40 hover:text-neutral-700 dark:hover:text-white/70 active:scale-90 transition-all cursor-pointer"
-          type="button"
-          title="Favorit"
-          aria-label="Favorit"
-        >
-          <Heart size={19} strokeWidth={1.8} />
-        </button>
       </div>
     </nav>
   );

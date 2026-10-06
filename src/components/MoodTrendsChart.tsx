@@ -4,7 +4,6 @@ import {
   Smile,
   Heart,
   MessageCircle,
-  Sparkles,
   Info,
   Calendar,
 } from "lucide-react";
@@ -45,48 +44,24 @@ export const MoodTrendsChart: React.FC<MoodTrendsChartProps> = ({
     (m) => m.role === "char"
   );
 
-  // If chat is brand new with only 1 greeting, provide a gentle initial history
-  const displayMessages =
-    allCharMessages.length > 1
-      ? allCharMessages
-      : [
-          {
-            id: "m_init_0",
-            role: "char" as const,
-            text: "lagi apa kamu? udah makan belum? jangan diskip yaa.. :( hehe",
-            emotion: "happy",
-            intensity: 7,
-            timestamp: Date.now() - 1000 * 60 * 15,
-          },
-          {
-            id: "m_init_1",
-            role: "char" as const,
-            text: "ihh tiba-tiba banget ngomong gitu, bikin salting aja tau haha",
-            emotion: "shy",
-            intensity: 8,
-            timestamp: Date.now() - 1000 * 60 * 10,
-          },
-          {
-            id: "m_init_2",
-            role: "char" as const,
-            text: "DEMI APA?? Mauuu bgt ke bakery! aku lagi pengen manis-manis wkwk",
-            emotion: "excited",
-            intensity: 9,
-            timestamp: Date.now() - 1000 * 60 * 5,
-          },
-          ...(allCharMessages.length === 1
-            ? [allCharMessages[0]]
-            : [
-                {
-                  id: "m_init_3",
-                  role: "char" as const,
-                  text: "seneng deh bisa ngobrol sama kamu hari ini hehe",
-                  emotion: "happy",
-                  intensity: 8,
-                  timestamp: Date.now(),
-                },
-              ]),
-        ];
+  // If there are fewer than 2 messages, display an honest empty state (R-17, R-27, R-38)
+  if (allCharMessages.length < 2) {
+    return (
+      <div className="bg-neutral-50 dark:bg-white/[0.04] border border-black/5 dark:border-white/[0.08] rounded-[20px] p-6 text-center flex flex-col items-center justify-center space-y-2.5">
+        <div className="w-12 h-12 rounded-full bg-amber-50 dark:bg-[#F5B838]/15 text-[#F5B838] flex items-center justify-center">
+          <TrendingUp size={22} />
+        </div>
+        <h4 className="text-sm font-bold text-neutral-800 dark:text-[#E4E5EA]">
+          Belum Cukup Data Tren Mood
+        </h4>
+        <p className="text-xs text-neutral-500 dark:text-[#8A8A93] max-w-xs leading-relaxed">
+          Mulai percakapan lebih lanjut dengan {charName} untuk menganalisis dinamika emosinya secara otomatis.
+        </p>
+      </div>
+    );
+  }
+
+  const displayMessages = allCharMessages;
 
   // Slice based on filter range
   const filteredMessages =
@@ -442,7 +417,7 @@ export const MoodTrendsChart: React.FC<MoodTrendsChartProps> = ({
 
           <div className="bg-black/[0.03] dark:bg-white/[0.03] border border-black/[0.05] dark:border-white/[0.05] rounded-xl p-2.5 flex flex-col items-center text-center">
             <span className="text-[10px] text-neutral-500 dark:text-white/50 flex items-center gap-1">
-              <Sparkles size={11} className="text-amber-500 dark:text-amber-400" />
+              <Heart size={11} className="text-amber-500 dark:text-amber-400" />
               Dominan
             </span>
             <span className="text-xs font-bold text-amber-600 dark:text-amber-300 mt-1 truncate max-w-full">
@@ -452,7 +427,7 @@ export const MoodTrendsChart: React.FC<MoodTrendsChartProps> = ({
 
           <div className="bg-black/[0.03] dark:bg-white/[0.03] border border-black/[0.05] dark:border-white/[0.05] rounded-xl p-2.5 flex flex-col items-center text-center">
             <span className="text-[10px] text-neutral-500 dark:text-white/50 flex items-center gap-1">
-              <MessageCircle size={11} className="text-[#8B7CF6]" />
+              <MessageCircle size={11} className="text-[#F5B838]" />
               Total Pesan
             </span>
             <span className="text-base font-bold text-neutral-900 dark:text-white mt-0.5">

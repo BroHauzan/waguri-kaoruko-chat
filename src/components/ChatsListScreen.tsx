@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from "react";
 import {
   Search,
-  Mic,
   MoreHorizontal,
   Plus,
   Trash2,
@@ -14,6 +13,8 @@ interface ChatsListScreenProps {
   chats: Record<string, Chat>;
   typingCharacterIds?: Record<string, boolean>;
   unreadCharacterIds?: Set<string>;
+  /** Obrolan yang sedang terbuka di panel kanan (hanya desktop). */
+  activeCharacterId?: string;
   onSelectCharacter: (char: Character) => void;
   onDeleteCharacter: (characterId: string) => void;
   onCreateNew: () => void;
@@ -24,6 +25,7 @@ export const ChatsListScreen: React.FC<ChatsListScreenProps> = ({
   chats,
   typingCharacterIds = {},
   unreadCharacterIds = new Set(),
+  activeCharacterId,
   onSelectCharacter,
   onDeleteCharacter,
   onCreateNew,
@@ -38,7 +40,7 @@ export const ChatsListScreen: React.FC<ChatsListScreenProps> = ({
       const isTyping = Boolean(typingCharacterIds[char.id]);
       const isUnread = Boolean(unreadCharacterIds.has(char.id));
 
-      let timeDisplay = "21:16";
+      let timeDisplay = "";
       if (lastMessage) {
         const date = new Date(lastMessage.timestamp);
         const now = new Date();
@@ -52,6 +54,8 @@ export const ChatsListScreen: React.FC<ChatsListScreenProps> = ({
             day: "numeric",
           });
         }
+      } else {
+        timeDisplay = "Baru";
       }
 
       const previewText = lastMessage ? lastMessage.text : char.greeting;
@@ -102,9 +106,9 @@ export const ChatsListScreen: React.FC<ChatsListScreenProps> = ({
           />
         </div>
 
-        {/* Title: Message */}
+        {/* Title: Pesan */}
         <h1 className="text-[19px] font-bold text-neutral-900 dark:text-[#F2F3F7] tracking-tight">
-          Message
+          Pesan
         </h1>
 
         {/* Options icon button on right */}
@@ -112,13 +116,14 @@ export const ChatsListScreen: React.FC<ChatsListScreenProps> = ({
           type="button"
           onClick={onCreateNew}
           className="w-10 h-10 rounded-full bg-white dark:bg-[#16171B] border border-black/10 dark:border-white/10 shadow-xs flex items-center justify-center text-neutral-700 dark:text-[#C9CAD1] hover:bg-neutral-50 dark:hover:bg-white/[0.04] active:scale-95 transition-all cursor-pointer"
-          title="Opsi / Buat Karakter"
+          title="Buat Karakter Baru"
+          aria-label="Buat Karakter Baru"
         >
-          <MoreHorizontal size={20} />
+          <Plus size={20} />
         </button>
       </div>
 
-      {/* Search Bar Matching Screen 2 */}
+      {/* Search Bar */}
       <div className="px-5 py-2.5">
         <div className="bg-[#EAEBED] dark:bg-white/[0.08] rounded-full px-4 h-[44px] flex items-center gap-2.5 text-neutral-700 dark:text-[#C9CAD1]">
           <Search size={18} className="text-neutral-400 dark:text-[#71717A] shrink-0" />
@@ -126,10 +131,18 @@ export const ChatsListScreen: React.FC<ChatsListScreenProps> = ({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Search here"
+            placeholder="Cari percakapan atau karakter..."
             className="bg-transparent w-full text-[14px] text-neutral-900 dark:text-[#F2F3F7] placeholder:text-neutral-400 dark:placeholder:text-[#71717A] focus:outline-none"
           />
-          <Mic size={18} className="text-neutral-400 dark:text-[#71717A] shrink-0 cursor-pointer hover:text-neutral-700 dark:hover:text-[#C9CAD1]" />
+          {searchQuery && (
+            <button
+              type="button"
+              onClick={() => setSearchQuery("")}
+              className="text-xs text-neutral-400 dark:text-[#71717A] hover:text-neutral-700 dark:hover:text-white cursor-pointer px-1.5 py-0.5 rounded-full"
+            >
+              Batal
+            </button>
+          )}
         </div>
       </div>
 
@@ -199,7 +212,11 @@ export const ChatsListScreen: React.FC<ChatsListScreenProps> = ({
               <div
                 key={item.character.id}
                 onClick={() => onSelectCharacter(item.character)}
-                className="group flex items-center px-4 py-3.5 hover:bg-neutral-50 dark:hover:bg-white/[0.04] active:bg-neutral-100 dark:active:bg-white/[0.08] transition-colors cursor-pointer select-none"
+                className={`group flex items-center px-4 py-3.5 transition-colors cursor-pointer select-none ${
+                  item.character.id === activeCharacterId
+                    ? "bg-amber-50 dark:bg-[#F5B838]/10"
+                    : "hover:bg-neutral-50 dark:hover:bg-white/[0.04] active:bg-neutral-100 dark:active:bg-white/[0.08]"
+                }`}
               >
                 {/* Avatar with Online Dot */}
                 <div className="relative w-12 h-12 rounded-full overflow-hidden shrink-0 mr-3.5 border border-black/5 dark:border-white/10 shadow-xs">

@@ -11,6 +11,8 @@ import { playNotificationSound } from "./lib/notificationSound";
 import { InAppNotificationBanner } from "./components/InAppNotificationBanner";
 import { haptics } from "./lib/haptics";
 import { backgroundQueue } from "./lib/backgroundQueueProcessor";
+import { useMediaQuery, DESKTOP_QUERY } from "./lib/useMediaQuery";
+import { DesktopEmptyState } from "./components/DesktopEmptyState";
 
 export default function App() {
   const [characters, setCharacters] = useState<Character[]>([]);
@@ -28,6 +30,9 @@ export default function App() {
 
   // Theme — resolves `auto` against the OS preference, live.
   useTheme(settings.theme || "dark");
+
+  // Desktop (>= lg) memakai layout dua panel ala WhatsApp Web.
+  const isDesktop = useMediaQuery(DESKTOP_QUERY);
 
   // Load initial data on mount
   useEffect(() => {
@@ -226,99 +231,134 @@ export default function App() {
     (k) => (chats[k]?.messages?.length || 0) > 0
   ).length;
 
+  const chatView = activeCharacter ? (
+    /* Active Chat View. key memastikan state chat ter-reset saat pindah karakter (desktop). */
+    <ChatScreen
+      key={activeCharacter.id}
+      character={activeCharacter}
+      chat={
+        chats[activeCharacter.id] ||
+        storage.getChatByCharacterId(activeCharacter.id, activeCharacter)
+      }
+      settings={settings}
+      onBack={() => setActiveCharacter(null)}
+      onUpdateChat={handleUpdateChat}
+      onClearChat={handleClearChat}
+      onUpdateCharacter={handleUpdateCharacter}
+      onEditCharacter={(char) => {
+        setActiveCharacter(null);
+        setEditingCharacter(char);
+      }}
+      onDeleteCharacter={handleDeleteCharacter}
+      onBackgroundReply={handleBackgroundReply}
+      onTypingChange={handleTypingChange}
+    />
+  ) : null;
+
+  const editView = editingCharacter ? (
+    <CharacterForm
+      key={editingCharacter.id}
+      initialCharacter={editingCharacter}
+      onSave={handleSaveCharacterForm}
+      onCancel={() => setEditingCharacter(null)}
+    />
+  ) : null;
+
+  /* Tab Navigation Views: Obrolan (chats), Buat (+), Akun & Pengaturan (settings) */
+  const tabViews = (
+    <div className="flex-1 flex flex-col">
+      {/* Page transition — keyed so it re-runs on tab change */}
+      <div key={currentTab} className="flex-1 flex flex-col animate-page-in">
+        {currentTab === "chats" && (
+          <ChatsListScreen
+            characters={characters}
+            chats={chats}
+            typingCharacterIds={typingCharacterIds}
+            unreadCharacterIds={unreadCharacterIds}
+            activeCharacterId={isDesktop ? activeCharacter?.id : undefined}
+            onSelectCharacter={handleSelectCharacter}
+            onDeleteCharacter={handleDeleteCharacter}
+            onCreateNew={() => setCurrentTab("create")}
+          />
+        )}
+
+        {currentTab === "create" && (
+          <CharacterForm
+            initialCharacter={null}
+            onSave={handleSaveCharacterForm}
+            onCancel={() => setCurrentTab("chats")}
+          />
+        )}
+
+        {currentTab === "settings" && (
+          <SettingsScreen
+            settings={settings}
+            characters={characters}
+            chats={chats}
+            onSaveSettings={handleSaveSettings}
+            onClearAllData={handleClearAllData}
+          />
+        )}
+      </div>
+
+      {/* Liquid Glass Floating Tab Bar (Always Accessible) */}
+      <Navigation
+        currentTab={currentTab}
+        onTabChange={(tab) => {
+          setEditingCharacter(null);
+          setCurrentTab(tab);
+        }}
+        activeChatsCount={activeChatsCount}
+      />
+    </div>
+  );
+
+  /* Dynamic Floating In-App Notification Banner */
+  const notificationBanner = activeNotification ? (
+    <InAppNotificationBanner
+      character={activeNotification.character}
+      messageText={activeNotification.messageText}
+      onClick={() => {
+        handleSelectCharacter(activeNotification.character);
+        setActiveNotification(null);
+      }}
+      onDismiss={() => setActiveNotification(null)}
+    />
+  ) : null;
+
+  /* Desktop: dua panel seperti WhatsApp Web (daftar di kiri, obrolan di kanan).
+     Setiap panel punya `transform-gpu` supaya elemen `fixed` di dalamnya
+     (header, input bar, tab bar, modal) menempel ke panel, bukan ke layar.
+     Scroller dipisah ke div dalam agar elemen fixed tidak ikut tergulung. */
+  if (isDesktop) {
+    return (
+      <div className="h-screen w-full flex bg-[#E9EBEF] dark:bg-[#15161A] selection:bg-[#F5B838]/30 font-['Inter',-apple-system,sans-serif] text-[#18181B] dark:text-[#F2F3F7]">
+        <aside className="relative w-[380px] xl:w-[420px] shrink-0 h-screen overflow-hidden transform-gpu bg-[#F4F5F7] dark:bg-[#0B0C0F] border-r border-black/10 dark:border-white/10">
+          <div className="h-full overflow-y-auto flex flex-col">{tabViews}</div>
+        </aside>
+
+        <section className="relative flex-1 min-w-0 h-screen overflow-hidden transform-gpu bg-[#F4F5F7] dark:bg-[#0B0C0F]">
+          <div className="h-full overflow-y-auto flex flex-col">
+            {chatView ||
+              editView || (
+                <DesktopEmptyState onCreateCharacter={() => setCurrentTab("create")} />
+              )}
+          </div>
+        </section>
+
+        {notificationBanner}
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#E9EBEF] dark:bg-[#15161A] sm:py-6 flex justify-center selection:bg-[#F5B838]/30 font-['Inter',-apple-system,sans-serif]">
       {/* Mobile Device Frame Container (max-w-md responsive) matching reference */}
       <div className="relative w-full max-w-md min-h-screen bg-[#F4F5F7] dark:bg-[#0B0C0F] sm:rounded-[36px] sm:shadow-2xl sm:border sm:border-black/10 dark:sm:border-white/10 sm:overflow-hidden flex flex-col z-10 text-[#18181B] dark:text-[#F2F3F7]">
-        {activeCharacter ? (
-          /* Active Chat View (Screen 3 in Reference Image) */
-          <ChatScreen
-            character={activeCharacter}
-            chat={
-              chats[activeCharacter.id] ||
-              storage.getChatByCharacterId(activeCharacter.id, activeCharacter)
-            }
-            settings={settings}
-            onBack={() => setActiveCharacter(null)}
-            onUpdateChat={handleUpdateChat}
-            onClearChat={handleClearChat}
-            onUpdateCharacter={handleUpdateCharacter}
-            onEditCharacter={(char) => {
-              setActiveCharacter(null);
-              setEditingCharacter(char);
-            }}
-            onDeleteCharacter={handleDeleteCharacter}
-            onBackgroundReply={handleBackgroundReply}
-            onTypingChange={handleTypingChange}
-          />
-        ) : editingCharacter ? (
-          /* Edit Character Mode (with explicit Batal and Back button) */
-          <CharacterForm
-            initialCharacter={editingCharacter}
-            onSave={handleSaveCharacterForm}
-            onCancel={() => setEditingCharacter(null)}
-          />
-        ) : (
-          /* Tab Navigation Views: Obrolan, Buat, Pengaturan */
-          <div className="flex-1 flex flex-col">
-            {/* Page transition — keyed so it re-runs on tab change */}
-            <div key={currentTab} className="flex-1 flex flex-col animate-page-in">
-              {currentTab === "chats" && (
-                <ChatsListScreen
-                  characters={characters}
-                  chats={chats}
-                  typingCharacterIds={typingCharacterIds}
-                  unreadCharacterIds={unreadCharacterIds}
-                  onSelectCharacter={handleSelectCharacter}
-                  onDeleteCharacter={handleDeleteCharacter}
-                  onCreateNew={() => setCurrentTab("create")}
-                />
-              )}
-
-              {currentTab === "create" && (
-                <CharacterForm
-                  initialCharacter={null}
-                  onSave={handleSaveCharacterForm}
-                  onCancel={() => setCurrentTab("chats")}
-                />
-              )}
-
-              {currentTab === "settings" && (
-                <SettingsScreen
-                  settings={settings}
-                  characters={characters}
-                  chats={chats}
-                  onSaveSettings={handleSaveSettings}
-                  onClearAllData={handleClearAllData}
-                />
-              )}
-            </div>
-
-            {/* Liquid Glass Floating Tab Bar (Always Accessible) */}
-            <Navigation
-              currentTab={currentTab}
-              onTabChange={(tab) => {
-                setEditingCharacter(null);
-                setCurrentTab(tab);
-              }}
-              activeChatsCount={activeChatsCount}
-            />
-          </div>
-        )}
+        {chatView || editView || tabViews}
       </div>
 
-      {/* Dynamic Floating In-App Notification Banner */}
-      {activeNotification && (
-        <InAppNotificationBanner
-          character={activeNotification.character}
-          messageText={activeNotification.messageText}
-          onClick={() => {
-            handleSelectCharacter(activeNotification.character);
-            setActiveNotification(null);
-          }}
-          onDismiss={() => setActiveNotification(null)}
-        />
-      )}
+      {notificationBanner}
     </div>
   );
 }

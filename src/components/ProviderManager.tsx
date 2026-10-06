@@ -6,7 +6,6 @@ import {
   Pencil,
   X,
   Server,
-  Sparkles,
   Eye,
   EyeOff,
 } from "lucide-react";
@@ -347,7 +346,7 @@ export const ProviderManager: React.FC<ProviderManagerProps> = ({
             <label className="text-[11px] font-semibold text-neutral-500 dark:text-[#8A8A93]">
               API Key
               {form.type === "gemini" && (
-                <span className="font-normal"> — kosongkan untuk pakai .env</span>
+                <span className="font-normal"> (kosongkan jika menggunakan .env)</span>
               )}
             </label>
             <div className="relative">
@@ -409,7 +408,7 @@ export const ProviderManager: React.FC<ProviderManagerProps> = ({
             onClick={handleSubmit}
             className="w-full py-3 rounded-full bg-[#F5B838] hover:bg-[#E5A929] text-neutral-950 font-bold text-xs shadow-xs active:scale-[0.98] transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
-            {isNew ? <Sparkles size={15} /> : <Check size={15} />}
+            {isNew ? <Plus size={15} /> : <Check size={15} />}
             <span>{isNew ? "Tambah Provider" : "Simpan Perubahan"}</span>
           </button>
         </div>

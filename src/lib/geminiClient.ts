@@ -55,8 +55,10 @@ export async function sendMessageToGemini({
   audio,
   replyToText,
 }: SendMessageParams): Promise<SendMessageResult> {
-  // Format last 25 messages as history for Gemini (mapping role: char -> model)
-  const history = chat.messages.slice(-25).map((m) => ({
+  // Batasi history pesan. Jika ringkasan memori (`chat.summary`) sudah ada,
+  // 15 pesan terakhir sudah sangat cukup untuk alur aktif dan menghemat token AI.
+  const historyLimit = chat.summary && chat.summary.trim() ? 15 : 25;
+  const history = chat.messages.slice(-historyLimit).map((m) => ({
     role: (m.role === "user" ? "user" : "model") as "user" | "model",
     text: m.text,
   }));
@@ -181,3 +183,95 @@ export async function triggerSummarizeMemory({
   const data = await res.json();
   return data.summary || chat.summary || "";
 }
+
+/**
+ * Memeriksa apakah terjadi pergantian hari dan obrolan dari hari kemarin/sebelumnya
+ * belum dirangkum ke dalam memori karakter (`chat.summary`).
+ * Dijalankan di background tanpa memblokir obrolan pengguna.
+ */
+export async function checkAndAutoSummarizeDayTransition({
+  character,
+  chat,
+  settings,
+  onUpdateChat,
+}: {
+  character: Character;
+  chat: Chat;
+  settings: Settings;
+  onUpdateChat?: (updatedChat: Chat) => void;
+}): Promise<Chat> {
+  const now = new Date();
+  const startOfToday = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate()
+  ).getTime();
+  const todayStr = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(
+    2,
+    "0"
+  )}-${String(now.getDate()).padStart(2, "0")}`;
+
+  // Ambil semua pesan yang dikirim sebelum hari ini (kemarin atau sebelumnya)
+  const pastDaysMessages = chat.messages.filter((m) => m.timestamp < startOfToday);
+
+  // Jika pesan dari hari sebelumnya kurang dari 3 pesan, tidak perlu dirangkum
+  if (pastDaysMessages.length < 3) {
+    return chat;
+  }
+
+  // Pesan terakhir dari masa lalu (kemarin)
+  const lastPastMessage = pastDaysMessages[pastDaysMessages.length - 1];
+
+  // Jika pesan kemarin ini sudah pernah dirangkum, jangan panggil AI lagi (hemat token!)
+  if (chat.lastSummarizedMessageId === lastPastMessage.id) {
+    return chat;
+  }
+
+  try {
+    const payload = {
+      charName: character.name,
+      userName: settings.userName || "Kamu",
+      existingSummary: chat.summary || "",
+      messagesToSummarize: pastDaysMessages.map((m) => ({
+        role: m.role,
+        text: m.text,
+      })),
+      provider: providerPayload(settings),
+    };
+
+    const res = await fetch(apiUrl("summarize"), {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      console.warn("Auto-summarize failed with status:", res.status);
+      return chat;
+    }
+
+    const data = await res.json();
+    const newSummary = (data.summary || "").trim();
+
+    if (newSummary && newSummary !== chat.summary) {
+      const updatedChat: Chat = {
+        ...chat,
+        summary: newSummary,
+        lastSummarizedMessageId: lastPastMessage.id,
+        lastSummarizedDate: todayStr,
+      };
+
+      if (onUpdateChat) {
+        onUpdateChat(updatedChat);
+      }
+      return updatedChat;
+    }
+  } catch (err) {
+    console.warn("Auto-summarize exception:", err);
+  }
+
+  return chat;
+}
+

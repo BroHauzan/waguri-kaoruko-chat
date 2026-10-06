@@ -45,7 +45,7 @@ export const NotificationPermissionBanner: React.FC = () => {
   }
 
   return (
-    <div className="mx-4 mt-2 mb-1 p-3.5 liquid-glass rounded-2xl border border-[#8B7CF6]/30 bg-[#8B7CF6]/10 flex flex-col gap-2.5 animate-slide-down shadow-xl relative">
+    <div className="mx-4 mt-2 mb-1 p-3.5 liquid-glass rounded-2xl border border-amber-500/30 bg-amber-500/10 dark:bg-[#F5B838]/10 dark:border-[#F5B838]/25 flex flex-col gap-2.5 animate-slide-down shadow-lg relative">
       <button
         onClick={() => setDismissed(true)}
         className="absolute top-2.5 right-2.5 text-neutral-500 dark:text-white/40 hover:text-neutral-800 dark:hover:text-white p-1 rounded-full cursor-pointer"
@@ -55,7 +55,7 @@ export const NotificationPermissionBanner: React.FC = () => {
       </button>
 
       <div className="flex items-start gap-3 pr-6">
-        <div className="w-8 h-8 rounded-full bg-[#8B7CF6]/20 border border-[#8B7CF6]/40 flex items-center justify-center shrink-0 text-[#8B7CF6] dark:text-[#A78BFA]">
+        <div className="w-8 h-8 rounded-full bg-amber-500/20 border border-amber-500/40 flex items-center justify-center shrink-0 text-[#E5A929] dark:text-[#F5B838]">
           <Bell size={16} />
         </div>
         <div>
@@ -78,7 +78,7 @@ export const NotificationPermissionBanner: React.FC = () => {
         <button
           onClick={handleRequest}
           disabled={isActivating}
-          className="px-3.5 py-1.5 rounded-xl text-xs font-semibold bg-[#8B7CF6] hover:bg-[#7C3AED] active:scale-95 text-white transition-all shadow-md cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
+          className="px-3.5 py-1.5 rounded-xl text-xs font-bold bg-[#F5B838] hover:bg-[#E5A929] active:scale-95 text-neutral-950 transition-all shadow-xs cursor-pointer disabled:opacity-50 flex items-center gap-1.5"
         >
           <Bell size={13} />
           <span>{isActivating ? "Meminta izin..." : "Izinkan Notifikasi"}</span>
