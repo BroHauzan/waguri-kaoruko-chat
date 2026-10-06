@@ -876,10 +876,13 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                 </span>
                 <span className="text-neutral-300 dark:text-neutral-700 text-[10px]">•</span>
                 <span
-                  className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[10.5px] font-medium border ${moodTheme.badgeStyle}`}
-                  title={`Mood saat ini: ${moodTheme.label}`}
+                  className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium border ${moodTheme.badgeStyle}`}
+                  title={`Suasana hati: ${moodTheme.label}`}
                 >
-                  <span>{moodTheme.emoji}</span>
+                  <span
+                    className="w-1.5 h-1.5 rounded-full shrink-0"
+                    style={{ backgroundColor: moodTheme.accentColor }}
+                  />
                   <span>{moodTheme.label}</span>
                 </span>
               </div>
@@ -950,7 +953,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
       </header>
 
       {/* Main Conversation Stream */}
-      <main className="flex-1 flex flex-col relative w-full pt-[74px] pb-24 min-h-screen">
+      <main className="flex-1 flex flex-col relative w-full pt-[74px] pb-32 lg:pb-36 min-h-screen">
 
         {/* Banner notices */}
         {errorNotice && (
@@ -1164,7 +1167,8 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
             </div>
           )}
 
-          <div ref={messagesEndRef} className="h-4" />
+          {/* Spacer ekstra di bawah agar pesan terakhir & typing indicator tidak terpotong oleh footer yang fixed */}
+          <div ref={messagesEndRef} className="h-16 lg:h-20 shrink-0 w-full" />
         </div>
       </main>
 

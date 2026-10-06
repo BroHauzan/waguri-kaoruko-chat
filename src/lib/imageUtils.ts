@@ -134,3 +134,64 @@ export function formatBytes(bytes: number): string {
   if (bytes < 1024 * 1024) return `${Math.round(bytes / 1024)} KB`;
   return `${(bytes / 1024 / 1024).toFixed(1)} MB`;
 }
+
+/**
+ * Kompres file foto yang diunggah untuk avatar profil / karakter (PFP).
+ * Dipotong / discale menjadi persegi beresolusi optimal (maks 400x400)
+ * dengan kompresi JPEG kualitas 0.82 agar sangat ringan disimpan di localStorage (~20-40 KB).
+ */
+export async function compressAvatarImage(
+  file: File,
+  maxSize: number = 400,
+  quality: number = 0.82
+): Promise<string> {
+  if (!file.type.startsWith("image/")) {
+    throw new Error("File yang dipilih bukan gambar.");
+  }
+  if (file.size > MAX_UPLOAD_BYTES) {
+    throw new Error(
+      `Ukuran file terlalu besar (maks ${Math.round(
+        MAX_UPLOAD_BYTES / 1024 / 1024
+      )} MB).`
+    );
+  }
+
+  const rawDataUrl = await readAsDataUrl(file);
+  const img = await loadImage(rawDataUrl);
+
+  const origW = img.width || 1;
+  const origH = img.height || 1;
+
+  // Crop tengah menjadi square 1:1 untuk profile photo
+  const cropDim = Math.min(origW, origH);
+  const cropX = Math.max(0, Math.round((origW - cropDim) / 2));
+  const cropY = Math.max(0, Math.round((origH - cropDim) / 2));
+
+  const targetDim = Math.min(maxSize, cropDim);
+
+  const canvas = document.createElement("canvas");
+  canvas.width = targetDim;
+  canvas.height = targetDim;
+
+  const ctx = canvas.getContext("2d");
+  if (!ctx) {
+    return rawDataUrl;
+  }
+
+  ctx.fillStyle = "#FFFFFF";
+  ctx.fillRect(0, 0, targetDim, targetDim);
+  ctx.drawImage(
+    img,
+    cropX,
+    cropY,
+    cropDim,
+    cropDim,
+    0,
+    0,
+    targetDim,
+    targetDim
+  );
+
+  return canvas.toDataURL("image/jpeg", quality);
+}
+

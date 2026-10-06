@@ -1,7 +1,8 @@
-import React, { useState } from "react";
-import { Check, ChevronLeft, Camera, Plus } from "lucide-react";
+import React, { useState, useRef } from "react";
+import { Check, ChevronLeft, Camera, Plus, Upload, Loader2 } from "lucide-react";
 import { Character, CharacterCategory } from "../types";
 import { PRESET_AVATARS } from "../lib/storage";
+import { compressAvatarImage } from "../lib/imageUtils";
 
 interface CharacterFormProps {
   initialCharacter?: Character | null;
@@ -43,7 +44,31 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({
   );
   const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [customAvatarInput, setCustomAvatarInput] = useState("");
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
+  const [avatarError, setAvatarError] = useState<string | null>(null);
   const [isSaved, setIsSaved] = useState(false);
+  const avatarFileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleAvatarFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsUploadingAvatar(true);
+      setAvatarError(null);
+      // Kompres otomatis gambar profil ke 400x400 JPEG ringan
+      const compressedDataUrl = await compressAvatarImage(file, 400, 0.82);
+      setAvatarUrl(compressedDataUrl);
+      setShowAvatarPicker(false);
+    } catch (err: any) {
+      setAvatarError(err?.message || "Gagal mengompres gambar.");
+    } finally {
+      setIsUploadingAvatar(false);
+      if (avatarFileInputRef.current) {
+        avatarFileInputRef.current.value = "";
+      }
+    }
+  };
 
   const toggleTag = (
     currentText: string,
@@ -168,12 +193,46 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({
                   ))}
                 </div>
 
+                {/* Tombol Unggah Foto dari Perangkat (dengan Auto-Kompres) */}
+                <div className="pt-1 flex flex-col gap-1.5">
+                  <input
+                    ref={avatarFileInputRef}
+                    type="file"
+                    accept="image/*"
+                    onChange={handleAvatarFileUpload}
+                    className="hidden"
+                  />
+                  <button
+                    type="button"
+                    disabled={isUploadingAvatar}
+                    onClick={() => avatarFileInputRef.current?.click()}
+                    className="w-full py-2.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/[0.08] hover:bg-neutral-200 dark:hover:bg-white/[0.14] text-neutral-800 dark:text-[#E4E5EA] text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer border border-black/5 dark:border-white/10"
+                  >
+                    {isUploadingAvatar ? (
+                      <>
+                        <Loader2 size={14} className="animate-spin text-[#F5B838]" />
+                        <span>Mengompres foto...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Upload size={14} className="text-[#F5B838]" />
+                        <span>Unggah Foto dari Perangkat (Auto-Compress)</span>
+                      </>
+                    )}
+                  </button>
+                  {avatarError && (
+                    <span className="text-[11px] text-red-500 font-medium text-center">
+                      {avatarError}
+                    </span>
+                  )}
+                </div>
+
                 <div className="flex items-center gap-2 mt-1">
                   <input
                     type="url"
                     value={customAvatarInput}
                     onChange={(e) => setCustomAvatarInput(e.target.value)}
-                    placeholder="URL gambar kustom..."
+                    placeholder="Atau masukkan URL gambar..."
                     className="flex-1 bg-[#F0F1F5] dark:bg-white/[0.06] text-xs text-neutral-900 dark:text-[#F2F3F7] placeholder:text-neutral-400 dark:placeholder:text-white/35 rounded-xl px-3 py-2 border-none focus:outline-none"
                   />
                   <button
