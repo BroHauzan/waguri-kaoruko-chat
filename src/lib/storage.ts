@@ -1,11 +1,19 @@
 import { Character, Chat, Settings } from "../types";
 import { BUILTIN_GEMINI_PROVIDER } from "./providers";
 
+export const DEFAULT_WAGURI_AVATAR = "/waguri-pfp.jpg";
+export const DEFAULT_USER_AVATAR = "/rintaro-pfp.jpg";
+
 export const PRESET_AVATARS = [
   {
     name: "Kaoruko",
-    url: "https://lh3.googleusercontent.com/aida-public/AB6AXuCnksOEdUWWjIFM2DKkv0M3M1nns1uLZ7JRrSgHoawfU-TfgveaYV1-96MI6O-rBWcZFfjSz1RYh05XZhiWApi1UZoPYVhuy105ir_Y4zFj9vMWriTmkwji9zY5f7JoyMQ_yREEJp6R4fuOgSAS03DUFXxcGX6mPnfo9z19jphVU-T4dY7EhtcJAdvlA_oTNIKfxENIPBKrmLkFyP7cMT7b4qnkUnJPKwvWFONDMQTUJbEQPfUrC6s",
+    url: DEFAULT_WAGURI_AVATAR,
     description: "Waguri Kaoruko - gentle schoolgirl anime style"
+  },
+  {
+    name: "Rintaro",
+    url: DEFAULT_USER_AVATAR,
+    description: "Rintaro Tsumugi - calm & caring boyfriend"
   },
   {
     name: "Raka",
@@ -39,7 +47,7 @@ const INITIAL_CHARACTERS: Character[] = [
   {
     id: "waguri-kaoruko",
     name: "Waguri Kaoruko",
-    avatarUrl: PRESET_AVATARS[0].url,
+    avatarUrl: DEFAULT_WAGURI_AVATAR,
     tagline: "Pacar yang hangat, tulus, dan penyayang",
     category: "Romantis",
     personality:
@@ -123,6 +131,13 @@ export const storage = {
         if (seenIds.has(c.id)) continue;
         if (normalizedName === "waguri kaoruko" && seenNames.has("waguri kaoruko")) {
           continue;
+        }
+        // Pastikan Waguri Kaoruko selalu menggunakan foto default lokal jika masih memakai link lama
+        if (
+          (c.id === "waguri-kaoruko" || normalizedName === "waguri kaoruko") &&
+          (!c.avatarUrl || c.avatarUrl.includes("googleusercontent.com") || c.avatarUrl.includes("unsplash"))
+        ) {
+          c.avatarUrl = DEFAULT_WAGURI_AVATAR;
         }
         seenIds.add(c.id);
         seenNames.add(normalizedName);

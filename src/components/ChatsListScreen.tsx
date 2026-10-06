@@ -96,7 +96,7 @@ export const ChatsListScreen: React.FC<ChatsListScreenProps> = ({
         {/* User profile avatar on left */}
         <div className="w-10 h-10 rounded-full overflow-hidden bg-neutral-200 dark:bg-white/[0.12] border border-black/10 dark:border-white/10 shadow-xs shrink-0">
           <img
-            src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80"
+            src="/rintaro-pfp.jpg"
             alt="Profil Kamu"
             className="w-full h-full object-cover"
           />
