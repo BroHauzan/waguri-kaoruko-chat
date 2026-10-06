@@ -1,6 +1,8 @@
 import React from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { MessageSquare, Plus, User } from "lucide-react";
+import { AppLanguage } from "../types";
+import { getDictionary } from "../lib/i18n";
 
 export type NavTab = "chats" | "create" | "settings";
 
@@ -8,20 +10,8 @@ interface NavigationProps {
   currentTab: NavTab;
   onTabChange: (tab: NavTab) => void;
   activeChatsCount?: number;
+  language?: AppLanguage;
 }
-
-interface NavItem {
-  id: NavTab;
-  label: string;
-  icon: typeof MessageSquare;
-  title: string;
-}
-
-const NAV_ITEMS: NavItem[] = [
-  { id: "chats", label: "Pesan", icon: MessageSquare, title: "Pesan Obrolan" },
-  { id: "create", label: "Buat", icon: Plus, title: "Buat Karakter Baru" },
-  { id: "settings", label: "Akun", icon: User, title: "Pengaturan & Profil" },
-];
 
 // Apple Design: critically damped spring, no overshoot.
 const SPRING = { type: "spring" as const, bounce: 0, duration: 0.35 };
@@ -30,12 +20,36 @@ export const Navigation: React.FC<NavigationProps> = ({
   currentTab,
   onTabChange,
   activeChatsCount = 0,
+  language = "id",
 }) => {
+  const dict = getDictionary(language);
+
+  const navItems = [
+    {
+      id: "chats" as NavTab,
+      label: dict.navChats,
+      icon: MessageSquare,
+      title: dict.navChatsTitle,
+    },
+    {
+      id: "create" as NavTab,
+      label: dict.navCreate,
+      icon: Plus,
+      title: dict.navCreateTitle,
+    },
+    {
+      id: "settings" as NavTab,
+      label: dict.navSettings,
+      icon: User,
+      title: dict.navSettingsTitle,
+    },
+  ];
+
   return (
     <nav className="fixed bottom-4 inset-x-0 z-50 pointer-events-none pb-safe flex justify-center px-4">
       {/* Floating Tab Bar — restrained translucent pill */}
       <div className="liquid-glass-nav rounded-full h-[58px] px-2.5 flex items-center gap-1 pointer-events-auto shadow-md">
-        {NAV_ITEMS.map((item) => {
+        {navItems.map((item) => {
           const isActive = currentTab === item.id;
           const Icon = item.icon;
 

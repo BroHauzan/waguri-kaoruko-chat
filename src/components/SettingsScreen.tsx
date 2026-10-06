@@ -1,8 +1,7 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import {
   Trash2,
-  CheckCircle,
   Vibrate,
   Check,
   Bell,
@@ -14,45 +13,21 @@ import {
   Cpu,
   Sliders,
   AlertTriangle,
-  Sparkles,
   MessageSquare,
+  Globe,
   X,
 } from "lucide-react";
-import { Character, Chat, Settings, ThemeMode } from "../types";
+import { Character, Chat, Settings, ThemeMode, AppLanguage } from "../types";
 import { haptics } from "../lib/haptics";
 import { ProviderManager } from "./ProviderManager";
 import { getActiveProvider } from "../lib/providers";
+import { applyTheme } from "../lib/useTheme";
+import { getDictionary, t } from "../lib/i18n";
 import {
   getNotificationPermission,
   requestNotificationPermission,
   sendPushLikeNotification,
 } from "../lib/pushNotification";
-
-const THEME_OPTIONS: { id: ThemeMode; label: string; icon: typeof Sun }[] = [
-  { id: "light", label: "Terang", icon: Sun },
-  { id: "dark", label: "Gelap", icon: Moon },
-  { id: "auto", label: "Otomatis", icon: Monitor },
-];
-
-/** Preset gaya percakapan yang ramah pengguna, mengabstraksi nilai temperature LLM */
-const CONVERSATION_STYLE_PRESETS = [
-  {
-    temp: 0.6,
-    label: "Fokus & Konsisten",
-    desc: "Jawaban teratur, tenang, dan runtut",
-  },
-  {
-    temp: 0.8,
-    label: "Natural & Mengalir",
-    desc: "Hangat, luwes, dan seperti obrolan nyata (Disarankan)",
-    recommended: true,
-  },
-  {
-    temp: 1.1,
-    label: "Spontan & Ekspresif",
-    desc: "Variatif, kaya emosi, dan penuh kejutan",
-  },
-];
 
 interface SettingsScreenProps {
   settings: Settings;
@@ -73,10 +48,56 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const [replyLength, setReplyLength] = useState(settings.replyLength || "Sedang");
   const [hapticFeedback, setHapticFeedback] = useState(settings.hapticFeedback !== false);
   const [theme, setTheme] = useState<ThemeMode>(settings.theme || "dark");
+  const [language, setLanguage] = useState<AppLanguage>(settings.language || "id");
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [notifPermission, setNotifPermission] = useState<string>(getNotificationPermission());
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [showResetConfirmModal, setShowResetConfirmModal] = useState(false);
+
+  // Sinkronkan state lokal saat prop settings dari parent berubah
+  useEffect(() => {
+    if (settings.theme && settings.theme !== theme) {
+      setTheme(settings.theme);
+    }
+  }, [settings.theme]);
+
+  useEffect(() => {
+    if (settings.language && settings.language !== language) {
+      setLanguage(settings.language);
+    }
+  }, [settings.language]);
+
+  const dict = getDictionary(language);
+
+  const themeOptions: { id: ThemeMode; label: string; icon: typeof Sun }[] = [
+    { id: "light", label: dict.themeLight, icon: Sun },
+    { id: "dark", label: dict.themeDark, icon: Moon },
+    { id: "auto", label: dict.themeAuto, icon: Monitor },
+  ];
+
+  const languageOptions: { id: AppLanguage; label: string; flag: string }[] = [
+    { id: "id", label: "Bahasa Indonesia", flag: "🇮🇩" },
+    { id: "en", label: "English", flag: "🇬🇧" },
+  ];
+
+  const conversationPresets = [
+    {
+      temp: 0.6,
+      label: language === "en" ? "Focused & Consistent" : "Fokus & Konsisten",
+      desc: language === "en" ? "Structured, calm, and predictable replies" : "Jawaban teratur, tenang, dan runtut",
+    },
+    {
+      temp: 0.8,
+      label: language === "en" ? "Natural & Flowing" : "Natural & Mengalir",
+      desc: language === "en" ? "Warm, casual, and true-to-life (Recommended)" : "Hangat, luwes, dan seperti obrolan nyata (Disarankan)",
+      recommended: true,
+    },
+    {
+      temp: 1.1,
+      label: language === "en" ? "Spontaneous & Expressive" : "Spontan & Ekspresif",
+      desc: language === "en" ? "Lively, expressive, and full of pleasant surprises" : "Variatif, kaya emosi, dan penuh kejutan",
+    },
+  ];
 
   /** Provider yang sedang dipakai */
   const activeProvider = getActiveProvider(settings);
@@ -97,6 +118,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       temperature: newVal,
       replyLength,
       hapticFeedback,
+      theme,
+      language,
     });
   };
 
@@ -110,13 +133,24 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       temperature,
       replyLength: len,
       hapticFeedback,
+      theme,
+      language,
     });
-    showToast(`Panjang balasan: ${len}`);
+    const lenLabel =
+      len === "Pendek"
+        ? dict.replyLengthShort
+        : len === "Sedang"
+        ? dict.replyLengthMedium
+        : dict.replyLengthLong;
+    showToast(t("replyLengthToast", language, { val: lenLabel }));
   };
 
   const handleSelectTheme = (next: ThemeMode) => {
     setTheme(next);
+    // LANGSUNG sinkronkan ke DOM seketika
+    applyTheme(next);
     haptics.light(hapticFeedback);
+
     onSaveSettings({
       ...settings,
       userName,
@@ -125,14 +159,35 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       replyLength,
       hapticFeedback,
       theme: next,
+      language,
     });
-    showToast(
+
+    const valLabel =
       next === "light"
-        ? "Tema: Terang"
+        ? dict.themeLight
         : next === "dark"
-        ? "Tema: Gelap"
-        : "Tema: Ikut Sistem"
-    );
+        ? dict.themeDark
+        : dict.themeAuto;
+    showToast(t("themeToast", language, { val: valLabel }));
+  };
+
+  const handleSelectLanguage = (nextLang: AppLanguage) => {
+    setLanguage(nextLang);
+    haptics.light(hapticFeedback);
+
+    onSaveSettings({
+      ...settings,
+      userName,
+      model,
+      temperature,
+      replyLength,
+      hapticFeedback,
+      theme,
+      language: nextLang,
+    });
+
+    const langName = nextLang === "en" ? "English" : "Bahasa Indonesia";
+    showToast(t("langToast", nextLang, { val: langName }));
   };
 
   const toggleHaptics = () => {
@@ -146,17 +201,27 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       temperature,
       replyLength,
       hapticFeedback: newVal,
+      theme,
+      language,
     });
-    showToast(newVal ? "Getaran haptik aktif" : "Getaran haptik dinonaktifkan");
+    showToast(
+      newVal
+        ? language === "en"
+          ? "Haptic feedback enabled"
+          : "Getaran haptik aktif"
+        : language === "en"
+        ? "Haptic feedback disabled"
+        : "Getaran haptik dinonaktifkan"
+    );
   };
 
   return (
-    <main className="flex-1 flex flex-col relative z-10 w-full pt-safe pb-36 sm:pb-40 bg-[#F4F5F7] dark:bg-[#0B0C0F]">
-      {/* Toast Banner */}
+    <main className="flex-1 flex flex-col relative z-10 w-full pt-safe pb-32 bg-[#F4F5F7] dark:bg-[#0B0C0F]">
+      {/* Toast Notifikasi Ringan Floating */}
       {toastMsg && (
-        <div className="fixed top-4 inset-x-4 z-50 flex justify-center pointer-events-none animate-slide-down">
-          <div className="px-4 py-2.5 rounded-full text-xs font-semibold shadow-lg pointer-events-auto flex items-center gap-2 bg-neutral-900 dark:bg-[#2A2B31] text-white">
-            <CheckCircle size={15} className="text-[#F5B838]" />
+        <div className="fixed top-5 inset-x-0 z-50 flex justify-center pointer-events-none px-4 animate-slide-down">
+          <div className="liquid-glass-strong px-4 py-2 rounded-full shadow-lg border border-black/5 dark:border-white/10 text-xs font-semibold text-neutral-900 dark:text-[#F2F3F7] flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-[#F5B838]" />
             <span>{toastMsg}</span>
           </div>
         </div>
@@ -165,10 +230,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       {/* Header — Konsisten dengan tab 'Akun' */}
       <div className="px-5 pt-4 pb-3">
         <h1 className="text-[20px] font-bold text-neutral-900 dark:text-[#F2F3F7] tracking-tight">
-          Akun & Pengaturan
+          {dict.settingsHeading}
         </h1>
         <p className="text-xs text-neutral-500 dark:text-[#8A8A93] mt-0.5">
-          Kelola profil, gaya percakapan, dan preferensi aplikasi
+          {dict.settingsSubheading}
         </p>
       </div>
 
@@ -184,18 +249,26 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           </div>
           <div className="flex-1 min-w-0">
             <span className="text-xs text-neutral-400 dark:text-[#71717A] font-medium">
-              Nama Panggilan Kamu
+              {dict.nicknameLabel}
             </span>
             <input
               type="text"
               value={userName}
               onChange={(e) => setUserName(e.target.value)}
               onBlur={() => {
-                onSaveSettings({ ...settings, userName });
-                showToast("Nama panggilan disimpan!");
+                onSaveSettings({
+                  ...settings,
+                  userName,
+                  theme,
+                  language,
+                  temperature,
+                  replyLength,
+                  hapticFeedback,
+                });
+                showToast(dict.nicknameSavedToast);
               }}
               className="w-full text-base font-bold text-neutral-900 dark:text-[#F2F3F7] bg-transparent focus:outline-none"
-              placeholder="Namamu..."
+              placeholder={dict.nicknamePlaceholder}
             />
           </div>
         </div>
@@ -207,12 +280,12 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               <Sun size={16} />
             </div>
             <span className="text-sm font-bold text-neutral-900 dark:text-[#F2F3F7]">
-              Tampilan
+              {dict.appearanceTitle}
             </span>
           </div>
 
           <div className="grid grid-cols-3 bg-[#F0F1F5] dark:bg-white/[0.06] p-1 rounded-2xl gap-1">
-            {THEME_OPTIONS.map((opt) => {
+            {themeOptions.map((opt) => {
               const isActive = theme === opt.id;
               const Icon = opt.icon;
               return (
@@ -232,7 +305,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   <span
                     className={`relative z-10 flex items-center justify-center gap-1.5 ${
                       isActive
-                        ? "text-neutral-950"
+                        ? "text-neutral-950 font-bold"
                         : "text-neutral-600 dark:text-[#8A8A93]"
                     }`}
                   >
@@ -245,7 +318,55 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           </div>
 
           <p className="text-[11px] text-neutral-500 dark:text-[#8A8A93] leading-relaxed">
-            "Otomatis" mengikuti pengaturan mode gelap atau terang dari perangkatmu.
+            {dict.themeDesc}
+          </p>
+        </div>
+
+        {/* Section: Bahasa / Language */}
+        <div className="bg-white dark:bg-[#16171B] rounded-3xl p-4 border border-black/5 dark:border-white/10 shadow-xs flex flex-col gap-3">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-full bg-amber-50 dark:bg-[#F5B838]/15 text-[#F5B838] flex items-center justify-center">
+              <Globe size={16} />
+            </div>
+            <span className="text-sm font-bold text-neutral-900 dark:text-[#F2F3F7]">
+              {dict.languageTitle}
+            </span>
+          </div>
+
+          <div className="grid grid-cols-2 bg-[#F0F1F5] dark:bg-white/[0.06] p-1 rounded-2xl gap-1">
+            {languageOptions.map((opt) => {
+              const isActive = language === opt.id;
+              return (
+                <button
+                  key={opt.id}
+                  type="button"
+                  onClick={() => handleSelectLanguage(opt.id)}
+                  className="relative py-2.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+                >
+                  {isActive && (
+                    <motion.div
+                      layoutId="languagePill"
+                      transition={{ type: "spring", bounce: 0, duration: 0.4 }}
+                      className="absolute inset-0 rounded-xl bg-[#F5B838] shadow-xs"
+                    />
+                  )}
+                  <span
+                    className={`relative z-10 flex items-center justify-center gap-2 ${
+                      isActive
+                        ? "text-neutral-950 font-bold"
+                        : "text-neutral-600 dark:text-[#8A8A93]"
+                    }`}
+                  >
+                    <span className="text-sm">{opt.flag}</span>
+                    <span>{opt.label}</span>
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          <p className="text-[11px] text-neutral-500 dark:text-[#8A8A93] leading-relaxed">
+            {dict.langDesc}
           </p>
         </div>
 
@@ -256,50 +377,66 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               <MessageSquare size={16} />
             </div>
             <span className="text-sm font-bold text-neutral-900 dark:text-[#F2F3F7]">
-              Gaya Interaksi Obrolan
+              {dict.chatStyleTitle}
             </span>
           </div>
 
           {/* Panjang Balasan */}
           <div className="flex flex-col gap-1.5">
             <span className="text-xs text-neutral-500 dark:text-[#8A8A93] font-medium">
-              Panjang Balasan Karakter
+              {dict.replyLengthLabel}
             </span>
             <div className="grid grid-cols-3 bg-[#F0F1F5] dark:bg-white/[0.06] p-1 rounded-2xl gap-1">
-              {(["Pendek", "Sedang", "Panjang"] as const).map((len) => (
-                <button
-                  key={len}
-                  type="button"
-                  onClick={() => handleSelectLength(len)}
-                  className={`py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
-                    replyLength === len
-                      ? "bg-[#F5B838] text-neutral-950 shadow-xs"
-                      : "text-neutral-600 dark:text-[#8A8A93] hover:text-neutral-900 dark:hover:text-white"
-                  }`}
-                >
-                  {len}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Gaya Interaksi (Abstraksi Temperature ramah pengguna) */}
-          <div className="flex flex-col gap-2 pt-1">
-            <span className="text-xs text-neutral-500 dark:text-[#8A8A93] font-medium flex items-center gap-1.5">
-              <span>Nuansa Respons Karakter</span>
-              <Sparkles size={13} className="text-[#F5B838]" />
-            </span>
-            <div className="grid grid-cols-1 gap-2">
-              {CONVERSATION_STYLE_PRESETS.map((preset) => {
-                const isSelected = Math.abs(temperature - preset.temp) < 0.15;
+              {(["Pendek", "Sedang", "Panjang"] as const).map((len) => {
+                const isSelected = replyLength === len;
+                const label =
+                  len === "Pendek"
+                    ? dict.replyLengthShort
+                    : len === "Sedang"
+                    ? dict.replyLengthMedium
+                    : dict.replyLengthLong;
                 return (
                   <button
-                    key={preset.label}
+                    key={len}
+                    type="button"
+                    onClick={() => handleSelectLength(len)}
+                    className={`py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer ${
+                      isSelected
+                        ? "bg-[#F5B838] text-neutral-950 shadow-xs font-bold"
+                        : "text-neutral-600 dark:text-[#8A8A93] hover:text-neutral-900 dark:hover:text-white"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-[11px] text-neutral-400 dark:text-[#71717A]">
+              {dict.replyLengthDesc}
+            </p>
+          </div>
+
+          {/* Preset Gaya Percakapan (Pengganti Slider Teknis) */}
+          <div className="flex flex-col gap-2 pt-2 border-t border-neutral-100 dark:border-white/10">
+            <span className="text-xs text-neutral-500 dark:text-[#8A8A93] font-medium">
+              {language === "en" ? "Character Expression Mood" : "Sifat & Nada Respons Karakter"}
+            </span>
+
+            <div className="flex flex-col gap-2">
+              {conversationPresets.map((preset) => {
+                const isSelected = Math.abs(temperature - preset.temp) < 0.12;
+                return (
+                  <button
+                    key={preset.temp}
                     type="button"
                     onClick={() => {
                       handleTempChange(preset.temp);
                       haptics.light(hapticFeedback);
-                      showToast(`Gaya respon: ${preset.label}`);
+                      showToast(
+                        language === "en"
+                          ? `Response style: ${preset.label}`
+                          : `Gaya respon: ${preset.label}`
+                      );
                     }}
                     className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex items-center justify-between ${
                       isSelected
@@ -309,14 +446,18 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   >
                     <div className="flex flex-col gap-0.5">
                       <div className="flex items-center gap-2">
-                        <span className={`text-xs font-bold ${
-                          isSelected ? "text-neutral-900 dark:text-white" : "text-neutral-700 dark:text-[#D1D2D9]"
-                        }`}>
+                        <span
+                          className={`text-xs font-bold ${
+                            isSelected
+                              ? "text-neutral-900 dark:text-white"
+                              : "text-neutral-700 dark:text-[#D1D2D9]"
+                          }`}
+                        >
                           {preset.label}
                         </span>
                         {preset.recommended && (
                           <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-[#F5B838] text-neutral-950">
-                            Rekomendasi
+                            {language === "en" ? "Recommended" : "Rekomendasi"}
                           </span>
                         )}
                       </div>
@@ -344,13 +485,13 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 <Bell size={16} />
               </div>
               <span className="text-sm font-bold text-neutral-900 dark:text-[#F2F3F7]">
-                Notifikasi Balasan
+                {dict.notificationsTitle}
               </span>
             </div>
             {notifPermission === "granted" ? (
               <span className="px-2.5 py-1 rounded-full text-xs font-bold bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 flex items-center gap-1">
                 <Check size={12} />
-                <span>Aktif</span>
+                <span>{dict.notifActive}</span>
               </span>
             ) : (
               <button
@@ -358,30 +499,45 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 onClick={async () => {
                   const granted = await requestNotificationPermission();
                   setNotifPermission(granted ? "granted" : "denied");
-                  if (granted) showToast("Notifikasi aktif!");
+                  if (granted) {
+                    showToast(
+                      language === "en"
+                        ? "Notifications enabled!"
+                        : "Notifikasi aktif!"
+                    );
+                  }
                 }}
                 className="px-3 py-1.5 rounded-full text-xs font-bold bg-[#F5B838] text-neutral-950 cursor-pointer active:scale-95 transition-all"
               >
-                Izinkan
+                {dict.notifRequest}
               </button>
             )}
           </div>
           <p className="text-xs text-neutral-500 dark:text-[#8A8A93] leading-relaxed">
-            Tetap terima balasan karakter meskipun layar ditutup atau aplikasi diminimalkan.
+            {dict.notificationsDesc}
           </p>
           <div className="pt-2 border-t border-neutral-100 dark:border-white/10 flex justify-end">
             <button
               type="button"
               onClick={async () => {
                 await sendPushLikeNotification("Waguri Kaoruko", {
-                  body: "Tes notifikasi berhasil! Balasan akan tetap masuk saat layar ditutup.",
+                  body:
+                    language === "en"
+                      ? "Test notification successful! Replies will arrive even when your screen is locked."
+                      : "Tes notifikasi berhasil! Balasan akan tetap masuk saat layar ditutup.",
                   characterId: "waguri-kaoruko",
                 });
-                showToast("Notifikasi uji coba terkirim!");
+                showToast(
+                  language === "en"
+                    ? "Test notification sent!"
+                    : "Notifikasi uji coba terkirim!"
+                );
               }}
               className="text-xs font-semibold text-[#E5A929] hover:underline cursor-pointer"
             >
-              Kirim Notifikasi Uji Coba
+              {language === "en"
+                ? "Send Test Notification"
+                : "Kirim Notifikasi Uji Coba"}
             </button>
           </div>
         </div>
@@ -394,10 +550,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             </div>
             <div className="flex flex-col">
               <span className="text-sm font-bold text-neutral-900 dark:text-[#F2F3F7]">
-                Umpan Balik Getar
+                {dict.hapticsTitle}
               </span>
               <span className="text-xs text-neutral-500 dark:text-[#8A8A93]">
-                Sensasi ketikan & respons pesan
+                {dict.hapticsDesc}
               </span>
             </div>
           </div>
@@ -430,10 +586,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               <div className="flex flex-col text-left">
                 <div className="flex items-center gap-2">
                   <span className="text-sm font-bold text-neutral-900 dark:text-[#F2F3F7]">
-                    Opsi Pengembang & Mesin AI
+                    {dict.advancedTitle}
                   </span>
                   <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-neutral-100 dark:bg-white/[0.08] text-neutral-600 dark:text-[#9B9BA3]">
-                    Lanjutan
+                    {language === "en" ? "Advanced" : "Lanjutan"}
                   </span>
                 </div>
                 <span className="text-xs text-neutral-500 dark:text-[#8A8A93]">
@@ -451,7 +607,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           {showAdvanced && (
             <div className="p-4 pt-1 border-t border-neutral-100 dark:border-white/10 flex flex-col gap-4 animate-fade-in">
               <p className="text-xs text-neutral-500 dark:text-[#8A8A93] leading-relaxed">
-                Di sini kamu dapat mengatur provider AI eksternal (OpenRouter, Groq, DeepSeek) atau menyesuaikan parameter teknis model.
+                {dict.advancedDesc}
               </p>
 
               {/* Provider Manager */}
@@ -468,7 +624,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   <div className="flex items-center gap-1.5">
                     <Cpu size={14} className="text-neutral-500 dark:text-[#8A8A93]" />
                     <span className="text-xs font-bold text-neutral-800 dark:text-[#E4E5EA]">
-                      Fine-Tuning Kreativitas (Temperature)
+                      {language === "en" ? "Temperature Fine-Tuning" : "Fine-Tuning Kreativitas (Temperature)"}
                     </span>
                   </div>
                   <span className="text-xs font-mono font-bold text-[#E5A929]">
@@ -485,7 +641,9 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   className="w-full accent-[#F5B838] cursor-pointer"
                 />
                 <span className="text-[11px] text-neutral-500 dark:text-[#8A8A93]">
-                  Nilai 0.0 deterministik & kaku, 0.8 seimbang untuk roleplay, 1.5+ sangat acak.
+                  {language === "en"
+                    ? "0.0 is deterministic and strict, 0.8 is balanced for roleplay, 1.5+ is very creative and random."
+                    : "Nilai 0.0 deterministik & kaku, 0.8 seimbang untuk roleplay, 1.5+ sangat acak."}
                 </span>
               </div>
             </div>
@@ -500,15 +658,17 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             </div>
             <div className="flex flex-col">
               <span className="text-sm font-bold text-red-700 dark:text-red-300">
-                Zona Bahaya
+                {dict.dangerZoneTitle}
               </span>
               <span className="text-[11px] text-red-600/80 dark:text-red-400/80">
-                Tindakan berisiko tinggi terhadap data lokal
+                {language === "en"
+                  ? "Irreversible action on local data"
+                  : "Tindakan berisiko tinggi terhadap data lokal"}
               </span>
             </div>
           </div>
           <p className="text-xs text-neutral-600 dark:text-[#A1A1AA] leading-relaxed">
-            Menghapus seluruh riwayat percakapan, kustomisasi karakter, dan mengembalikan aplikasi ke kondisi awal.
+            {dict.resetAppDesc}
           </p>
           <button
             type="button"
@@ -516,7 +676,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             className="w-full py-3 rounded-2xl bg-white dark:bg-[#1A181D] hover:bg-red-50 dark:hover:bg-red-500/15 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/30 text-xs font-bold transition-all shadow-2xs cursor-pointer flex items-center justify-center gap-2 active:scale-98"
           >
             <Trash2 size={14} />
-            <span>Reset Semua Data Aplikasi</span>
+            <span>{dict.resetBtn}</span>
           </button>
         </div>
 
@@ -538,7 +698,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 <div className="flex items-center gap-2 text-red-600 dark:text-red-400">
                   <AlertTriangle size={18} />
                   <h3 className="text-base font-bold text-neutral-900 dark:text-[#F2F3F7]">
-                    Reset Semua Data?
+                    {dict.resetConfirmTitle}
                   </h3>
                 </div>
                 <button
@@ -551,7 +711,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               </div>
 
               <p className="text-xs text-neutral-600 dark:text-[#A1A1AA] leading-relaxed">
-                Semua karakter yang telah kamu buat dan seluruh riwayat pesan akan dihapus permanen dari perangkat ini. Tindakan ini tidak dapat dibatalkan.
+                {dict.resetConfirmDesc}
               </p>
 
               <div className="flex items-center gap-2 pt-2">
@@ -560,7 +720,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   onClick={() => setShowResetConfirmModal(false)}
                   className="flex-1 py-2.5 rounded-full bg-neutral-100 dark:bg-white/[0.08] text-neutral-700 dark:text-[#C9CAD1] text-xs font-semibold hover:bg-neutral-200 dark:hover:bg-white/[0.14] transition-all cursor-pointer"
                 >
-                  Batal
+                  {dict.cancel}
                 </button>
                 <button
                   type="button"
@@ -570,7 +730,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   }}
                   className="flex-1 py-2.5 rounded-full bg-red-600 hover:bg-red-700 text-white text-xs font-bold transition-all shadow-xs cursor-pointer active:scale-95"
                 >
-                  Ya, Hapus Semua
+                  {dict.resetConfirmBtn}
                 </button>
               </div>
             </motion.div>

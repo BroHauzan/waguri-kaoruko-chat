@@ -96,6 +96,7 @@ const DEFAULT_SETTINGS: Settings = {
   hapticFeedback: true,
   moodColorPreset: "dynamic",
   theme: "dark",
+  language: "id",
   providers: [BUILTIN_GEMINI_PROVIDER],
   activeProviderId: BUILTIN_GEMINI_PROVIDER.id,
 };
@@ -378,12 +379,12 @@ export const storage = {
         merged.providers = [BUILTIN_GEMINI_PROVIDER];
       }
 
-      // Pastikan ID aktif selalu menunjuk provider yang benar-benar ada.
-      if (
-        !merged.activeProviderId ||
-        !merged.providers.some((p) => p.id === merged.activeProviderId)
-      ) {
-        merged.activeProviderId = merged.providers[0].id;
+      // Pastikan tema dan bahasa valid
+      if (merged.theme !== "light" && merged.theme !== "dark" && merged.theme !== "auto") {
+        merged.theme = "dark";
+      }
+      if (merged.language !== "id" && merged.language !== "en") {
+        merged.language = "id";
       }
 
       return merged;

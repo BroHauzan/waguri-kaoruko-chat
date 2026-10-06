@@ -1,3 +1,5 @@
+import { AppLanguage } from "../types";
+
 /**
  * Utilitas format tanggal & pemisah riwayat pesan obrolan (WhatsApp style).
  */
@@ -17,12 +19,15 @@ export function isSameDay(t1: number, t2: number): boolean {
 
 /**
  * Format pemisah tanggal obrolan seperti WhatsApp:
- * - Hari ini: "Hari ini"
- * - Kemarin (lewat 23:59 kemarin): "Kemarin"
- * - Dalam 7 hari terakhir: Nama hari (Senin, Selasa, dsb.)
- * - Lebih lama: Format tanggal kalender (misal: "6 Okt 2026")
+ * - Hari ini: "Hari ini" / "Today"
+ * - Kemarin (lewat 23:59 kemarin): "Kemarin" / "Yesterday"
+ * - Dalam 7 hari terakhir: Nama hari (Senin, Tuesday, dsb.)
+ * - Lebih lama: Format tanggal kalender (misal: "6 Okt 2026" / "Oct 6, 2026")
  */
-export function formatDateSeparator(timestamp: number): string {
+export function formatDateSeparator(
+  timestamp: number,
+  lang: AppLanguage = "id"
+): string {
   const messageDate = new Date(timestamp);
   const now = new Date();
 
@@ -38,17 +43,20 @@ export function formatDateSeparator(timestamp: number): string {
   const diffDays = Math.round(diffTime / (1000 * 60 * 60 * 24));
 
   if (diffDays === 0) {
-    return "Hari ini";
+    return lang === "en" ? "Today" : "Hari ini";
   }
   if (diffDays === 1) {
-    return "Kemarin";
+    return lang === "en" ? "Yesterday" : "Kemarin";
   }
+
+  const locale = lang === "en" ? "en-US" : "id-ID";
+
   if (diffDays > 1 && diffDays < 7) {
-    return messageDate.toLocaleDateString("id-ID", { weekday: "long" });
+    return messageDate.toLocaleDateString(locale, { weekday: "long" });
   }
 
   const isSameYear = messageDate.getFullYear() === now.getFullYear();
-  return messageDate.toLocaleDateString("id-ID", {
+  return messageDate.toLocaleDateString(locale, {
     day: "numeric",
     month: "short",
     ...(isSameYear ? {} : { year: "numeric" }),

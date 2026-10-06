@@ -34,15 +34,22 @@
         try {
           var raw = localStorage.getItem("waguri_v5_official_settings");
           var mode = raw ? (JSON.parse(raw) || {}).theme : "dark";
-          if (mode === undefined || mode === null) mode = "dark";
+          if (!mode) mode = "dark";
           var dark =
             mode === "dark" ||
             (mode === "auto" &&
               window.matchMedia("(prefers-color-scheme: dark)").matches);
-          if (dark) document.documentElement.classList.add("dark");
+          if (dark) {
+            document.documentElement.classList.add("dark");
+            document.documentElement.setAttribute("data-theme", "dark");
+          } else {
+            document.documentElement.classList.remove("dark");
+            document.documentElement.setAttribute("data-theme", "light");
+          }
           document.documentElement.style.colorScheme = dark ? "dark" : "light";
         } catch (e) {
           document.documentElement.classList.add("dark");
+          document.documentElement.setAttribute("data-theme", "dark");
         }
       })();
     </script>

@@ -55,6 +55,7 @@ import { NotificationPermissionBanner } from "./NotificationPermissionBanner";
 import { CharacterDetailSheet } from "./CharacterDetailSheet";
 import { formatDateSeparator, isSameDay } from "../lib/dateUtils";
 import { getMoodTheme } from "../lib/moodConfig";
+import { getDictionary } from "../lib/i18n";
 
 interface ChatScreenProps {
   character: Character;
@@ -85,6 +86,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
 }) => {
   const [inputText, setInputText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
+  const dict = getDictionary(settings.language || "id");
   const moodTheme = getMoodTheme(
     chat.currentMood?.emotion || character.defaultMood || "neutral"
   );
@@ -1004,7 +1006,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                 {showDateSeparator && (
                   <div className="flex items-center justify-center py-2.5 my-1">
                     <span className="text-[11px] font-medium tracking-tight text-neutral-600 dark:text-[#A1A1AA] bg-neutral-200/70 dark:bg-neutral-800/80 px-3 py-0.5 rounded-full shadow-2xs">
-                      {formatDateSeparator(message.timestamp)}
+                      {formatDateSeparator(message.timestamp, settings.language || "id")}
                     </span>
                   </div>
                 )}

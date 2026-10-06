@@ -119,6 +119,8 @@ export interface AIProvider {
   createdAt: number;
 }
 
+export type AppLanguage = 'id' | 'en';
+
 export interface Settings {
   userName: string;
   model: string;
@@ -128,6 +130,7 @@ export interface Settings {
   hapticFeedback?: boolean;
   moodColorPreset?: MoodColorPreset;
   theme?: ThemeMode;
+  language?: AppLanguage;
   /** Daftar provider AI yang bisa dipilih user. Disimpan di localStorage. */
   providers?: AIProvider[];
   /** ID provider yang sedang dipakai. */

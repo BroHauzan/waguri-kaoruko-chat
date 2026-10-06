@@ -279,6 +279,7 @@ export default function App() {
             onSelectCharacter={handleSelectCharacter}
             onDeleteCharacter={handleDeleteCharacter}
             onCreateNew={() => setCurrentTab("create")}
+            language={settings.language || "id"}
           />
         )}
 
@@ -309,6 +310,7 @@ export default function App() {
           setCurrentTab(tab);
         }}
         activeChatsCount={activeChatsCount}
+        language={settings.language || "id"}
       />
     </div>
   );
@@ -341,7 +343,10 @@ export default function App() {
           <div className="h-full overflow-y-auto flex flex-col">
             {chatView ||
               editView || (
-                <DesktopEmptyState onCreateCharacter={() => setCurrentTab("create")} />
+                <DesktopEmptyState
+                  onCreateCharacter={() => setCurrentTab("create")}
+                  language={settings.language || "id"}
+                />
               )}
           </div>
         </section>

@@ -5,7 +5,7 @@
    Components consume these via Tailwind utilities:
      bg-surface dark:bg-surface-dark  text-content dark:text-content-dark
    ============================================================ */
-@custom-variant dark (&:where(.dark, .dark *));
+@custom-variant dark (&:where(.dark, .dark *, [data-theme="dark"], [data-theme="dark"] *));
 
 @theme {
   /* Brand */
@@ -52,7 +52,8 @@
   :root {
     color-scheme: light;
   }
-  :root.dark {
+  :root.dark,
+  :root[data-theme="dark"] {
     color-scheme: dark;
   }
 

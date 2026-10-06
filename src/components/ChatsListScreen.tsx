@@ -1,12 +1,12 @@
 import React, { useState, useMemo } from "react";
 import {
   Search,
-  MoreHorizontal,
   Plus,
   Trash2,
   MessageSquareOff,
 } from "lucide-react";
-import { Character, Chat } from "../types";
+import { Character, Chat, AppLanguage } from "../types";
+import { getDictionary, t } from "../lib/i18n";
 
 interface ChatsListScreenProps {
   characters: Character[];
@@ -18,6 +18,7 @@ interface ChatsListScreenProps {
   onSelectCharacter: (char: Character) => void;
   onDeleteCharacter: (characterId: string) => void;
   onCreateNew: () => void;
+  language?: AppLanguage;
 }
 
 export const ChatsListScreen: React.FC<ChatsListScreenProps> = ({
@@ -29,8 +30,10 @@ export const ChatsListScreen: React.FC<ChatsListScreenProps> = ({
   onSelectCharacter,
   onDeleteCharacter,
   onCreateNew,
+  language = "id",
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
+  const dict = getDictionary(language);
 
   const chatItems = useMemo(() => {
     return characters.map((char) => {
@@ -49,13 +52,13 @@ export const ChatsListScreen: React.FC<ChatsListScreenProps> = ({
             date.getMinutes()
           ).padStart(2, "0")}`;
         } else {
-          timeDisplay = date.toLocaleDateString([], {
+          timeDisplay = date.toLocaleDateString(language === "en" ? "en-US" : "id-ID", {
             month: "short",
             day: "numeric",
           });
         }
       } else {
-        timeDisplay = "Baru";
+        timeDisplay = dict.newBadge;
       }
 
       const previewText = lastMessage ? lastMessage.text : char.greeting;
@@ -69,7 +72,7 @@ export const ChatsListScreen: React.FC<ChatsListScreenProps> = ({
         isUnread,
       };
     });
-  }, [characters, chats, typingCharacterIds, unreadCharacterIds]);
+  }, [characters, chats, typingCharacterIds, unreadCharacterIds, language, dict.newBadge]);
 
   const filteredItems = useMemo(() => {
     if (!searchQuery.trim()) return chatItems;
@@ -84,11 +87,8 @@ export const ChatsListScreen: React.FC<ChatsListScreenProps> = ({
 
   const handleDelete = (char: Character, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (
-      confirm(
-        `Hapus karakter "${char.name}" beserta riwayat chatnya?`
-      )
-    ) {
+    const promptMsg = t("deleteChatConfirm", language, { name: char.name });
+    if (confirm(promptMsg)) {
       onDeleteCharacter(char.id);
     }
   };
@@ -108,7 +108,7 @@ export const ChatsListScreen: React.FC<ChatsListScreenProps> = ({
 
         {/* Title: Pesan */}
         <h1 className="text-[19px] font-bold text-neutral-900 dark:text-[#F2F3F7] tracking-tight">
-          Pesan
+          {dict.chatsHeading}
         </h1>
 
         {/* Options icon button on right */}
@@ -116,8 +116,8 @@ export const ChatsListScreen: React.FC<ChatsListScreenProps> = ({
           type="button"
           onClick={onCreateNew}
           className="w-10 h-10 rounded-full bg-white dark:bg-[#16171B] border border-black/10 dark:border-white/10 shadow-xs flex items-center justify-center text-neutral-700 dark:text-[#C9CAD1] hover:bg-neutral-50 dark:hover:bg-white/[0.04] active:scale-95 transition-all cursor-pointer"
-          title="Buat Karakter Baru"
-          aria-label="Buat Karakter Baru"
+          title={dict.navCreateTitle}
+          aria-label={dict.navCreateTitle}
         >
           <Plus size={20} />
         </button>
@@ -131,7 +131,7 @@ export const ChatsListScreen: React.FC<ChatsListScreenProps> = ({
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Cari percakapan atau karakter..."
+            placeholder={dict.searchPlaceholder}
             className="bg-transparent w-full text-[14px] text-neutral-900 dark:text-[#F2F3F7] placeholder:text-neutral-400 dark:placeholder:text-[#71717A] focus:outline-none"
           />
           {searchQuery && (
@@ -140,7 +140,7 @@ export const ChatsListScreen: React.FC<ChatsListScreenProps> = ({
               onClick={() => setSearchQuery("")}
               className="text-xs text-neutral-400 dark:text-[#71717A] hover:text-neutral-700 dark:hover:text-white cursor-pointer px-1.5 py-0.5 rounded-full"
             >
-              Batal
+              {dict.cancel}
             </button>
           )}
         </div>
@@ -158,7 +158,7 @@ export const ChatsListScreen: React.FC<ChatsListScreenProps> = ({
               <Plus size={22} />
             </div>
             <span className="text-[12px] font-medium text-neutral-600 dark:text-[#9B9BA3] truncate max-w-[56px] text-center">
-              Tambah
+              {dict.add}
             </span>
           </button>
 
@@ -194,16 +194,16 @@ export const ChatsListScreen: React.FC<ChatsListScreenProps> = ({
               <MessageSquareOff size={26} />
             </div>
             <h3 className="text-base font-bold text-neutral-800 dark:text-[#E4E5EA]">
-              Tidak Ada Obrolan Ditemukan
+              {dict.noChatsFound}
             </h3>
             <p className="text-xs text-neutral-500 dark:text-[#8A8A93] mt-1 max-w-xs">
-              Mulai percakapan baru dengan menekan tombol tambah.
+              {dict.noChatsPrompt}
             </p>
             <button
               onClick={onCreateNew}
               className="mt-4 px-5 py-2.5 rounded-full text-xs font-semibold bg-[#F5B838] text-neutral-900 hover:bg-[#E5A929] transition-all shadow-xs cursor-pointer"
             >
-              Buat Karakter Sekarang
+              {dict.desktopEmptyBtn}
             </button>
           </div>
         ) : (
@@ -236,7 +236,7 @@ export const ChatsListScreen: React.FC<ChatsListScreenProps> = ({
                       <span>{item.character.name}</span>
                       {item.isUnread && (
                         <span className="text-[10px] font-bold px-1.5 py-0.2 bg-[#F5B838] text-neutral-900 rounded-full">
-                          Baru
+                          {dict.newBadge}
                         </span>
                       )}
                     </h2>
@@ -248,7 +248,7 @@ export const ChatsListScreen: React.FC<ChatsListScreenProps> = ({
                   {item.isTyping ? (
                     <span className="text-[13px] text-[#E5A929] font-medium flex items-center gap-1.5 animate-pulse">
                       <span className="w-1.5 h-1.5 rounded-full bg-[#F5B838]" />
-                      <span>sedang mengetik...</span>
+                      <span>{dict.typing}</span>
                     </span>
                   ) : (
                     <p
