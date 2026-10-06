@@ -151,12 +151,8 @@ export const CharacterDetailSheet: React.FC<CharacterDetailSheetProps> = ({
                   Kondisi Perasaan Saat Ini
                 </h3>
               </div>
-              <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full border flex items-center gap-1.5 ${moodTheme.badgeStyle}`}>
-                <span
-                  className="w-1.5 h-1.5 rounded-full shrink-0"
-                  style={{ backgroundColor: moodTheme.accentColor }}
-                />
-                <span>{moodTheme.label}</span>
+              <span className="text-xs font-semibold text-neutral-700 dark:text-[#C9CAD1]">
+                {moodTheme.label}
               </span>
             </div>
 

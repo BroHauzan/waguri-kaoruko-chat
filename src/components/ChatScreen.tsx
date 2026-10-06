@@ -88,7 +88,8 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
   const [isTyping, setIsTyping] = useState(false);
   const dict = getDictionary(settings.language || "id");
   const moodTheme = getMoodTheme(
-    chat.currentMood?.emotion || character.defaultMood || "neutral"
+    chat.currentMood?.emotion || character.defaultMood || "neutral",
+    settings.language || "id"
   );
   const [showDetailSheet, setShowDetailSheet] = useState(false);
   const [showActionMenu, setShowActionMenu] = useState(false);
@@ -873,19 +874,15 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                 {character.name}
               </span>
               <div className="flex items-center gap-1.5 leading-tight mt-0.5">
-                <span className="text-[12px] font-medium text-emerald-600 dark:text-emerald-400 flex items-center gap-1">
-                  <span>Online</span>
+                <span className="text-[12px] font-medium text-emerald-600 dark:text-emerald-400">
+                  {dict.online}
                 </span>
                 <span className="text-neutral-300 dark:text-neutral-700 text-[10px]">•</span>
                 <span
-                  className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-medium border ${moodTheme.badgeStyle}`}
+                  className="text-[12px] font-medium text-neutral-500 dark:text-[#8A8A93]"
                   title={`Suasana hati: ${moodTheme.label}`}
                 >
-                  <span
-                    className="w-1.5 h-1.5 rounded-full shrink-0"
-                    style={{ backgroundColor: moodTheme.accentColor }}
-                  />
-                  <span>{moodTheme.label}</span>
+                  {moodTheme.label}
                 </span>
               </div>
             </div>

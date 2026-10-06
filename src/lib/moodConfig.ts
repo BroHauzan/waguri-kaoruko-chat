@@ -1,4 +1,4 @@
-import { MoodMeta, MoodTheme } from "../types";
+import { MoodMeta, MoodTheme, AppLanguage } from "../types";
 
 export const MOOD_CONFIG: Record<string, MoodMeta> = {
   happy: {
@@ -93,11 +93,19 @@ export function getMoodMeta(emotion: string = "neutral"): MoodMeta {
  * - Salting / Tersipu (shy, jealous): Tema Rose / Coral
  * - Santai / Biasa aja (neutral, bored, default): Tema Amber Bakery Default
  */
-export function getMoodTheme(emotion: string = "neutral"): MoodTheme {
+export function getMoodTheme(
+  emotion: string = "neutral",
+  lang: AppLanguage = "id"
+): MoodTheme {
   const key = emotion.toLowerCase().trim();
+  const isEn = lang === "en";
 
   // 1. Senang / Ceria -> Pink
   if (key === "happy" || key === "playful" || key === "excited") {
+    let label = isEn ? "Happy" : "Lagi Senang";
+    if (key === "playful") label = isEn ? "Playful" : "Lagi Gemes";
+    if (key === "excited") label = isEn ? "Excited" : "Lagi Heboh";
+
     return {
       themeName: "pink",
       accentColor: "#F472B6",
@@ -106,7 +114,7 @@ export function getMoodTheme(emotion: string = "neutral"): MoodTheme {
       accentBorder: "rgba(244, 114, 182, 0.35)",
       userBubbleBg: "bg-[#F472B6] text-neutral-950",
       userBubbleText: "text-neutral-950",
-      label: key === "playful" ? "Lagi Gemes" : key === "excited" ? "Lagi Heboh" : "Lagi Senang",
+      label,
       emoji: key === "playful" ? "😜" : key === "excited" ? "🤩" : "😊",
       badgeStyle: "bg-pink-500/15 text-pink-700 dark:text-pink-300 border-pink-400/30",
       glowColor: "rgba(244, 114, 182, 0.4)",
@@ -115,6 +123,9 @@ export function getMoodTheme(emotion: string = "neutral"): MoodTheme {
 
   // 2. Marah / Kesal / Ngambek -> Merah
   if (key === "angry" || key === "annoyed") {
+    let label = isEn ? "Annoyed" : "Lagi Kesal";
+    if (key === "angry") label = isEn ? "Upset" : "Lagi Ngambek";
+
     return {
       themeName: "red",
       accentColor: "#EF4444",
@@ -123,7 +134,7 @@ export function getMoodTheme(emotion: string = "neutral"): MoodTheme {
       accentBorder: "rgba(239, 68, 68, 0.35)",
       userBubbleBg: "bg-[#EF4444] text-white",
       userBubbleText: "text-white",
-      label: key === "angry" ? "Lagi Ngambek Berat" : "Lagi Kesal",
+      label,
       emoji: key === "angry" ? "😡" : "😤",
       badgeStyle: "bg-red-500/15 text-red-700 dark:text-red-300 border-red-400/30",
       glowColor: "rgba(239, 68, 68, 0.4)",
@@ -132,6 +143,9 @@ export function getMoodTheme(emotion: string = "neutral"): MoodTheme {
 
   // 3. Sedih / Galau / Cemas -> Biru
   if (key === "sad" || key === "worried") {
+    let label = isEn ? "Sad" : "Lagi Galau";
+    if (key === "worried") label = isEn ? "Worried" : "Lagi Cemas";
+
     return {
       themeName: "blue",
       accentColor: "#3B82F6",
@@ -140,7 +154,7 @@ export function getMoodTheme(emotion: string = "neutral"): MoodTheme {
       accentBorder: "rgba(59, 130, 246, 0.35)",
       userBubbleBg: "bg-[#3B82F6] text-white",
       userBubbleText: "text-white",
-      label: key === "sad" ? "Lagi Galau" : "Lagi Cemas",
+      label,
       emoji: key === "sad" ? "🥺" : "😟",
       badgeStyle: "bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-400/30",
       glowColor: "rgba(59, 130, 246, 0.4)",
@@ -149,6 +163,9 @@ export function getMoodTheme(emotion: string = "neutral"): MoodTheme {
 
   // 4. Salting / Tersipu -> Rose / Coral
   if (key === "shy" || key === "jealous") {
+    let label = isEn ? "Blushing" : "Lagi Salting";
+    if (key === "jealous") label = isEn ? "Jealous" : "Lagi Cemburu";
+
     return {
       themeName: "rose",
       accentColor: "#FB7185",
@@ -157,7 +174,7 @@ export function getMoodTheme(emotion: string = "neutral"): MoodTheme {
       accentBorder: "rgba(251, 113, 133, 0.35)",
       userBubbleBg: "bg-[#FB7185] text-neutral-950",
       userBubbleText: "text-neutral-950",
-      label: key === "jealous" ? "Lagi Cemburu" : "Lagi Salting",
+      label,
       emoji: key === "jealous" ? "😒" : "😳",
       badgeStyle: "bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-400/30",
       glowColor: "rgba(251, 113, 133, 0.4)",
@@ -173,7 +190,7 @@ export function getMoodTheme(emotion: string = "neutral"): MoodTheme {
     accentBorder: "rgba(245, 184, 56, 0.35)",
     userBubbleBg: "bg-[#F5B838] text-neutral-950",
     userBubbleText: "text-neutral-950",
-    label: "Santai",
+    label: isEn ? "Relaxed" : "Santai",
     emoji: "☕",
     badgeStyle: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-400/30",
     glowColor: "rgba(245, 184, 56, 0.4)",
