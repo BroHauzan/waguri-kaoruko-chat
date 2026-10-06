@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, useCallback } from "react";
 import { AnimatePresence } from "motion/react";
 import { createPortal } from "react-dom";
 import {
@@ -129,6 +129,28 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const isMountedRef = useRef(true);
 
+  const MAX_INPUT_HEIGHT = 130; // ~5 baris teks WhatsApp style
+
+  // Logika auto-resize tinggi textarea
+  const adjustHeight = useCallback(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+
+    // Reset height dulu agar scrollHeight terhitung akurat saat teks dihapus
+    el.style.height = "auto";
+
+    // Hitung tinggi baru (clamp ke MAX_INPUT_HEIGHT)
+    const newHeight = Math.min(el.scrollHeight, MAX_INPUT_HEIGHT);
+    el.style.height = `${newHeight}px`;
+
+    // Aktifkan scroll internal jika teks sudah melebihi 5 baris
+    el.style.overflowY = el.scrollHeight > MAX_INPUT_HEIGHT ? "auto" : "hidden";
+  }, []);
+
+  useEffect(() => {
+    adjustHeight();
+  }, [inputText, adjustHeight]);
+
   useEffect(() => {
     isMountedRef.current = true;
     // Auto-summarize di background saat berganti hari jika ada obrolan kemarin yang belum dirangkum
@@ -181,7 +203,10 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
       });
       setEditingMessage(null);
       setInputText("");
-      if (textareaRef.current) textareaRef.current.style.height = "auto";
+      if (textareaRef.current) {
+        textareaRef.current.style.height = "auto";
+        textareaRef.current.style.overflowY = "hidden";
+      }
       return;
     }
 
@@ -231,7 +256,10 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
     setAttachedImage(null);
     setReplyTo(null);
     setShowEmojiPicker(false);
-    if (textareaRef.current) textareaRef.current.style.height = "auto";
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+      textareaRef.current.style.overflowY = "hidden";
+    }
     setIsTyping(true);
     onTypingChange?.(character.id, true);
 
@@ -1300,7 +1328,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
           </div>
         )}
 
-        <div className="h-[68px] px-3.5 flex items-center gap-2">
+        <div className="min-h-[58px] px-3 py-2 flex items-end gap-2">
           {/* Smiley Emoji Button */}
           <button
             type="button"
@@ -1308,12 +1336,13 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
               haptics.light(settings.hapticFeedback !== false);
               setShowEmojiPicker((v) => !v);
             }}
-            className={`w-10 h-10 rounded-full flex items-center justify-center active:scale-90 transition-all shrink-0 cursor-pointer ${
+            className={`w-10 h-10 rounded-full flex items-center justify-center active:scale-90 transition-all shrink-0 cursor-pointer mb-0.5 ${
               showEmojiPicker
                 ? "text-[#E5A929]"
                 : "text-neutral-500 dark:text-[#8A8A93] hover:text-neutral-800 dark:hover:text-white"
             }`}
             title="Emoji"
+            aria-label="Emoji"
           >
             <Smile size={22} />
           </button>
@@ -1327,11 +1356,11 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
             className="hidden"
           />
 
-          {/* Text Input Container */}
-          <div className="flex-1 bg-[#F0F1F5] dark:bg-white/[0.08] rounded-full px-4 h-[44px] flex items-center">
-            <input
-              ref={textareaRef as any}
-              type="text"
+          {/* Container Input Bulat / Pill */}
+          <div className="flex-1 bg-[#F0F1F5] dark:bg-white/[0.08] rounded-2xl px-3 py-1.5 flex items-end gap-1.5 border border-transparent focus-within:border-[#F5B838]/40 transition-all min-h-[44px]">
+            <textarea
+              ref={textareaRef}
+              rows={1}
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               onKeyDown={(e) => {
@@ -1340,85 +1369,86 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                   handleSend();
                 }
               }}
-              placeholder="Message"
-              className="w-full bg-transparent text-[14px] text-neutral-900 dark:text-[#F2F3F7] placeholder:text-neutral-400 dark:placeholder:text-white/35 focus:outline-none"
+              placeholder={dict.messagePlaceholder || "Message"}
+              className="w-full bg-transparent text-[14px] text-neutral-900 dark:text-[#F2F3F7] placeholder:text-neutral-400 dark:placeholder:text-white/35 resize-none outline-none leading-relaxed py-1 max-h-[130px] scrollbar-thin"
             />
+
+            {/* Tombol Attachment (Gambar & Tambah) */}
+            <div className="flex items-center gap-0.5 pb-1 text-neutral-500 dark:text-[#8A8A93] shrink-0">
+              <button
+                type="button"
+                disabled={isPreparingImage}
+                onClick={() => {
+                  haptics.light(settings.hapticFeedback !== false);
+                  fileInputRef.current?.click();
+                }}
+                className={`p-1 rounded-full flex items-center justify-center active:scale-90 transition-all cursor-pointer disabled:opacity-50 ${
+                  attachedImage
+                    ? "text-[#E5A929]"
+                    : "hover:text-neutral-800 dark:hover:text-white"
+                }`}
+                title={isPreparingImage ? "Memuat gambar..." : "Kirim foto"}
+                aria-label="Kirim foto"
+              >
+                <ImageIcon size={19} className={isPreparingImage ? "animate-pulse" : ""} />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowActionMenu(!showActionMenu)}
+                className="p-1 rounded-full flex items-center justify-center hover:text-neutral-800 dark:hover:text-white active:scale-90 transition-all cursor-pointer"
+                title="Lampiran"
+                aria-label="Lampiran"
+              >
+                <Plus size={20} />
+              </button>
+            </div>
           </div>
 
-          {/* Right Action Icons (Image, Plus, Yellow Send/Mic) */}
-          <div className="flex items-center gap-1.5 shrink-0">
-            {/* Gallery Image Button — buka pemilih file, bukan menyisipkan teks */}
-            <button
-              type="button"
-              disabled={isPreparingImage}
-              onClick={() => {
-                haptics.light(settings.hapticFeedback !== false);
-                fileInputRef.current?.click();
-              }}
-              className={`w-9 h-9 rounded-full flex items-center justify-center active:scale-90 transition-all cursor-pointer disabled:opacity-50 ${
-                attachedImage
-                  ? "text-[#E5A929]"
-                  : "text-neutral-500 dark:text-[#8A8A93] hover:text-neutral-800 dark:hover:text-white"
-              }`}
-              title={isPreparingImage ? "Memuat gambar..." : "Kirim foto"}
-            >
-              <ImageIcon size={20} className={isPreparingImage ? "animate-pulse" : ""} />
-            </button>
-
-            {/* Plus / Add Button */}
-            <button
-              type="button"
-              onClick={() => setShowActionMenu(!showActionMenu)}
-              className="w-9 h-9 rounded-full flex items-center justify-center text-neutral-500 dark:text-[#8A8A93] hover:text-neutral-800 dark:hover:text-white active:scale-90 transition-all cursor-pointer"
-              title="Lampiran"
-            >
-              <Plus size={22} />
-            </button>
-
-            {/* Amber Yellow Mic / Send Button (Screen 3) */}
-            <button
-              type="button"
-              disabled={isTyping || isPreparingImage || isPreparingAudio}
-              onClick={() => {
-                // Ada teks atau lampiran → kirim. Kosong → mulai merekam.
-                if (inputText.trim() || attachedImage) {
-                  handleSend();
-                  return;
-                }
-                if (!isRecordingSupported()) {
-                  setErrorNotice(
-                    "Browser ini tidak mendukung perekaman suara. Coba ketik pesanmu."
-                  );
-                  return;
-                }
-                setIsRecording(true);
-              }}
-              style={{
-                backgroundColor: isPreparingAudio ? undefined : moodTheme.accentColor,
-              }}
-              className={`w-11 h-11 rounded-full text-neutral-950 flex items-center justify-center shadow-xs active:scale-95 transition-all cursor-pointer disabled:opacity-50 ${
-                isPreparingAudio
-                  ? "bg-neutral-300 dark:bg-white/20"
-                  : "hover:brightness-95"
-              }`}
-              title={
-                inputText.trim() || attachedImage
-                  ? "Kirim Pesan"
-                  : isPreparingAudio
-                  ? "Memproses suara..."
-                  : "Rekam Pesan Suara"
+          {/* Tombol Send / Voice Action */}
+          <button
+            type="button"
+            disabled={isTyping || isPreparingImage || isPreparingAudio}
+            onClick={() => {
+              // Ada teks atau lampiran → kirim. Kosong → mulai merekam.
+              if (inputText.trim() || attachedImage) {
+                handleSend();
+                return;
               }
-            >
-              {inputText.trim() || attachedImage ? (
-                <Send size={18} className="translate-x-0.5" />
-              ) : (
-                <Mic
-                  size={19}
-                  className={isPreparingAudio ? "animate-pulse" : ""}
-                />
-              )}
-            </button>
-          </div>
+              if (!isRecordingSupported()) {
+                setErrorNotice(
+                  "Browser ini tidak mendukung perekaman suara. Coba ketik pesanmu."
+                );
+                return;
+              }
+              setIsRecording(true);
+            }}
+            style={{
+              backgroundColor: isPreparingAudio ? undefined : moodTheme.accentColor,
+            }}
+            className={`w-11 h-11 rounded-full text-neutral-950 flex items-center justify-center shadow-xs active:scale-95 transition-all cursor-pointer shrink-0 mb-0.5 disabled:opacity-50 ${
+              isPreparingAudio
+                ? "bg-neutral-300 dark:bg-white/20"
+                : "hover:brightness-95"
+            }`}
+            title={
+              inputText.trim() || attachedImage
+                ? "Kirim Pesan"
+                : isPreparingAudio
+                ? "Memproses suara..."
+                : "Rekam Pesan Suara"
+            }
+            aria-label={inputText.trim() || attachedImage ? "Kirim Pesan" : "Rekam Suara"}
+          >
+            {inputText.trim() || attachedImage ? (
+              <Send size={18} className="translate-x-0.5" />
+            ) : (
+              <Mic
+                size={19}
+                className={isPreparingAudio ? "animate-pulse" : ""}
+              />
+            )}
+          </button>
         </div>
       </footer>
 
