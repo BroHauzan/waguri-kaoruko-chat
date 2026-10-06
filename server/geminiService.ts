@@ -1,5 +1,7 @@
 import { GoogleGenAI, Type } from "@google/genai";
 import dotenv from "dotenv";
+import fs from "fs";
+import path from "path";
 
 dotenv.config();
 
@@ -33,6 +35,7 @@ export interface ChatTurnRequest {
   summary?: string;
   customInstructions?: string;
   visualProfile?: CharacterVisualProfile;
+  avatarUrl?: string;
   exampleDialogues: Array<{ user: string; char: string }>;
   history: Array<{ role: "user" | "model"; text: string }>;
   message: string;
@@ -347,9 +350,9 @@ async function generatePhotoHelper(
   charName: string,
   visualProfile: CharacterVisualProfile | undefined,
   sceneDescription: string,
-  apiKey: string
+  apiKey: string,
+  avatarUrl?: string
 ): Promise<string> {
-  const ai = new GoogleGenAI({ apiKey });
   const visual = visualProfile;
   const visualPrompt = visual
     ? `${charName}, ${visual.hair}, ${visual.eyes}, wearing ${visual.schoolUniform}, ${visual.generalLook}`
@@ -363,37 +366,59 @@ async function generatePhotoHelper(
     "clean lines, vibrant colors",
   ].join(", ");
 
-  try {
-    const result = await ai.models.generateImages({
-      model: "imagen-3.0-generate-002",
-      prompt: finalPrompt,
-      config: {
-        numberOfImages: 1,
-        aspectRatio: "9:16",
-        outputMimeType: "image/jpeg",
-      },
-    });
-
-    const base64Data = result?.generatedImages?.[0]?.image?.imageBytes;
-    if (base64Data) {
-      return `data:image/jpeg;base64,${base64Data}`;
-    }
-  } catch (err: any) {
-    console.warn("Imagen 3 generateImages error in server:", err?.message || err);
+  // 1. Coba Imagen 3 / Gemini Image API jika kuota/model mengizinkan
+  if (apiKey && apiKey !== "MY_GEMINI_API_KEY") {
     try {
-      const fallbackResponse = await ai.models.generateContent({
-        model: "gemini-3.1-flash-image",
-        contents: finalPrompt,
+      const ai = new GoogleGenAI({ apiKey });
+      const result = await ai.models.generateImages({
+        model: "imagen-3.0-generate-002",
+        prompt: finalPrompt,
+        config: {
+          numberOfImages: 1,
+          aspectRatio: "9:16",
+          outputMimeType: "image/jpeg",
+        },
       });
-      for (const part of fallbackResponse.candidates?.[0]?.content?.parts || []) {
-        if (part.inlineData?.data) {
-          return `data:${part.inlineData.mimeType || "image/png"};base64,${part.inlineData.data}`;
-        }
+
+      const base64Data = result?.generatedImages?.[0]?.image?.imageBytes;
+      if (base64Data) {
+        return `data:image/jpeg;base64,${base64Data}`;
       }
-    } catch (fallbackErr) {
-      console.error("All image generation fallbacks failed:", fallbackErr);
+    } catch (err: any) {
+      console.warn("Imagen 3 generateImages error in server:", err?.message || err);
+      try {
+        const ai = new GoogleGenAI({ apiKey });
+        const fallbackResponse = await ai.models.generateContent({
+          model: "gemini-3.1-flash-image",
+          contents: finalPrompt,
+        });
+        for (const part of fallbackResponse.candidates?.[0]?.content?.parts || []) {
+          if (part.inlineData?.data) {
+            return `data:${part.inlineData.mimeType || "image/png"};base64,${part.inlineData.data}`;
+          }
+        }
+      } catch (fallbackErr) {
+        console.warn("Gemini image fallback also failed:", fallbackErr);
+      }
     }
   }
+
+  // 2. Fallback: jika avatarUrl dikirim dan berupa dataUrl base64, gunakan avatar karakter
+  if (avatarUrl && avatarUrl.startsWith("data:image")) {
+    return avatarUrl;
+  }
+
+  // 3. Fallback: gunakan foto lokal karakter (misal waguri-pfp.jpg) dari folder public
+  try {
+    const publicPfpPath = path.resolve(process.cwd(), "public/waguri-pfp.jpg");
+    if (fs.existsSync(publicPfpPath)) {
+      const buf = fs.readFileSync(publicPfpPath);
+      return `data:image/jpeg;base64,${buf.toString("base64")}`;
+    }
+  } catch (fsErr) {
+    console.warn("Could not read local fallback image:", fsErr);
+  }
+
   throw new Error("Gagal menghasilkan foto karakter.");
 }
 
@@ -522,7 +547,8 @@ async function callGemini(
               req.charName,
               req.visualProfile,
               parsed.send_photo.sceneDescription,
-              apiKey
+              apiKey,
+              req.avatarUrl
             );
             payload.photo = {
               dataUrl: photoDataUrl,

@@ -81,6 +81,7 @@ export async function sendMessageToGemini({
     summary: chat.summary,
     customInstructions: character.customInstructions,
     visualProfile: character.visualProfile,
+    avatarUrl: character.avatarUrl,
     exampleDialogues: character.exampleDialogues,
     history,
     message: userMessage,
