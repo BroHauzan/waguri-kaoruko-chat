@@ -31,7 +31,6 @@ import {
   checkAndAutoSummarizeDayTransition,
 } from "../lib/geminiClient";
 import {
-  ACCEPTED_IMAGE_TYPES,
   fileToImageAttachment,
   formatBytes,
 } from "../lib/imageUtils";
@@ -41,6 +40,7 @@ import { VoiceNoteBubble } from "./VoiceNoteBubble";
 import { MessageTicks } from "./MessageTicks";
 import { CustomInstructionsModal } from "./CustomInstructionsModal";
 import { EmojiPicker } from "./EmojiPicker";
+import { ChatImagePicker } from "./ChatImagePicker";
 import {
   MessageContextMenu,
   ContextMenuAction,
@@ -126,7 +126,6 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-  const fileInputRef = useRef<HTMLInputElement>(null);
   const isMountedRef = useRef(true);
 
   const MAX_INPUT_HEIGHT = 130; // ~5 baris teks WhatsApp style
@@ -526,13 +525,8 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
     }
   };
 
-  /** Terima file dari input, kompres, lalu jadikan lampiran. */
-  const handlePickImage = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    // Reset value supaya file yang sama bisa dipilih dua kali berturut-turut.
-    e.target.value = "";
-    if (!file) return;
-
+  /** Terima file gambar dari pemilih kamera/galeri, kompres, lalu jadikan lampiran. */
+  const handleImageSelected = async (file: File) => {
     setIsPreparingImage(true);
     try {
       const attachment = await fileToImageAttachment(file);
@@ -1347,15 +1341,6 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
             <Smile size={22} />
           </button>
 
-          {/* Hidden file input — dipicu tombol galeri */}
-          <input
-            ref={fileInputRef}
-            type="file"
-            accept={ACCEPTED_IMAGE_TYPES.join(",")}
-            onChange={handlePickImage}
-            className="hidden"
-          />
-
           {/* Container Input Bulat / Pill */}
           <div className="flex-1 bg-[#F0F1F5] dark:bg-white/[0.08] rounded-2xl px-3 py-1.5 flex items-end gap-1.5 border border-transparent focus-within:border-[#F5B838]/40 transition-all min-h-[44px]">
             <textarea
@@ -1375,23 +1360,14 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
 
             {/* Tombol Attachment (Gambar & Tambah) */}
             <div className="flex items-center gap-0.5 pb-1 text-neutral-500 dark:text-[#8A8A93] shrink-0">
-              <button
-                type="button"
-                disabled={isPreparingImage}
-                onClick={() => {
-                  haptics.light(settings.hapticFeedback !== false);
-                  fileInputRef.current?.click();
-                }}
-                className={`p-1 rounded-full flex items-center justify-center active:scale-90 transition-all cursor-pointer disabled:opacity-50 ${
-                  attachedImage
-                    ? "text-[#E5A929]"
-                    : "hover:text-neutral-800 dark:hover:text-white"
-                }`}
-                title={isPreparingImage ? "Memuat gambar..." : "Kirim foto"}
-                aria-label="Kirim foto"
-              >
-                <ImageIcon size={19} className={isPreparingImage ? "animate-pulse" : ""} />
-              </button>
+              <ChatImagePicker
+                onImageSelected={handleImageSelected}
+                disabled={isTyping}
+                isPreparing={isPreparingImage}
+                hasAttachment={!!attachedImage}
+                dict={dict}
+                onHaptic={() => haptics.light(settings.hapticFeedback !== false)}
+              />
 
               <button
                 type="button"
