@@ -13,6 +13,7 @@ import { haptics } from "./lib/haptics";
 import { backgroundQueue } from "./lib/backgroundQueueProcessor";
 import { useMediaQuery, DESKTOP_QUERY } from "./lib/useMediaQuery";
 import { DesktopEmptyState } from "./components/DesktopEmptyState";
+import { checkAndExecuteScheduledRoutines } from "./lib/routineService";
 
 export default function App() {
   const [characters, setCharacters] = useState<Character[]>([]);
@@ -241,6 +242,32 @@ export default function App() {
       [updatedChat.characterId]: updatedChat,
     }));
   };
+
+  // Periodic scheduled routines checker (evaluates tasks every 30 seconds)
+  useEffect(() => {
+    const runScheduler = () => {
+      checkAndExecuteScheduledRoutines((updatedChat) => {
+        handleUpdateChat(updatedChat);
+        const char = characters.find((c) => c.id === updatedChat.characterId);
+        if (char && activeCharacterRef.current?.id !== char.id) {
+          setUnreadCharacterIds((prev) => new Set([...prev, char.id]));
+          const lastMsg = updatedChat.messages[updatedChat.messages.length - 1];
+          if (lastMsg) {
+            playNotificationSound();
+            haptics.receive(settings.hapticFeedback !== false);
+            setActiveNotification({
+              character: char,
+              messageText: lastMsg.text,
+            });
+          }
+        }
+      });
+    };
+
+    runScheduler();
+    const interval = setInterval(runScheduler, 30000);
+    return () => clearInterval(interval);
+  }, [characters, settings.hapticFeedback]);
 
   const handleClearChat = (characterId: string) => {
     const char = characters.find((c) => c.id === characterId) || activeCharacter;

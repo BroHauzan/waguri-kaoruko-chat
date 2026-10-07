@@ -23,7 +23,7 @@ const PERSONALITY_TAGS = [
 
 const STYLE_TAGS = [
   "Santai & Akrab",
-  "Banyak Emoji ✨",
+  "Ekspresif & Santai",
   "Lembut & Manis",
   "Singkat & Cuek",
 ];
@@ -203,19 +203,19 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({
           <button
             onClick={onCancel}
             type="button"
-            className="w-10 h-10 rounded-full bg-white dark:bg-[#16171B] border border-black/10 dark:border-white/10 shadow-xs flex items-center justify-center text-neutral-800 dark:text-[#E4E5EA] active:scale-95 transition-all cursor-pointer mr-1"
+            className="w-9 h-9 rounded-lg bg-white dark:bg-[#16171B] border border-black/10 dark:border-white/10 shadow-xs flex items-center justify-center text-neutral-800 dark:text-[#E4E5EA] active:scale-95 transition-all cursor-pointer mr-1"
             title="Kembali"
           >
-            <ChevronLeft size={22} />
+            <ChevronLeft size={20} />
           </button>
-          <h1 className="text-[19px] font-bold tracking-tight text-neutral-900 dark:text-[#F2F3F7]">
+          <h1 className="text-lg font-bold tracking-tight text-neutral-900 dark:text-[#F2F3F7]">
             {isEditing ? "Edit Karakter" : "Buat Karakter"}
           </h1>
         </div>
         <button
           onClick={onCancel}
           type="button"
-          className="text-sm font-medium text-neutral-500 dark:text-[#8A8A93] hover:text-neutral-900 dark:hover:text-white px-3 py-1.5 rounded-full hover:bg-neutral-200 dark:hover:bg-white/[0.08] transition-colors cursor-pointer"
+          className="text-xs font-medium text-neutral-500 dark:text-[#8A8A93] hover:text-neutral-900 dark:hover:text-white px-3 py-1.5 rounded-lg hover:bg-neutral-200 dark:hover:bg-white/[0.08] transition-colors cursor-pointer"
         >
           Batal
         </button>
@@ -223,12 +223,12 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({
 
       {/* Main Form */}
       <main className="flex-1 flex flex-col px-5 pt-2">
-        <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-          {/* Avatar Section Ringkas */}
-          <div className="bg-white dark:bg-[#16171B] rounded-3xl p-4 border border-black/5 dark:border-white/10 shadow-xs flex flex-col items-center">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
+          {/* Avatar Section */}
+          <div className="bg-white dark:bg-[#16171B] rounded-xl p-4 border border-black/5 dark:border-white/10 shadow-xs flex flex-col items-center">
             <div
               onClick={() => setShowAvatarPicker(!showAvatarPicker)}
-              className="relative w-20 h-20 rounded-full overflow-hidden border-2 border-[#F5B838] shadow-xs cursor-pointer active:scale-95 transition-transform"
+              className="relative w-20 h-20 rounded-full overflow-hidden border-2 border-amber-500 shadow-xs cursor-pointer active:scale-95 transition-transform"
             >
               <img
                 src={avatarUrl}
@@ -238,7 +238,7 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({
               <div className="absolute inset-0 bg-black/20 flex items-center justify-center text-white opacity-0 hover:opacity-100 transition-opacity">
                 <Camera size={20} />
               </div>
-              <div className="absolute bottom-0 right-0 w-6 h-6 rounded-full bg-[#F5B838] text-neutral-950 flex items-center justify-center shadow-xs">
+              <div className="absolute bottom-0 right-0 w-6 h-6 rounded-full bg-amber-500 text-neutral-950 flex items-center justify-center shadow-xs">
                 <Camera size={13} />
               </div>
             </div>
@@ -257,7 +257,7 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({
                       }}
                       className={`relative w-12 h-12 rounded-full overflow-hidden border-2 transition-all cursor-pointer mx-auto ${
                         avatarUrl === p.url
-                          ? "border-[#F5B838] scale-105"
+                          ? "border-amber-500 scale-105"
                           : "border-neutral-200 dark:border-white/15"
                       }`}
                     >
@@ -266,7 +266,7 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({
                   ))}
                 </div>
 
-                {/* Tombol Unggah Foto dari Perangkat (dengan Auto-Kompres) */}
+                {/* Tombol Unggah Foto */}
                 <div className="pt-1 flex flex-col gap-1.5">
                   <input
                     ref={avatarFileInputRef}
@@ -279,17 +279,17 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({
                     type="button"
                     disabled={isUploadingAvatar}
                     onClick={() => avatarFileInputRef.current?.click()}
-                    className="w-full py-2.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/[0.08] hover:bg-neutral-200 dark:hover:bg-white/[0.14] text-neutral-800 dark:text-[#E4E5EA] text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer border border-black/5 dark:border-white/10"
+                    className="w-full py-2.5 px-3 rounded-lg bg-neutral-100 dark:bg-white/[0.08] hover:bg-neutral-200 dark:hover:bg-white/[0.14] text-neutral-800 dark:text-[#E4E5EA] text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer border border-black/5 dark:border-white/10"
                   >
                     {isUploadingAvatar ? (
                       <>
-                        <Loader2 size={14} className="animate-spin text-[#F5B838]" />
+                        <Loader2 size={14} className="animate-spin text-amber-500" />
                         <span>Mengompres foto...</span>
                       </>
                     ) : (
                       <>
-                        <Upload size={14} className="text-[#F5B838]" />
-                        <span>Unggah Foto dari Perangkat (Auto-Compress)</span>
+                        <Upload size={14} className="text-amber-500" />
+                        <span>Unggah Foto dari Perangkat</span>
                       </>
                     )}
                   </button>
@@ -306,7 +306,7 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({
                     value={customAvatarInput}
                     onChange={(e) => setCustomAvatarInput(e.target.value)}
                     placeholder="Atau masukkan URL gambar..."
-                    className="flex-1 bg-[#F0F1F5] dark:bg-white/[0.06] text-xs text-neutral-900 dark:text-[#F2F3F7] placeholder:text-neutral-400 dark:placeholder:text-white/35 rounded-xl px-3 py-2 border-none focus:outline-none"
+                    className="flex-1 bg-neutral-100 dark:bg-white/[0.06] text-xs text-neutral-900 dark:text-[#F2F3F7] placeholder:text-neutral-400 dark:placeholder:text-white/35 rounded-lg px-3 py-2 border-none focus:outline-none"
                   />
                   <button
                     type="button"
@@ -317,7 +317,7 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({
                         setShowAvatarPicker(false);
                       }
                     }}
-                    className="px-3 py-2 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 rounded-xl text-xs font-semibold cursor-pointer"
+                    className="px-3 py-2 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 rounded-lg text-xs font-semibold cursor-pointer"
                   >
                     Pakai
                   </button>
@@ -327,7 +327,7 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({
           </div>
 
           {/* Form Fields Card */}
-          <div className="bg-white dark:bg-[#16171B] rounded-3xl p-5 border border-black/5 dark:border-white/10 shadow-xs flex flex-col gap-4">
+          <div className="bg-white dark:bg-[#16171B] rounded-xl p-4 border border-black/5 dark:border-white/10 shadow-xs flex flex-col gap-3.5">
             {/* Nama */}
             <div className="flex flex-col gap-1.5">
               <div className="flex items-center justify-between">
@@ -338,8 +338,8 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({
                   type="button"
                   disabled={isFetchingLore}
                   onClick={handleAutoFetchLore}
-                  className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-[#F5B838]/15 hover:bg-[#F5B838]/25 text-[#9E6E08] dark:text-[#F5B838] transition-colors cursor-pointer disabled:opacity-50"
-                  title="Cari profil, kepribadian, dan ciri fisik kanon dari internet via Google Search Grounding"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/20 transition-colors cursor-pointer disabled:opacity-50"
+                  title="Cari profil, kepribadian, dan ciri fisik kanon dari internet"
                 >
                   {isFetchingLore ? (
                     <>
@@ -348,8 +348,8 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({
                     </>
                   ) : (
                     <>
-                      <span>🌐</span>
-                      <span>Isi Otomatis dari Internet</span>
+                      <Globe size={13} />
+                      <span>Isi Otomatis</span>
                     </>
                   )}
                 </button>
@@ -363,17 +363,17 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({
                 }}
                 placeholder="Contoh: Waguri Kaoruko"
                 required
-                className="bg-[#F0F1F5] dark:bg-white/[0.06] text-sm text-neutral-900 dark:text-[#F2F3F7] placeholder:text-neutral-400 dark:placeholder:text-white/35 rounded-2xl px-4 py-3 border-none focus:outline-none focus:ring-2 focus:ring-[#F5B838]/50"
+                className="bg-neutral-100 dark:bg-white/[0.06] text-sm text-neutral-900 dark:text-[#F2F3F7] placeholder:text-neutral-400 dark:placeholder:text-white/35 rounded-lg px-3.5 py-2.5 border-none focus:outline-none focus:ring-2 focus:ring-amber-500/40"
               />
               {nameError && (
                 <span className="text-xs font-semibold text-red-500 mt-0.5">{nameError}</span>
               )}
               {loreNotice && (
                 <div
-                  className={`text-xs px-3.5 py-2.5 rounded-2xl mt-1 font-medium flex items-center justify-between animate-fade-in ${
+                  className={`text-xs px-3 py-2 rounded-lg mt-1 font-medium flex items-center justify-between animate-fade-in ${
                     loreNotice.type === "success"
-                      ? "bg-emerald-500/15 text-emerald-800 dark:text-emerald-200 border border-emerald-500/25"
-                      : "bg-red-500/15 text-red-700 dark:text-red-300 border border-red-500/25"
+                      ? "bg-emerald-500/10 text-emerald-800 dark:text-emerald-200 border border-emerald-500/20"
+                      : "bg-red-500/10 text-red-700 dark:text-red-300 border border-red-500/20"
                   }`}
                 >
                   <span>{loreNotice.message}</span>
@@ -398,7 +398,7 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({
                 onChange={(e) => setBio(e.target.value)}
                 rows={2}
                 placeholder="Contoh: Teman sekelas yang diam-diam perhatian..."
-                className="bg-[#F0F1F5] dark:bg-white/[0.06] text-sm text-neutral-900 dark:text-[#F2F3F7] placeholder:text-neutral-400 dark:placeholder:text-white/35 rounded-2xl p-3.5 border-none focus:outline-none focus:ring-2 focus:ring-[#F5B838]/50 resize-y min-h-[56px] leading-relaxed"
+                className="bg-neutral-100 dark:bg-white/[0.06] text-sm text-neutral-900 dark:text-[#F2F3F7] placeholder:text-neutral-400 dark:placeholder:text-white/35 rounded-lg p-3 border-none focus:outline-none focus:ring-2 focus:ring-amber-500/40 resize-y min-h-[52px] leading-relaxed"
               />
             </div>
 
@@ -420,10 +420,10 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({
                       key={tag}
                       type="button"
                       onClick={() => toggleTag(personality, setPersonality, tag)}
-                      className={`text-xs px-2.5 py-1 rounded-full transition-all cursor-pointer ${
+                      className={`text-xs px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
                         isSelected
-                          ? "bg-[#F5B838] text-neutral-950 font-semibold shadow-2xs"
-                          : "bg-[#F0F1F5] dark:bg-white/[0.06] text-neutral-600 dark:text-[#9B9BA3] hover:text-neutral-900 dark:hover:text-white"
+                          ? "bg-amber-500 text-neutral-950 font-semibold shadow-2xs"
+                          : "bg-neutral-100 dark:bg-white/[0.06] text-neutral-600 dark:text-[#9B9BA3] hover:text-neutral-900 dark:hover:text-white border border-black/5 dark:border-white/5"
                       }`}
                     >
                       {tag}
@@ -437,7 +437,7 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({
                 onChange={(e) => setPersonality(e.target.value)}
                 rows={2}
                 placeholder="Contoh: Ceria, sedikit tsundere tapi perhatian..."
-                className="bg-[#F0F1F5] dark:bg-white/[0.06] text-sm text-neutral-900 dark:text-[#F2F3F7] placeholder:text-neutral-400 dark:placeholder:text-white/35 rounded-2xl p-3.5 border-none focus:outline-none focus:ring-2 focus:ring-[#F5B838]/50 resize-none"
+                className="bg-neutral-100 dark:bg-white/[0.06] text-sm text-neutral-900 dark:text-[#F2F3F7] placeholder:text-neutral-400 dark:placeholder:text-white/35 rounded-lg p-3 border-none focus:outline-none focus:ring-2 focus:ring-amber-500/40 resize-none"
               />
             </div>
 
@@ -459,10 +459,10 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({
                       key={tag}
                       type="button"
                       onClick={() => toggleTag(speakingStyle, setSpeakingStyle, tag)}
-                      className={`text-xs px-2.5 py-1 rounded-full transition-all cursor-pointer ${
+                      className={`text-xs px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
                         isSelected
-                          ? "bg-[#F5B838] text-neutral-950 font-semibold shadow-2xs"
-                          : "bg-[#F0F1F5] dark:bg-white/[0.06] text-neutral-600 dark:text-[#9B9BA3] hover:text-neutral-900 dark:hover:text-white"
+                          ? "bg-amber-500 text-neutral-950 font-semibold shadow-2xs"
+                          : "bg-neutral-100 dark:bg-white/[0.06] text-neutral-600 dark:text-[#9B9BA3] hover:text-neutral-900 dark:hover:text-white border border-black/5 dark:border-white/5"
                       }`}
                     >
                       {tag}
@@ -476,7 +476,7 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({
                 onChange={(e) => setSpeakingStyle(e.target.value)}
                 rows={2}
                 placeholder="Contoh: Santai dan akrab, suka bergurau..."
-                className="bg-[#F0F1F5] dark:bg-white/[0.06] text-sm text-neutral-900 dark:text-[#F2F3F7] placeholder:text-neutral-400 dark:placeholder:text-white/35 rounded-2xl p-3.5 border-none focus:outline-none focus:ring-2 focus:ring-[#F5B838]/50 resize-y min-h-[56px] leading-relaxed"
+                className="bg-neutral-100 dark:bg-white/[0.06] text-sm text-neutral-900 dark:text-[#F2F3F7] placeholder:text-neutral-400 dark:placeholder:text-white/35 rounded-lg p-3 border-none focus:outline-none focus:ring-2 focus:ring-amber-500/40 resize-y min-h-[52px] leading-relaxed"
               />
             </div>
 
@@ -490,20 +490,20 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({
                 onChange={(e) => setFirstMsg(e.target.value)}
                 rows={2}
                 placeholder="Contoh: Hai! Lagi apa sekarang? Kangen deh ngobrol :)"
-                className="bg-[#F0F1F5] dark:bg-white/[0.06] text-sm text-neutral-900 dark:text-[#F2F3F7] placeholder:text-neutral-400 dark:placeholder:text-white/35 rounded-2xl p-3.5 border-none focus:outline-none focus:ring-2 focus:ring-[#F5B838]/50 resize-none"
+                className="bg-neutral-100 dark:bg-white/[0.06] text-sm text-neutral-900 dark:text-[#F2F3F7] placeholder:text-neutral-400 dark:placeholder:text-white/35 rounded-lg p-3 border-none focus:outline-none focus:ring-2 focus:ring-amber-500/40 resize-none"
               />
             </div>
           </div>
 
-          {/* Profil Visual & Seragam Card (Untuk PAP / Foto) */}
-          <div className="bg-white dark:bg-[#16171B] rounded-3xl p-5 border border-black/5 dark:border-white/10 shadow-xs flex flex-col gap-3">
+          {/* Profil Visual & Seragam Card */}
+          <div className="bg-white dark:bg-[#16171B] rounded-xl p-4 border border-black/5 dark:border-white/10 shadow-xs flex flex-col gap-3">
             <button
               type="button"
               onClick={() => setShowVisualDetails((prev) => !prev)}
               className="flex items-center justify-between w-full text-left cursor-pointer"
             >
               <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-xl bg-pink-500/10 text-pink-500 dark:text-pink-400 flex items-center justify-center shrink-0">
+                <div className="w-8 h-8 rounded-lg bg-neutral-100 dark:bg-white/[0.06] text-neutral-700 dark:text-neutral-300 flex items-center justify-center shrink-0">
                   <Camera size={16} />
                 </div>
                 <div>
@@ -511,8 +511,8 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({
                     <span className="text-xs font-bold text-neutral-800 dark:text-[#E4E5EA]">
                       Profil Visual & Seragam
                     </span>
-                    <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-pink-500/15 text-pink-600 dark:text-pink-300">
-                      Foto PAP (Imagen 3)
+                    <span className="text-[11px] px-2 py-0.5 rounded font-medium bg-neutral-200/60 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400">
+                      Foto PAP
                     </span>
                   </div>
                   <p className="text-[11px] text-neutral-500 dark:text-[#8A8A93]">
@@ -528,7 +528,7 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({
             </button>
 
             {showVisualDetails && (
-              <div className="pt-2 flex flex-col gap-3.5 border-t border-neutral-100 dark:border-white/5 animate-fade-in">
+              <div className="pt-2 flex flex-col gap-3 border-t border-neutral-100 dark:border-white/5 animate-fade-in">
                 {/* Rambut */}
                 <div className="flex flex-col gap-1">
                   <label className="text-[11px] font-semibold text-neutral-600 dark:text-[#A1A1AA]">
@@ -539,7 +539,7 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({
                     value={hair}
                     onChange={(e) => setHair(e.target.value)}
                     placeholder="Contoh: dark wavy hair with gentle bangs, shoulder length"
-                    className="bg-[#F0F1F5] dark:bg-white/[0.06] text-xs text-neutral-900 dark:text-[#F2F3F7] placeholder:text-neutral-400 dark:placeholder:text-white/35 rounded-xl px-3.5 py-2.5 border-none focus:outline-none focus:ring-2 focus:ring-pink-500/30"
+                    className="bg-neutral-100 dark:bg-white/[0.06] text-xs text-neutral-900 dark:text-[#F2F3F7] placeholder:text-neutral-400 dark:placeholder:text-white/35 rounded-lg px-3 py-2 border-none focus:outline-none focus:ring-2 focus:ring-amber-500/30"
                   />
                 </div>
 
@@ -553,7 +553,7 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({
                     value={eyes}
                     onChange={(e) => setEyes(e.target.value)}
                     placeholder="Contoh: warm expressive amber brown eyes"
-                    className="bg-[#F0F1F5] dark:bg-white/[0.06] text-xs text-neutral-900 dark:text-[#F2F3F7] placeholder:text-neutral-400 dark:placeholder:text-white/35 rounded-xl px-3.5 py-2.5 border-none focus:outline-none focus:ring-2 focus:ring-pink-500/30"
+                    className="bg-neutral-100 dark:bg-white/[0.06] text-xs text-neutral-900 dark:text-[#F2F3F7] placeholder:text-neutral-400 dark:placeholder:text-white/35 rounded-lg px-3 py-2 border-none focus:outline-none focus:ring-2 focus:ring-amber-500/30"
                   />
                 </div>
 
@@ -567,7 +567,7 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({
                     value={schoolName}
                     onChange={(e) => setSchoolName(e.target.value)}
                     placeholder="Contoh: Kikyo Girls' High School"
-                    className="bg-[#F0F1F5] dark:bg-white/[0.06] text-xs text-neutral-900 dark:text-[#F2F3F7] placeholder:text-neutral-400 dark:placeholder:text-white/35 rounded-xl px-3.5 py-2.5 border-none focus:outline-none focus:ring-2 focus:ring-pink-500/30"
+                    className="bg-neutral-100 dark:bg-white/[0.06] text-xs text-neutral-900 dark:text-[#F2F3F7] placeholder:text-neutral-400 dark:placeholder:text-white/35 rounded-lg px-3 py-2 border-none focus:outline-none focus:ring-2 focus:ring-amber-500/30"
                   />
                 </div>
 
@@ -581,7 +581,7 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({
                     value={schoolUniform}
                     onChange={(e) => setSchoolUniform(e.target.value)}
                     placeholder="Contoh: prestigious navy blazer, ribbon tie, neat pleated skirt"
-                    className="bg-[#F0F1F5] dark:bg-white/[0.06] text-xs text-neutral-900 dark:text-[#F2F3F7] placeholder:text-neutral-400 dark:placeholder:text-white/35 rounded-xl px-3.5 py-2.5 border-none focus:outline-none focus:ring-2 focus:ring-pink-500/30"
+                    className="bg-neutral-100 dark:bg-white/[0.06] text-xs text-neutral-900 dark:text-[#F2F3F7] placeholder:text-neutral-400 dark:placeholder:text-white/35 rounded-lg px-3 py-2 border-none focus:outline-none focus:ring-2 focus:ring-amber-500/30"
                   />
                 </div>
 
@@ -595,7 +595,7 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({
                     value={generalLook}
                     onChange={(e) => setGeneralLook(e.target.value)}
                     placeholder="Contoh: petite, charming cute smile, gentle and expressive"
-                    className="bg-[#F0F1F5] dark:bg-white/[0.06] text-xs text-neutral-900 dark:text-[#F2F3F7] placeholder:text-neutral-400 dark:placeholder:text-white/35 rounded-xl px-3.5 py-2.5 border-none focus:outline-none focus:ring-2 focus:ring-pink-500/30"
+                    className="bg-neutral-100 dark:bg-white/[0.06] text-xs text-neutral-900 dark:text-[#F2F3F7] placeholder:text-neutral-400 dark:placeholder:text-white/35 rounded-lg px-3 py-2 border-none focus:outline-none focus:ring-2 focus:ring-amber-500/30"
                   />
                 </div>
               </div>
@@ -607,7 +607,7 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({
             <button
               type="submit"
               disabled={isSaved}
-              className="w-full py-3.5 rounded-full bg-[#F5B838] hover:bg-[#E5A929] active:scale-98 text-neutral-950 font-bold text-sm shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              className="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-98 text-neutral-950 font-semibold text-sm shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
             >
               {isSaved ? (
                 <>

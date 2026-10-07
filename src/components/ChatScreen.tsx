@@ -25,6 +25,7 @@ import {
   ChevronDown,
   Reply,
   ArrowLeft,
+  Clock,
 } from "lucide-react";
 import {
   Character,
@@ -55,6 +56,7 @@ import {
 } from "./MessageContextMenu";
 import { haptics } from "../lib/haptics";
 import { MoodTrendsChart } from "./MoodTrendsChart";
+import { ScheduledTasksModal } from "./ScheduledTasksModal";
 import { storage } from "../lib/storage";
 import { enqueueTask, removeTask } from "../lib/indexedDbQueue";
 import { backgroundQueue } from "../lib/backgroundQueueProcessor";
@@ -150,6 +152,30 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
   const [cooldownTime, setCooldownTime] = useState(0);
   const [showInputMenu, setShowInputMenu] = useState(false);
   const inputMenuRef = useRef<HTMLDivElement>(null);
+
+  // Floating scroll-to-bottom & scheduled routines state
+  const [showScrollBottomBtn, setShowScrollBottomBtn] = useState(false);
+  const [showScheduledTasksModal, setShowScheduledTasksModal] = useState(false);
+  const mainScrollRef = useRef<HTMLDivElement>(null);
+
+  const handleMainScroll = useCallback(() => {
+    if (!mainScrollRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = mainScrollRef.current;
+    const distanceFromBottom = scrollHeight - scrollTop - clientHeight;
+    setShowScrollBottomBtn(distanceFromBottom > 250);
+  }, []);
+
+  const handleScrollToMessage = useCallback((messageId?: string) => {
+    if (!messageId) return;
+    const el = document.getElementById(`msg-${messageId}`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      setHighlightedMessageId(messageId);
+      setTimeout(() => {
+        setHighlightedMessageId((prev) => (prev === messageId ? null : prev));
+      }, 2500);
+    }
+  }, []);
 
   const searchMatches = React.useMemo(() => {
     if (!searchQuery.trim()) return [];
@@ -1302,6 +1328,16 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                 <Edit3 size={15} className="text-neutral-500 dark:text-[#8A8A93]" />
                 <span>Instruksi Khusus (System)</span>
               </button>
+              <button
+                onClick={() => {
+                  setShowActionMenu(false);
+                  setShowScheduledTasksModal(true);
+                }}
+                className="w-full px-3 py-2 text-left text-xs font-semibold text-neutral-800 dark:text-[#E4E5EA] hover:bg-neutral-100 dark:hover:bg-white/[0.08] rounded-xl flex items-center gap-2.5 cursor-pointer"
+              >
+                <Clock size={15} className="text-[#F5B838]" />
+                <span>Instruksi Terjadwal</span>
+              </button>
             </div>
             <div className="py-1">
               <button
@@ -1317,7 +1353,11 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
       </header>
 
       {/* Main Conversation Stream */}
-      <main className="flex-1 min-h-0 overflow-y-auto overscroll-contain relative w-full flex flex-col">
+      <main
+        ref={mainScrollRef}
+        onScroll={handleMainScroll}
+        className="flex-1 min-h-0 overflow-y-auto overscroll-contain relative w-full flex flex-col"
+      >
 
         {/* Banner notices */}
         {errorNotice && (
@@ -1434,15 +1474,20 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                           : "opacity-100"
                       }`}
                     >
-                      {/* Kutipan pesan yang dibalas, seperti WhatsApp */}
+                      {/* Kutipan pesan yang dibalas, seperti WhatsApp (bisa diklik untuk scroll ke pesan asli) */}
                       {message.replyTo && (
                         <div
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleScrollToMessage(message.replyTo?.id);
+                          }}
                           style={!isUser ? { borderLeftColor: moodTheme.accentColor } : undefined}
-                          className={`flex flex-col gap-0.5 mb-1.5 pl-2 py-1 rounded-r-md border-l-[3px] ${
+                          className={`flex flex-col gap-0.5 mb-1.5 pl-2 py-1 rounded-r-md border-l-[3px] cursor-pointer hover:opacity-85 active:scale-[0.99] transition-transform ${
                             isUser
                               ? "border-neutral-900/40 bg-neutral-900/[0.07]"
                               : "border-[#F5B838] bg-black/[0.04] dark:bg-white/[0.05]"
                           }`}
+                          title="Klik untuk melihat pesan yang dibalas"
                         >
                           <span
                             style={!isUser ? { color: moodTheme.accentHover || moodTheme.accentColor } : undefined}
@@ -1708,14 +1753,18 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
           </div>
         )}
 
-        {/* Kutipan balasan, seperti WhatsApp */}
+        {/* Kutipan balasan, seperti WhatsApp (bisa diklik untuk melihat pesan yang dibalas) */}
         {replyTo && (
           <div className="px-3.5 pt-3 animate-fade-in">
             <div
               style={{ borderLeftColor: moodTheme.accentColor }}
               className="flex items-start gap-2 pl-2.5 py-1.5 rounded-r-lg border-l-[3px] bg-black/[0.04] dark:bg-white/[0.05]"
             >
-              <div className="flex flex-col min-w-0 flex-1">
+              <div
+                onClick={() => handleScrollToMessage(replyTo.id)}
+                className="flex flex-col min-w-0 flex-1 cursor-pointer hover:opacity-85 transition-opacity"
+                title="Klik untuk melihat pesan asli"
+              >
                 <span
                   style={{ color: moodTheme.accentHover || moodTheme.accentColor }}
                   className="text-[11px] font-semibold"
@@ -1884,6 +1933,19 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
         </div>
       </footer>
 
+      {/* Floating Jump to Bottom Button (WhatsApp style) */}
+      {showScrollBottomBtn && (
+        <button
+          type="button"
+          onClick={() => scrollToBottom(true)}
+          className="fixed sm:absolute right-4 bottom-20 z-30 w-10 h-10 rounded-full bg-white dark:bg-[#1E1F25] text-neutral-700 dark:text-[#C9CAD1] shadow-lg border border-black/10 dark:border-white/10 flex items-center justify-center hover:bg-neutral-100 dark:hover:bg-neutral-800 active:scale-95 transition-all animate-fade-in cursor-pointer"
+          aria-label="Ke pesan terbaru"
+          title="Ke pesan terbaru"
+        >
+          <ChevronDown size={20} />
+        </button>
+      )}
+
       {/* Character Profile / Detail View Modal Matching Screen 1 */}
       {showDetailSheet && (
         <CharacterDetailSheet
@@ -1905,30 +1967,37 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
       {/* Mood Trends Modal */}
       {showMoodStatsModal && (
         <div className="fixed inset-0 z-50 bg-black/60 dark:bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
-          <div className="bg-white dark:bg-[#16171B] rounded-3xl max-w-sm w-full p-5 shadow-2xl border border-black/10 dark:border-white/10 flex flex-col gap-4">
+          <div className="bg-white dark:bg-[#16171B] rounded-2xl max-w-sm w-full p-5 shadow-2xl border border-black/10 dark:border-white/10 flex flex-col gap-4">
             <div className="flex items-center justify-between pb-2 border-b border-neutral-100 dark:border-white/10">
-              <h3 className="text-base font-bold text-neutral-900 dark:text-[#F2F3F7]">
+              <h3 className="text-sm font-bold text-neutral-900 dark:text-[#F2F3F7]">
                 Statistik Mood {character.name}
               </h3>
               <button
                 type="button"
                 onClick={() => setShowMoodStatsModal(false)}
-                className="w-8 h-8 rounded-full bg-neutral-100 dark:bg-white/[0.08] hover:bg-neutral-200 dark:hover:bg-white/[0.14] text-neutral-600 dark:text-[#9B9BA3] flex items-center justify-center"
+                className="w-7 h-7 rounded-lg bg-neutral-100 dark:bg-white/[0.08] hover:bg-neutral-200 dark:hover:bg-white/[0.14] text-neutral-600 dark:text-[#9B9BA3] flex items-center justify-center cursor-pointer"
               >
-                ✕
+                <X size={15} />
               </button>
             </div>
             <MoodTrendsChart chat={chat} />
             <button
               type="button"
               onClick={() => setShowMoodStatsModal(false)}
-              className="w-full py-2.5 rounded-full bg-[#F5B838] font-bold text-neutral-950 text-xs shadow-xs"
+              className="w-full py-2.5 rounded-xl bg-[#F5B838] hover:bg-[#E5A929] font-bold text-neutral-950 text-xs shadow-xs cursor-pointer transition-colors"
             >
               Tutup
             </button>
           </div>
         </div>
       )}
+
+      {/* Scheduled Tasks Modal */}
+      <ScheduledTasksModal
+        isOpen={showScheduledTasksModal}
+        onClose={() => setShowScheduledTasksModal(false)}
+        character={character}
+      />
 
       {/* Custom Instructions Modal */}
       {showCustomInstructions && (

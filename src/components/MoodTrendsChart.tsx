@@ -16,18 +16,18 @@ interface MoodTrendsChartProps {
 
 export const MOOD_CONFIG: Record<
   string,
-  { label: string; color: string; score: number; emoji: string }
+  { label: string; color: string; score: number }
 > = {
-  excited: { label: "Bersemangat", color: "#F59E0B", score: 9.5, emoji: "✨" },
-  happy: { label: "Senang & Hangat", color: "#10B981", score: 8.5, emoji: "🥰" },
-  playful: { label: "Ceria / Gemas", color: "#8B7CF6", score: 8.0, emoji: "😋" },
-  shy: { label: "Salting / Tersipu", color: "#EC4899", score: 7.5, emoji: "😳" },
-  neutral: { label: "Santai", color: "#64748B", score: 6.0, emoji: "🙂" },
-  worried: { label: "Khawatir / Perhatian", color: "#06B6D4", score: 5.5, emoji: "🥺" },
-  bored: { label: "Bosan", color: "#94A3B8", score: 4.5, emoji: "🥱" },
-  annoyed: { label: "Ngambek / Pouty", color: "#F97316", score: 3.5, emoji: "😤" },
-  sad: { label: "Sedih", color: "#3B82F6", score: 2.5, emoji: "😢" },
-  angry: { label: "Kesal", color: "#EF4444", score: 1.5, emoji: "😡" },
+  excited: { label: "Bersemangat", color: "#F59E0B", score: 9.5 },
+  happy: { label: "Senang & Hangat", color: "#10B981", score: 8.5 },
+  playful: { label: "Ceria", color: "#8B7CF6", score: 8.0 },
+  shy: { label: "Tersipu", color: "#EC4899", score: 7.5 },
+  neutral: { label: "Santai", color: "#64748B", score: 6.0 },
+  worried: { label: "Perhatian", color: "#06B6D4", score: 5.5 },
+  bored: { label: "Bosan", color: "#94A3B8", score: 4.5 },
+  annoyed: { label: "Ngambek", color: "#F97316", score: 3.5 },
+  sad: { label: "Sedih", color: "#3B82F6", score: 2.5 },
+  angry: { label: "Kesal", color: "#EF4444", score: 1.5 },
 };
 
 export const MoodTrendsChart: React.FC<MoodTrendsChartProps> = ({
@@ -47,14 +47,14 @@ export const MoodTrendsChart: React.FC<MoodTrendsChartProps> = ({
   // If there are fewer than 2 messages, display an honest empty state (R-17, R-27, R-38)
   if (allCharMessages.length < 2) {
     return (
-      <div className="bg-neutral-50 dark:bg-white/[0.04] border border-black/5 dark:border-white/[0.08] rounded-[20px] p-6 text-center flex flex-col items-center justify-center space-y-2.5">
-        <div className="w-12 h-12 rounded-full bg-amber-50 dark:bg-[#F5B838]/15 text-[#F5B838] flex items-center justify-center">
-          <TrendingUp size={22} />
+      <div className="bg-neutral-50 dark:bg-white/[0.04] border border-black/5 dark:border-white/[0.08] rounded-xl p-5 text-center flex flex-col items-center justify-center space-y-2">
+        <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-[#F5B838] flex items-center justify-center">
+          <TrendingUp size={20} />
         </div>
-        <h4 className="text-sm font-bold text-neutral-800 dark:text-[#E4E5EA]">
+        <h4 className="text-xs font-bold text-neutral-800 dark:text-[#E4E5EA]">
           Belum Cukup Data Tren Mood
         </h4>
-        <p className="text-xs text-neutral-500 dark:text-[#8A8A93] max-w-xs leading-relaxed">
+        <p className="text-[11px] text-neutral-500 dark:text-[#8A8A93] max-w-xs leading-relaxed">
           Mulai percakapan lebih lanjut dengan {charName} untuk menganalisis dinamika emosinya secara otomatis.
         </p>
       </div>
@@ -91,7 +91,6 @@ export const MoodTrendsChart: React.FC<MoodTrendsChartProps> = ({
       time: timeStr,
       emotionKey: rawEmotion,
       label: config.label,
-      emoji: config.emoji,
       color: config.color,
       intensity,
       value: normalizedVal,
@@ -124,7 +123,6 @@ export const MoodTrendsChart: React.FC<MoodTrendsChartProps> = ({
 
   const dominantMood = sortedMoods[0] || {
     label: "Senang & Hangat",
-    emoji: "🥰",
     color: "#10B981",
     percentage: 100,
   };
@@ -211,19 +209,22 @@ export const MoodTrendsChart: React.FC<MoodTrendsChartProps> = ({
       </div>
 
       {/* Main Chart Card */}
-      <div className="bg-neutral-50 dark:bg-white/[0.04] border border-black/5 dark:border-white/[0.08] rounded-[20px] p-4 shadow-xs flex flex-col space-y-3.5 relative overflow-hidden">
+      <div className="bg-neutral-50 dark:bg-white/[0.04] border border-black/5 dark:border-white/[0.08] rounded-xl p-4 shadow-2xs flex flex-col space-y-3.5 relative overflow-hidden">
         {/* Selected Data Point Spotlight Card */}
         {selectedPoint && (
-          <div className="flex items-center justify-between bg-white dark:bg-[#1C1D22] border border-black/5 dark:border-white/10 rounded-xl px-3 py-2 animate-fade-in shadow-2xs">
+          <div className="flex items-center justify-between bg-white dark:bg-[#1C1D22] border border-black/5 dark:border-white/10 rounded-lg px-3 py-2 animate-fade-in shadow-2xs">
             <div className="flex items-center gap-2.5 min-w-0">
-              <span className="text-xl shrink-0">{selectedPoint.emoji}</span>
+              <span
+                className="w-2.5 h-2.5 rounded-full shrink-0"
+                style={{ backgroundColor: selectedPoint.color }}
+              />
               <div className="flex flex-col min-w-0">
                 <div className="flex items-center gap-2">
                   <span className="text-xs font-bold text-neutral-900 dark:text-[#F2F3F7] truncate">
                     {selectedPoint.label}
                   </span>
                   <span
-                    className="text-[10px] font-medium px-1.5 py-0.2 rounded-full border"
+                    className="text-[10px] font-medium px-1.5 py-0.5 rounded-md border"
                     style={{
                       borderColor: `${selectedPoint.color}50`,
                       backgroundColor: `${selectedPoint.color}15`,
@@ -254,7 +255,7 @@ export const MoodTrendsChart: React.FC<MoodTrendsChartProps> = ({
           >
             <defs>
               <linearGradient id="moodGradient" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%" stopColor="#F5B838" stopOpacity="0.3" />
+                <stop offset="0%" stopColor="#F5B838" stopOpacity="0.25" />
                 <stop offset="100%" stopColor="#F5B838" stopOpacity="0.0" />
               </linearGradient>
             </defs>
@@ -349,17 +350,16 @@ export const MoodTrendsChart: React.FC<MoodTrendsChartProps> = ({
                   {/* Invisible Hit Target */}
                   <circle cx={c.x} cy={c.y} r="14" fill="transparent" />
 
-                  {/* Outer Pulsing Ring when Selected */}
+                  {/* Outer Ring when Selected */}
                   {isSelected && (
                     <circle
                       cx={c.x}
                       cy={c.y}
-                      r="8"
+                      r="7.5"
                       fill="none"
                       stroke={c.color}
-                      strokeWidth="2"
+                      strokeWidth="1.5"
                       opacity="0.8"
-                      className="animate-ping"
                     />
                   )}
 
@@ -367,7 +367,7 @@ export const MoodTrendsChart: React.FC<MoodTrendsChartProps> = ({
                   <circle
                     cx={c.x}
                     cy={c.y}
-                    r={isSelected ? "5.5" : "3.5"}
+                    r={isSelected ? "5" : "3.5"}
                     fill={c.color}
                     stroke="currentColor"
                     strokeWidth="2"
@@ -402,35 +402,35 @@ export const MoodTrendsChart: React.FC<MoodTrendsChartProps> = ({
           <span>Ketuk salah satu titik pada grafik untuk melihat pesan & mood</span>
         </div>
 
-        {/* Quick Stat Pill Grid */}
+        {/* Quick Stat Grid */}
         <div className="grid grid-cols-3 gap-2 pt-2 border-t border-black/[0.06] dark:border-white/[0.08]">
-          <div className="bg-black/[0.03] dark:bg-white/[0.03] border border-black/[0.05] dark:border-white/[0.05] rounded-xl p-2.5 flex flex-col items-center text-center">
+          <div className="bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.05] dark:border-white/[0.05] rounded-lg p-2.5 flex flex-col items-center text-center">
             <span className="text-[10px] text-neutral-500 dark:text-white/50 flex items-center gap-1">
               <Smile size={11} className="text-emerald-500 dark:text-emerald-400" />
               Rata-rata Mood
             </span>
-            <span className="text-base font-bold text-neutral-900 dark:text-white mt-0.5">
+            <span className="text-sm font-bold text-neutral-900 dark:text-white mt-0.5">
               {avgIntensity}
-              <span className="text-xs text-neutral-400 dark:text-white/40 font-normal">/10</span>
+              <span className="text-[10px] text-neutral-400 dark:text-white/40 font-normal">/10</span>
             </span>
           </div>
 
-          <div className="bg-black/[0.03] dark:bg-white/[0.03] border border-black/[0.05] dark:border-white/[0.05] rounded-xl p-2.5 flex flex-col items-center text-center">
+          <div className="bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.05] dark:border-white/[0.05] rounded-lg p-2.5 flex flex-col items-center text-center">
             <span className="text-[10px] text-neutral-500 dark:text-white/50 flex items-center gap-1">
               <Heart size={11} className="text-amber-500 dark:text-amber-400" />
               Dominan
             </span>
             <span className="text-xs font-bold text-amber-600 dark:text-amber-300 mt-1 truncate max-w-full">
-              {dominantMood.emoji} {dominantMood.label}
+              {dominantMood.label}
             </span>
           </div>
 
-          <div className="bg-black/[0.03] dark:bg-white/[0.03] border border-black/[0.05] dark:border-white/[0.05] rounded-xl p-2.5 flex flex-col items-center text-center">
+          <div className="bg-black/[0.02] dark:bg-white/[0.02] border border-black/[0.05] dark:border-white/[0.05] rounded-lg p-2.5 flex flex-col items-center text-center">
             <span className="text-[10px] text-neutral-500 dark:text-white/50 flex items-center gap-1">
               <MessageCircle size={11} className="text-[#F5B838]" />
               Total Pesan
             </span>
-            <span className="text-base font-bold text-neutral-900 dark:text-white mt-0.5">
+            <span className="text-sm font-bold text-neutral-900 dark:text-white mt-0.5">
               {totalUserMsgs + totalCharMsgs}
             </span>
           </div>
@@ -444,7 +444,7 @@ export const MoodTrendsChart: React.FC<MoodTrendsChartProps> = ({
           </div>
 
           {/* Stacked Percentage Bar */}
-          <div className="w-full h-2.5 rounded-full overflow-hidden flex bg-black/[0.06] dark:bg-white/[0.06]">
+          <div className="w-full h-2 rounded-md overflow-hidden flex bg-black/[0.06] dark:bg-white/[0.06]">
             {sortedMoods.map((m) => (
               <div
                 key={m.key}
@@ -452,24 +452,23 @@ export const MoodTrendsChart: React.FC<MoodTrendsChartProps> = ({
                   width: `${m.percentage}%`,
                   backgroundColor: m.color,
                 }}
-                className="h-full transition-all duration-500 first:rounded-l-full last:rounded-r-full"
+                className="h-full transition-all duration-500"
                 title={`${m.label}: ${m.percentage}%`}
               />
             ))}
           </div>
 
-          {/* Mood Legend Chips */}
+          {/* Mood Legend Chips - Minimalist without emojis */}
           <div className="flex flex-wrap gap-1.5 pt-1">
             {sortedMoods.slice(0, 4).map((m) => (
               <span
                 key={m.key}
-                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] bg-black/[0.04] dark:bg-white/[0.04] border border-black/[0.06] dark:border-white/[0.06] text-neutral-700 dark:text-white/80"
+                className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-md text-[10px] bg-black/[0.03] dark:bg-white/[0.04] border border-black/[0.06] dark:border-white/[0.06] text-neutral-700 dark:text-white/80"
               >
                 <span
                   className="w-1.5 h-1.5 rounded-full"
                   style={{ backgroundColor: m.color }}
                 />
-                <span>{m.emoji}</span>
                 <span>{m.label}</span>
                 <span className="text-neutral-400 dark:text-white/40">({m.percentage}%)</span>
               </span>

@@ -186,3 +186,15 @@ export interface MoodTheme {
   badgeStyle: string;
   glowColor: string;
 }
+
+export interface ScheduledTask {
+  id: string;
+  characterId: string;
+  title: string;
+  time: string; // HH:mm
+  instruction: string;
+  enabled: boolean;
+  repeatDaily: boolean;
+  lastExecutedDate?: string; // YYYY-MM-DD
+  createdAt: number;
+}

@@ -1,4 +1,4 @@
-import { Character, Chat, Settings } from "../types";
+import { Character, Chat, ScheduledTask, Settings } from "../types";
 import { BUILTIN_GEMINI_PROVIDER } from "./providers";
 
 export const DEFAULT_WAGURI_AVATAR = "/waguri-pfp.jpg";
@@ -115,6 +115,7 @@ const STORAGE_KEYS = {
   SETTINGS: "waguri_v5_official_settings",
   PINNED: "waguri_v5_pinned_characters",
   ARCHIVED: "waguri_v5_archived_characters",
+  SCHEDULED_TASKS: "waguri_v5_scheduled_tasks",
 };
 
 export const storage = {
@@ -490,11 +491,63 @@ export const storage = {
     localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
   },
 
+  getScheduledTasks(characterId?: string): ScheduledTask[] {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEYS.SCHEDULED_TASKS);
+      const tasks: ScheduledTask[] = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(tasks)) return [];
+      if (characterId) {
+        return tasks.filter((t) => t.characterId === characterId);
+      }
+      return tasks;
+    } catch {
+      return [];
+    }
+  },
+
+  saveScheduledTask(task: ScheduledTask): void {
+    const tasks = this.getScheduledTasks();
+    const idx = tasks.findIndex((t) => t.id === task.id);
+    if (idx >= 0) {
+      tasks[idx] = task;
+    } else {
+      tasks.push(task);
+    }
+    localStorage.setItem(STORAGE_KEYS.SCHEDULED_TASKS, JSON.stringify(tasks));
+  },
+
+  deleteScheduledTask(taskId: string): void {
+    const tasks = this.getScheduledTasks().filter((t) => t.id !== taskId);
+    localStorage.setItem(STORAGE_KEYS.SCHEDULED_TASKS, JSON.stringify(tasks));
+  },
+
+  toggleScheduledTask(taskId: string, enabled: boolean): void {
+    const tasks = this.getScheduledTasks();
+    const task = tasks.find((t) => t.id === taskId);
+    if (task) {
+      task.enabled = enabled;
+      localStorage.setItem(STORAGE_KEYS.SCHEDULED_TASKS, JSON.stringify(tasks));
+    }
+  },
+
+  updateScheduledTaskLastExecuted(taskId: string, dateStr: string, autoDisable: boolean = false): void {
+    const tasks = this.getScheduledTasks();
+    const task = tasks.find((t) => t.id === taskId);
+    if (task) {
+      task.lastExecutedDate = dateStr;
+      if (autoDisable) {
+        task.enabled = false;
+      }
+      localStorage.setItem(STORAGE_KEYS.SCHEDULED_TASKS, JSON.stringify(tasks));
+    }
+  },
+
   clearAllData(): void {
     localStorage.removeItem(STORAGE_KEYS.CHARACTERS);
     localStorage.removeItem(STORAGE_KEYS.CHATS);
     localStorage.removeItem(STORAGE_KEYS.SETTINGS);
     localStorage.removeItem(STORAGE_KEYS.PINNED);
     localStorage.removeItem(STORAGE_KEYS.ARCHIVED);
+    localStorage.removeItem(STORAGE_KEYS.SCHEDULED_TASKS);
   },
 };
