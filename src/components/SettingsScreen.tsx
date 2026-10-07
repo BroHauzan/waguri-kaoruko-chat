@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
 import {
   ArrowLeft,
@@ -68,7 +69,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const [showSearchInput, setShowSearchInput] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showResetConfirmModal, setShowResetConfirmModal] = useState(false);
-  const [emojiStatus, setEmojiStatus] = useState("✨");
 
   // Sinkronkan state lokal saat prop settings dari parent berubah
   useEffect(() => {
@@ -391,14 +391,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
       {/* 2. CENTERED PROFILE HEADER (WhatsApp Android Hierarchy) */}
       <section className="flex flex-col items-center pt-5 pb-6 px-4">
-        {/* Pill Badge di atas Avatar */}
-        <div className="mb-2">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-medium bg-neutral-200/70 dark:bg-white/10 text-neutral-700 dark:text-[#C9CAD1] shadow-2xs backdrop-blur-xs">
-            <span>{emojiStatus}</span>
-            <span>{language === "en" ? "Today in emoji..." : "Hari ini dalam emoji..."}</span>
-          </div>
-        </div>
-
         {/* Large Rounded Avatar */}
         <div
           onClick={() => setActiveModal("profile")}
@@ -550,17 +542,19 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       {/* ========================================================
           MODAL & BOTTOM SHEET DIALOGS (Clean WhatsApp / Project Style)
           ======================================================== */}
-
-      {/* 1. Modal Edit Profil */}
-      <AnimatePresence>
-        {activeModal === "profile" && (
-          <div className="fixed inset-0 z-50 bg-black/60 dark:bg-black/75 backdrop-blur-xs flex items-center justify-center p-4">
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white dark:bg-[#16171B] rounded-3xl max-w-sm w-full p-5 shadow-2xl border border-black/10 dark:border-white/10 flex flex-col gap-4 text-neutral-900 dark:text-[#F2F3F7]"
-            >
+      {typeof document !== "undefined" &&
+        createPortal(
+          <>
+            {/* 1. Modal Edit Profil */}
+            <AnimatePresence>
+              {activeModal === "profile" && (
+                <div className="fixed inset-0 z-[100] bg-black/60 dark:bg-black/75 backdrop-blur-xs flex items-center justify-center p-4">
+                  <motion.div
+                    initial={{ scale: 0.95, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    exit={{ scale: 0.95, opacity: 0 }}
+                    className="bg-white dark:bg-[#16171B] rounded-3xl max-w-sm w-full p-5 shadow-2xl border border-black/10 dark:border-white/10 flex flex-col gap-4 text-neutral-900 dark:text-[#F2F3F7]"
+                  >
               <div className="flex items-center justify-between pb-2 border-b border-neutral-100 dark:border-white/10">
                 <h3 className="text-base font-bold">
                   {language === "en" ? "Edit Profile" : "Edit Profil"}
@@ -593,28 +587,6 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                     placeholder={dict.nicknamePlaceholder}
                   />
                 </div>
-
-                <div className="flex flex-col gap-1">
-                  <label className="text-xs font-medium text-neutral-500 dark:text-[#8A8A93]">
-                    {language === "en" ? "Today's Emoji Mood" : "Mood Emoji Hari Ini"}
-                  </label>
-                  <div className="flex gap-2">
-                    {["✨", "😊", "🍰", "☕", "🌸", "🔥"].map((emo) => (
-                      <button
-                        key={emo}
-                        type="button"
-                        onClick={() => setEmojiStatus(emo)}
-                        className={`text-lg p-2 rounded-xl transition-all cursor-pointer ${
-                          emojiStatus === emo
-                            ? "bg-[#F5B838] scale-110 shadow-xs"
-                            : "bg-neutral-100 dark:bg-white/5 hover:bg-neutral-200 dark:hover:bg-white/10"
-                        }`}
-                      >
-                        {emo}
-                      </button>
-                    ))}
-                  </div>
-                </div>
               </div>
 
               <div className="flex justify-end pt-2">
@@ -646,7 +618,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       {/* 2. Modal QR Code Profil */}
       <AnimatePresence>
         {activeModal === "qr" && (
-          <div className="fixed inset-0 z-50 bg-black/60 dark:bg-black/75 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[100] bg-black/60 dark:bg-black/75 backdrop-blur-xs flex items-center justify-center p-4">
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
@@ -690,12 +662,13 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       {/* 3. Modal Model & Provider AI */}
       <AnimatePresence>
         {activeModal === "model" && (
-          <div className="fixed inset-0 z-50 bg-black/60 dark:bg-black/75 backdrop-blur-xs flex items-end sm:items-center justify-center sm:p-4">
+          <div className="fixed inset-0 z-[100] bg-black/60 dark:bg-black/75 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 pb-safe">
             <motion.div
-              initial={{ y: 50, opacity: 0 }}
+              initial={{ y: "100%", opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 50, opacity: 0 }}
-              className="bg-white dark:bg-[#16171B] rounded-t-3xl sm:rounded-3xl max-w-md w-full p-5 max-h-[85vh] overflow-y-auto shadow-2xl border border-black/10 dark:border-white/10 flex flex-col gap-4 text-neutral-900 dark:text-[#F2F3F7]"
+              exit={{ y: "100%", opacity: 0 }}
+              transition={{ type: "spring", damping: 28, stiffness: 300 }}
+              className="bg-white dark:bg-[#16171B] rounded-t-[28px] sm:rounded-3xl max-w-md w-full p-5 max-h-[90vh] overflow-y-auto shadow-2xl border border-black/10 dark:border-white/10 flex flex-col gap-4 text-neutral-900 dark:text-[#F2F3F7] pb-10 sm:pb-5"
             >
               <div className="flex items-center justify-between pb-2 border-b border-neutral-100 dark:border-white/10">
                 <div className="flex items-center gap-2">
@@ -720,6 +693,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 hapticFeedback={hapticFeedback}
                 onSaveSettings={onSaveSettings}
                 showToast={showToast}
+                embedded={true}
               />
             </motion.div>
           </div>
@@ -729,12 +703,13 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       {/* 4. Modal Chat & Gaya Respons */}
       <AnimatePresence>
         {activeModal === "chatStyle" && (
-          <div className="fixed inset-0 z-50 bg-black/60 dark:bg-black/75 backdrop-blur-xs flex items-end sm:items-center justify-center sm:p-4">
+          <div className="fixed inset-0 z-[100] bg-black/60 dark:bg-black/75 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 pb-safe">
             <motion.div
-              initial={{ y: 50, opacity: 0 }}
+              initial={{ y: "100%", opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 50, opacity: 0 }}
-              className="bg-white dark:bg-[#16171B] rounded-t-3xl sm:rounded-3xl max-w-md w-full p-5 max-h-[85vh] overflow-y-auto shadow-2xl border border-black/10 dark:border-white/10 flex flex-col gap-4 text-neutral-900 dark:text-[#F2F3F7]"
+              exit={{ y: "100%", opacity: 0 }}
+              transition={{ type: "spring", damping: 28, stiffness: 300 }}
+              className="bg-white dark:bg-[#16171B] rounded-t-[28px] sm:rounded-3xl max-w-md w-full p-5 max-h-[90vh] overflow-y-auto shadow-2xl border border-black/10 dark:border-white/10 flex flex-col gap-4 text-neutral-900 dark:text-[#F2F3F7] pb-10 sm:pb-5"
             >
               <div className="flex items-center justify-between pb-2 border-b border-neutral-100 dark:border-white/10">
                 <div className="flex items-center gap-2">
@@ -856,7 +831,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       {/* 5. Modal Tampilan & Tema */}
       <AnimatePresence>
         {activeModal === "theme" && (
-          <div className="fixed inset-0 z-50 bg-black/60 dark:bg-black/75 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[100] bg-black/60 dark:bg-black/75 backdrop-blur-xs flex items-center justify-center p-4">
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
@@ -925,7 +900,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       {/* 6. Modal Bahasa Aplikasi */}
       <AnimatePresence>
         {activeModal === "language" && (
-          <div className="fixed inset-0 z-50 bg-black/60 dark:bg-black/75 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[100] bg-black/60 dark:bg-black/75 backdrop-blur-xs flex items-center justify-center p-4">
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
@@ -989,7 +964,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       {/* 7. Modal Notifikasi Balasan */}
       <AnimatePresence>
         {activeModal === "notifications" && (
-          <div className="fixed inset-0 z-50 bg-black/60 dark:bg-black/75 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[100] bg-black/60 dark:bg-black/75 backdrop-blur-xs flex items-center justify-center p-4">
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
@@ -1076,12 +1051,13 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       {/* 8. Modal Opsi Lanjutan & Developer */}
       <AnimatePresence>
         {activeModal === "advanced" && (
-          <div className="fixed inset-0 z-50 bg-black/60 dark:bg-black/75 backdrop-blur-xs flex items-end sm:items-center justify-center sm:p-4">
+          <div className="fixed inset-0 z-[100] bg-black/60 dark:bg-black/75 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 pb-safe">
             <motion.div
-              initial={{ y: 50, opacity: 0 }}
+              initial={{ y: "100%", opacity: 0 }}
               animate={{ y: 0, opacity: 1 }}
-              exit={{ y: 50, opacity: 0 }}
-              className="bg-white dark:bg-[#16171B] rounded-t-3xl sm:rounded-3xl max-w-md w-full p-5 max-h-[85vh] overflow-y-auto shadow-2xl border border-black/10 dark:border-white/10 flex flex-col gap-4 text-neutral-900 dark:text-[#F2F3F7]"
+              exit={{ y: "100%", opacity: 0 }}
+              transition={{ type: "spring", damping: 28, stiffness: 300 }}
+              className="bg-white dark:bg-[#16171B] rounded-t-[28px] sm:rounded-3xl max-w-md w-full p-5 max-h-[90vh] overflow-y-auto shadow-2xl border border-black/10 dark:border-white/10 flex flex-col gap-4 text-neutral-900 dark:text-[#F2F3F7] pb-10 sm:pb-5"
             >
               <div className="flex items-center justify-between pb-2 border-b border-neutral-100 dark:border-white/10">
                 <div className="flex items-center gap-2">
@@ -1140,6 +1116,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 hapticFeedback={hapticFeedback}
                 onSaveSettings={onSaveSettings}
                 showToast={showToast}
+                embedded={true}
               />
             </motion.div>
           </div>
@@ -1149,7 +1126,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       {/* Modal Konfirmasi Reset Data */}
       <AnimatePresence>
         {showResetConfirmModal && (
-          <div className="fixed inset-0 z-50 bg-black/60 dark:bg-black/75 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="fixed inset-0 z-[100] bg-black/60 dark:bg-black/75 backdrop-blur-xs flex items-center justify-center p-4">
             <motion.div
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
@@ -1199,6 +1176,9 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           </div>
         )}
       </AnimatePresence>
+          </>,
+          document.body
+        )}
     </main>
   );
 };

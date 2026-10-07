@@ -1,4 +1,5 @@
 import React, { useState, useMemo, useRef } from "react";
+import { createPortal } from "react-dom";
 import {
   Search,
   Plus,
@@ -443,11 +444,14 @@ export const ChatsListScreen: React.FC<ChatsListScreenProps> = ({
       </div>
 
       {/* WhatsApp Style Minimalist Action Sheet (No emojis, ultra clean) */}
-      {actionCharacter && (
-        <div
-          className="fixed inset-0 z-50 bg-black/60 dark:bg-black/75 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 animate-fade-in"
-          onClick={closeActionMenu}
-        >
+      {typeof document !== "undefined" &&
+        createPortal(
+          <>
+            {actionCharacter && (
+              <div
+                className="fixed inset-0 z-[100] bg-black/60 dark:bg-black/75 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 pb-safe animate-fade-in"
+                onClick={closeActionMenu}
+              >
           <div
             className="bg-white dark:bg-[#16171B] w-full max-w-sm rounded-t-[28px] sm:rounded-[28px] p-5 shadow-2xl border border-black/10 dark:border-white/10 flex flex-col gap-3 animate-slide-up"
             onClick={(e) => e.stopPropagation()}
@@ -563,7 +567,7 @@ export const ChatsListScreen: React.FC<ChatsListScreenProps> = ({
       {/* WhatsApp Style Minimalist Delete Confirmation Modal */}
       {characterToDelete && (
         <div
-          className="fixed inset-0 z-50 bg-black/60 dark:bg-black/75 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in"
+          className="fixed inset-0 z-[100] bg-black/60 dark:bg-black/75 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in"
           onClick={() => setCharacterToDelete(null)}
         >
           <div
@@ -607,6 +611,9 @@ export const ChatsListScreen: React.FC<ChatsListScreenProps> = ({
           </div>
         </div>
       )}
+          </>,
+          document.body
+        )}
     </main>
   );
 };

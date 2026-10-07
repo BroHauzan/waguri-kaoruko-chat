@@ -26,6 +26,7 @@ interface ProviderManagerProps {
   hapticFeedback: boolean;
   onSaveSettings: (settings: Settings) => void;
   showToast: (msg: string) => void;
+  embedded?: boolean;
 }
 
 const EMPTY_FORM = {
@@ -50,6 +51,7 @@ export const ProviderManager: React.FC<ProviderManagerProps> = ({
   hapticFeedback,
   onSaveSettings,
   showToast,
+  embedded = false,
 }) => {
   const providers = getProviderList(settings);
   const activeProvider = getActiveProvider(settings);
@@ -158,30 +160,51 @@ export const ProviderManager: React.FC<ProviderManagerProps> = ({
   };
 
   return (
-    <div className="bg-white dark:bg-[#16171B] rounded-3xl p-4 border border-black/5 dark:border-white/10 shadow-xs flex flex-col gap-3">
+    <div
+      className={
+        embedded
+          ? "flex flex-col gap-3"
+          : "bg-white dark:bg-[#16171B] rounded-3xl p-4 border border-black/5 dark:border-white/10 shadow-xs flex flex-col gap-3"
+      }
+    >
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <div className="w-8 h-8 rounded-full bg-amber-50 dark:bg-[#F5B838]/15 text-[#F5B838] flex items-center justify-center">
-            <Server size={16} />
-          </div>
+          {!embedded && (
+            <div className="w-8 h-8 rounded-full bg-amber-50 dark:bg-[#F5B838]/15 text-[#F5B838] flex items-center justify-center">
+              <Server size={16} />
+            </div>
+          )}
           <div className="flex flex-col">
-            <span className="text-sm font-bold text-neutral-900 dark:text-[#F2F3F7]">
-              Provider AI
+            <span
+              className={
+                embedded
+                  ? "text-xs font-semibold text-neutral-500 dark:text-[#8A8A93]"
+                  : "text-sm font-bold text-neutral-900 dark:text-[#F2F3F7]"
+              }
+            >
+              {embedded ? "Pilih provider yang dipakai:" : "Provider AI"}
             </span>
-            <span className="text-[11px] text-neutral-500 dark:text-[#8A8A93]">
-              Pilih sumber model yang dipakai
-            </span>
+            {!embedded && (
+              <span className="text-[11px] text-neutral-500 dark:text-[#8A8A93]">
+                Pilih sumber model yang dipakai
+              </span>
+            )}
           </div>
         </div>
         {!isEditing && (
           <button
             type="button"
             onClick={openNew}
-            className="w-8 h-8 rounded-full bg-[#F0F1F5] dark:bg-white/[0.08] hover:bg-neutral-200 dark:hover:bg-white/[0.14] text-neutral-700 dark:text-[#C9CAD1] flex items-center justify-center cursor-pointer transition-colors"
+            className={`rounded-full bg-[#F0F1F5] dark:bg-white/[0.08] hover:bg-neutral-200 dark:hover:bg-white/[0.14] text-neutral-700 dark:text-[#C9CAD1] flex items-center gap-1 cursor-pointer transition-colors ${
+              embedded
+                ? "px-2.5 py-1 text-xs font-semibold"
+                : "w-8 h-8 justify-center"
+            }`}
             title="Tambah provider"
           >
-            <Plus size={16} />
+            <Plus size={15} />
+            {embedded && <span>Tambah</span>}
           </button>
         )}
       </div>

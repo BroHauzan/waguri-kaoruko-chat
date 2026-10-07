@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Character, Chat, Settings } from "./types";
 import { storage } from "./lib/storage";
 import { useTheme } from "./lib/useTheme";
@@ -28,6 +28,22 @@ export default function App() {
     messageText: string;
   } | null>(null);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
+
+  const activeCharacterRef = useRef<Character | null>(null);
+  const editingCharacterRef = useRef<Character | null>(null);
+  const currentTabRef = useRef<NavTab>("chats");
+
+  useEffect(() => {
+    activeCharacterRef.current = activeCharacter;
+  }, [activeCharacter]);
+
+  useEffect(() => {
+    editingCharacterRef.current = editingCharacter;
+  }, [editingCharacter]);
+
+  useEffect(() => {
+    currentTabRef.current = currentTab;
+  }, [currentTab]);
 
   // Theme — resolves `auto` against the OS preference, live.
   useTheme(settings.theme || "dark");
@@ -112,9 +128,59 @@ export default function App() {
     };
   }, []);
 
-  const handleSelectCharacter = (char: Character) => {
+  // Browser History & Android Hardware Back Button Handling
+  useEffect(() => {
+    if (!window.history.state) {
+      window.history.replaceState({ screen: "main", tab: "chats" }, "");
+    }
+
+    const handlePopState = () => {
+      if (activeCharacterRef.current) {
+        setActiveCharacter(null);
+      } else if (editingCharacterRef.current) {
+        setEditingCharacter(null);
+      } else if (currentTabRef.current !== "chats") {
+        setCurrentTab("chats");
+      }
+    };
+
+    window.addEventListener("popstate", handlePopState);
+
+    // Capacitor hardware backButton listener support
+    const capApp = (window as any).Capacitor?.Plugins?.App;
+    let capRemove: (() => void) | undefined;
+    if (capApp?.addListener) {
+      capApp
+        .addListener("backButton", ({ canGoBack }: { canGoBack: boolean }) => {
+          if (activeCharacterRef.current) {
+            setActiveCharacter(null);
+          } else if (editingCharacterRef.current) {
+            setEditingCharacter(null);
+          } else if (currentTabRef.current !== "chats") {
+            setCurrentTab("chats");
+          } else if (canGoBack) {
+            window.history.back();
+          } else {
+            capApp.exitApp();
+          }
+        })
+        .then((handle: any) => {
+          capRemove = () => handle?.remove?.();
+        });
+    }
+
+    return () => {
+      window.removeEventListener("popstate", handlePopState);
+      capRemove?.();
+    };
+  }, []);
+
+  const handleSelectCharacter = (char: Character, pushHistory = true) => {
     const chat = storage.getChatByCharacterId(char.id, char);
     setChats((prev) => ({ ...prev, [char.id]: chat }));
+    if (pushHistory && !isDesktop) {
+      window.history.pushState({ screen: "chat", characterId: char.id }, "");
+    }
     setActiveCharacter(char);
     // Mark character as read when chat is opened
     setUnreadCharacterIds((prev) => {
@@ -125,6 +191,14 @@ export default function App() {
     // Dismiss active notification if it was for this character
     if (activeNotification?.character.id === char.id) {
       setActiveNotification(null);
+    }
+  };
+
+  const handleCloseChat = () => {
+    if (window.history.state?.screen === "chat") {
+      window.history.back();
+    } else {
+      setActiveCharacter(null);
     }
   };
 
@@ -255,7 +329,7 @@ export default function App() {
         storage.getChatByCharacterId(activeCharacter.id, activeCharacter)
       }
       settings={settings}
-      onBack={() => setActiveCharacter(null)}
+      onBack={handleCloseChat}
       onUpdateChat={handleUpdateChat}
       onClearChat={handleClearChat}
       onUpdateCharacter={handleUpdateCharacter}
@@ -384,7 +458,7 @@ export default function App() {
   return (
     <div className="min-h-screen bg-[#E9EBEF] dark:bg-[#15161A] sm:py-6 flex justify-center selection:bg-[#F5B838]/30 font-['Inter',-apple-system,sans-serif]">
       {/* Mobile Device Frame Container (max-w-md responsive) matching reference */}
-      <div className="relative w-full max-w-md min-h-screen bg-[#F4F5F7] dark:bg-[#0B0C0F] sm:rounded-[36px] sm:shadow-2xl sm:border sm:border-black/10 dark:sm:border-white/10 sm:overflow-hidden flex flex-col z-10 text-[#18181B] dark:text-[#F2F3F7]">
+      <div className={`relative w-full max-w-md ${activeCharacter ? "h-dvh max-h-dvh overflow-hidden" : "min-h-screen"} bg-[#F4F5F7] dark:bg-[#0B0C0F] sm:rounded-[36px] sm:shadow-2xl sm:border sm:border-black/10 dark:sm:border-white/10 sm:overflow-hidden flex flex-col z-10 text-[#18181B] dark:text-[#F2F3F7]`}>
         {chatView || editView || tabViews}
       </div>
 

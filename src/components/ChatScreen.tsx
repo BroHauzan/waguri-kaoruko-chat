@@ -19,6 +19,12 @@ import {
   BarChart2,
   X,
   Sparkles,
+  Search,
+  Calendar,
+  ChevronUp,
+  ChevronDown,
+  Reply,
+  ArrowLeft,
 } from "lucide-react";
 import {
   Character,
@@ -127,6 +133,16 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
   const [isPreparingAudio, setIsPreparingAudio] = useState(false);
   const [isGeneratingPhoto, setIsGeneratingPhoto] = useState(false);
 
+  // Search state (text & date)
+  const [isSearching, setIsSearching] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
+
+  // Swipe threshold tracking ref
+  const swipedThresholdReached = useRef<Record<string, boolean>>({});
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const isMountedRef = useRef(true);
@@ -134,6 +150,69 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
   const [cooldownTime, setCooldownTime] = useState(0);
   const [showInputMenu, setShowInputMenu] = useState(false);
   const inputMenuRef = useRef<HTMLDivElement>(null);
+
+  const searchMatches = React.useMemo(() => {
+    if (!searchQuery.trim()) return [];
+    const q = searchQuery.toLowerCase().trim();
+    return chat.messages
+      .map((m, idx) => ({ message: m, index: idx }))
+      .filter(({ message }) => message.text && message.text.toLowerCase().includes(q));
+  }, [chat.messages, searchQuery]);
+
+  const jumpToMatch = (index: number) => {
+    if (searchMatches.length === 0) return;
+    const clampedIndex = (index + searchMatches.length) % searchMatches.length;
+    setCurrentMatchIndex(clampedIndex);
+    const targetMsg = searchMatches[clampedIndex].message;
+    setHighlightedMessageId(targetMsg.id);
+    const el = document.getElementById(`msg-${targetMsg.id}`);
+    if (el) {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+    }
+    setTimeout(() => {
+      setHighlightedMessageId((prev) => (prev === targetMsg.id ? null : prev));
+    }, 2500);
+  };
+
+  const handleNextMatch = () => jumpToMatch(currentMatchIndex + 1);
+  const handlePrevMatch = () => jumpToMatch(currentMatchIndex - 1);
+
+  useEffect(() => {
+    if (searchMatches.length > 0) {
+      jumpToMatch(searchMatches.length - 1);
+    } else {
+      setCurrentMatchIndex(0);
+      setHighlightedMessageId(null);
+    }
+  }, [searchQuery]);
+
+  const handleJumpToDate = (dateStr: string) => {
+    setShowDatePicker(false);
+    if (!dateStr) return;
+    const targetDate = new Date(dateStr + "T00:00:00");
+    const startTime = targetDate.getTime();
+    const endTime = startTime + 24 * 60 * 60 * 1000;
+
+    const foundMsg = chat.messages.find(
+      (m) => m.timestamp >= startTime && m.timestamp < endTime
+    );
+
+    if (foundMsg) {
+      setHighlightedMessageId(foundMsg.id);
+      const el = document.getElementById(`msg-${foundMsg.id}`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+      setTimeout(() => {
+        setHighlightedMessageId((prev) => (prev === foundMsg.id ? null : prev));
+      }, 2500);
+      setSuccessNotice(`Menampilkan percakapan ${dateStr}`);
+      setTimeout(() => setSuccessNotice(null), 2500);
+    } else {
+      setErrorNotice(`Tidak ada pesan pada tanggal ${dateStr}`);
+      setTimeout(() => setErrorNotice(null), 3000);
+    }
+  };
 
   useEffect(() => {
     if (!showInputMenu) return;
@@ -400,7 +479,9 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
         settings,
         image: imageToSend,
         audio: audioToSend,
-        replyToText: replyTo?.text || null,
+        replyToText: replyTo
+          ? `${replyTo.role === "user" ? (settings.userName || "Pengguna") : character.name}: "${replyTo.text || (replyTo.image ? "[Foto]" : "[Pesan suara]")}"`
+          : null,
       });
 
       setIsGeneratingPhoto(false);
@@ -763,6 +844,18 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
 
     const actions: ContextMenuAction[] = [
       {
+        id: "reply",
+        label: "Balas",
+        icon: <Reply size={17} />,
+        onSelect: () => {
+          setReplyTo(selectedMessage);
+          haptics.light(settings.hapticFeedback !== false);
+          setSelectedMessageId(null);
+          setMenuAnchor(null);
+          requestAnimationFrame(() => textareaRef.current?.focus());
+        },
+      },
+      {
         id: "copy",
         label: "Salin",
         icon: <Copy size={17} />,
@@ -921,7 +1014,13 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
         clearLongPress();
         // Hanya geser ke kanan yang berarti membalas, seperti WhatsApp.
         const offset = Math.max(0, Math.min(dx, SWIPE_REPLY_THRESHOLD + 24));
-        setSwipeOffsets((prev) => ({ ...prev, [swipe.id]: offset }));
+        setSwipeOffsets((prev) => {
+          const prevOffset = prev[swipe.id] || 0;
+          if (prevOffset < SWIPE_REPLY_THRESHOLD && offset >= SWIPE_REPLY_THRESHOLD) {
+            haptics.light(settings.hapticFeedback !== false);
+          }
+          return { ...prev, [swipe.id]: offset };
+        });
         return;
       }
 
@@ -992,75 +1091,186 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
   };
 
   return (
-    <div className="relative flex flex-col min-h-screen text-[#18181B] dark:text-[#F2F3F7] bg-[#F4F5F7] dark:bg-[#0B0C0F] antialiased">
+    <div className="relative flex flex-col h-full h-dvh max-h-dvh w-full overflow-hidden text-[#18181B] dark:text-[#F2F3F7] bg-[#F4F5F7] dark:bg-[#0B0C0F] antialiased">
       {/* Top Header Matching Screen 3 (Right Phone in Reference Image) */}
-      <header className="fixed top-0 inset-x-0 z-40 bg-white/80 dark:bg-[#16171B]/80 backdrop-blur-md border-b border-black/[0.06] dark:border-white/10 pt-safe max-w-md lg:max-w-none mx-auto shadow-2xs">
-        <div className="h-[62px] px-4 flex items-center justify-between">
-          {/* Left: Back Arrow + Avatar + Character Name + "Online" */}
-          <div className="flex items-center gap-2.5 min-w-0">
+      <header className="shrink-0 z-30 bg-white/85 dark:bg-[#16171B]/85 backdrop-blur-md border-b border-black/[0.06] dark:border-white/10 pt-safe w-full shadow-2xs">
+        {isSearching ? (
+          /* Search Bar Header Mode - Minimalist, NO emojis */
+          <div className="h-[62px] px-3 flex items-center justify-between gap-2 max-w-md lg:max-w-none mx-auto">
             <button
-              aria-label="Kembali"
-              className="lg:hidden w-9 h-9 rounded-full hover:bg-neutral-100 dark:hover:bg-white/[0.08] flex items-center justify-center text-neutral-800 dark:text-[#E4E5EA] active:scale-95 transition-all cursor-pointer shrink-0"
-              onClick={onBack}
+              aria-label="Tutup pencarian"
+              className="w-9 h-9 rounded-full hover:bg-neutral-100 dark:hover:bg-white/[0.08] flex items-center justify-center text-neutral-800 dark:text-[#E4E5EA] active:scale-95 transition-all cursor-pointer shrink-0"
+              onClick={() => {
+                setIsSearching(false);
+                setSearchQuery("");
+                setHighlightedMessageId(null);
+              }}
               type="button"
             >
-              <ChevronLeft size={24} />
+              <ArrowLeft size={20} />
             </button>
 
-            {/* Avatar with Green Online Dot */}
-            <div
-              onClick={() => setShowDetailSheet(true)}
-              className="relative w-10 h-10 rounded-full overflow-hidden shrink-0 border border-black/10 dark:border-white/10 cursor-pointer shadow-2xs"
-            >
-              <img
-                alt={character.name}
-                className="w-full h-full object-cover"
-                src={character.avatarUrl}
+            <div className="flex-1 flex items-center gap-2 bg-[#F0F1F5] dark:bg-white/[0.08] rounded-xl px-3 py-1.5 min-w-0">
+              <Search size={16} className="text-neutral-400 dark:text-[#8A8A93] shrink-0" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Cari pesan..."
+                autoFocus
+                className="w-full bg-transparent text-[14px] text-neutral-900 dark:text-[#F2F3F7] placeholder:text-neutral-400 dark:placeholder:text-white/35 outline-none leading-normal min-w-0"
               />
-              <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white dark:border-[#16171B]" />
+              {searchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setSearchQuery("")}
+                  className="text-neutral-400 hover:text-neutral-600 dark:hover:text-white shrink-0 cursor-pointer"
+                >
+                  <X size={15} />
+                </button>
+              )}
             </div>
 
-            {/* Name & Online Status + Mood Indicator */}
-            <div
-              onClick={() => setShowDetailSheet(true)}
-              className="flex flex-col min-w-0 cursor-pointer"
-            >
-              <span className="text-[15px] font-bold text-neutral-900 dark:text-[#F2F3F7] tracking-tight truncate leading-tight">
-                {character.name}
+            {searchMatches.length > 0 && (
+              <span className="text-xs font-semibold text-neutral-500 dark:text-[#8A8A93] tabular-nums shrink-0 px-1">
+                {currentMatchIndex + 1}/{searchMatches.length}
               </span>
-              <div className="flex items-center gap-1.5 leading-tight mt-0.5">
-                <span className="text-[12px] font-medium text-emerald-600 dark:text-emerald-400">
-                  {dict.online}
+            )}
+
+            <div className="flex items-center gap-0.5 shrink-0">
+              <button
+                type="button"
+                onClick={handlePrevMatch}
+                disabled={searchMatches.length === 0}
+                className="w-8 h-8 rounded-full flex items-center justify-center text-neutral-600 dark:text-[#C9CAD1] disabled:opacity-30 hover:bg-neutral-100 dark:hover:bg-white/[0.08] cursor-pointer"
+                title="Pesan sebelumnya"
+              >
+                <ChevronUp size={18} />
+              </button>
+              <button
+                type="button"
+                onClick={handleNextMatch}
+                disabled={searchMatches.length === 0}
+                className="w-8 h-8 rounded-full flex items-center justify-center text-neutral-600 dark:text-[#C9CAD1] disabled:opacity-30 hover:bg-neutral-100 dark:hover:bg-white/[0.08] cursor-pointer"
+                title="Pesan berikutnya"
+              >
+                <ChevronDown size={18} />
+              </button>
+              <button
+                type="button"
+                onClick={() => setShowDatePicker(true)}
+                className="w-8 h-8 rounded-full flex items-center justify-center text-neutral-600 dark:text-[#C9CAD1] hover:bg-neutral-100 dark:hover:bg-white/[0.08] cursor-pointer ml-0.5"
+                title="Cari berdasarkan tanggal"
+              >
+                <Calendar size={17} />
+              </button>
+            </div>
+          </div>
+        ) : (
+          /* Normal Header Mode */
+          <div className="h-[62px] px-4 flex items-center justify-between max-w-md lg:max-w-none mx-auto">
+            {/* Left: Back Arrow + Avatar + Character Name + "Online" */}
+            <div className="flex items-center gap-2.5 min-w-0">
+              <button
+                aria-label="Kembali"
+                className="lg:hidden w-9 h-9 rounded-full hover:bg-neutral-100 dark:hover:bg-white/[0.08] flex items-center justify-center text-neutral-800 dark:text-[#E4E5EA] active:scale-95 transition-all cursor-pointer shrink-0"
+                onClick={onBack}
+                type="button"
+              >
+                <ChevronLeft size={24} />
+              </button>
+
+              {/* Avatar with Green Online Dot */}
+              <div
+                onClick={() => setShowDetailSheet(true)}
+                className="relative w-10 h-10 rounded-full overflow-hidden shrink-0 border border-black/10 dark:border-white/10 cursor-pointer shadow-2xs"
+              >
+                <img
+                  alt={character.name}
+                  className="w-full h-full object-cover"
+                  src={character.avatarUrl}
+                />
+                <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white dark:border-[#16171B]" />
+              </div>
+
+              {/* Name & Online Status + Mood Indicator */}
+              <div
+                onClick={() => setShowDetailSheet(true)}
+                className="flex flex-col min-w-0 cursor-pointer"
+              >
+                <span className="text-[15px] font-bold text-neutral-900 dark:text-[#F2F3F7] tracking-tight truncate leading-tight">
+                  {character.name}
                 </span>
-                <span className="text-neutral-300 dark:text-neutral-700 text-[10px]">•</span>
-                <span
-                  className="text-[12px] font-medium text-neutral-500 dark:text-[#8A8A93]"
-                  title={`Suasana hati: ${moodTheme.label}`}
-                >
-                  {moodTheme.label}
-                </span>
+                <div className="flex items-center gap-1.5 leading-tight mt-0.5">
+                  <span className="text-[12px] font-medium text-emerald-600 dark:text-emerald-400">
+                    {dict.online}
+                  </span>
+                  <span className="text-neutral-300 dark:text-neutral-700 text-[10px]">•</span>
+                  <span
+                    className="text-[12px] font-medium text-neutral-500 dark:text-[#8A8A93]"
+                    title={`Suasana hati: ${moodTheme.label}`}
+                  >
+                    {moodTheme.label}
+                  </span>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* Right Action Menu */}
-          <div className="flex items-center gap-1.5 shrink-0">
-            {/* Options Button -> Opens Character Profile / Detail View */}
-            <button
-              type="button"
-              onClick={() => setShowActionMenu(!showActionMenu)}
-              title="Menu Tindakan"
-              aria-label="Menu Tindakan"
-              className="w-10 h-10 rounded-full bg-[#F0F1F5] dark:bg-white/[0.08] hover:bg-neutral-200 dark:hover:bg-white/[0.14] text-neutral-700 dark:text-[#C9CAD1] flex items-center justify-center active:scale-95 transition-all cursor-pointer"
-            >
-              <MoreHorizontal size={19} />
-            </button>
+            {/* Right Action Menu */}
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                type="button"
+                onClick={() => {
+                  setIsSearching(true);
+                  setSearchQuery("");
+                }}
+                title="Cari Pesan"
+                aria-label="Cari Pesan"
+                className="w-10 h-10 rounded-full bg-[#F0F1F5] dark:bg-white/[0.08] hover:bg-neutral-200 dark:hover:bg-white/[0.14] text-neutral-700 dark:text-[#C9CAD1] flex items-center justify-center active:scale-95 transition-all cursor-pointer"
+              >
+                <Search size={18} />
+              </button>
+
+              {/* Options Button -> Opens Character Profile / Detail View */}
+              <button
+                type="button"
+                onClick={() => setShowActionMenu(!showActionMenu)}
+                title="Menu Tindakan"
+                aria-label="Menu Tindakan"
+                className="w-10 h-10 rounded-full bg-[#F0F1F5] dark:bg-white/[0.08] hover:bg-neutral-200 dark:hover:bg-white/[0.14] text-neutral-700 dark:text-[#C9CAD1] flex items-center justify-center active:scale-95 transition-all cursor-pointer"
+              >
+                <MoreHorizontal size={19} />
+              </button>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Dropdown Options Menu */}
         {showActionMenu && (
           <div className="absolute top-[66px] right-4 w-56 bg-white dark:bg-[#16171B] rounded-2xl shadow-xl border border-black/10 dark:border-white/10 p-1.5 z-50 animate-slide-down flex flex-col divide-y divide-neutral-100 dark:divide-white/10">
+            <div className="py-1">
+              <button
+                onClick={() => {
+                  setShowActionMenu(false);
+                  setIsSearching(true);
+                  setSearchQuery("");
+                }}
+                className="w-full px-3 py-2 text-left text-xs font-semibold text-neutral-800 dark:text-[#E4E5EA] hover:bg-neutral-100 dark:hover:bg-white/[0.08] rounded-xl flex items-center gap-2.5 cursor-pointer"
+              >
+                <Search size={15} className="text-neutral-500 dark:text-[#8A8A93]" />
+                <span>Cari Pesan</span>
+              </button>
+              <button
+                onClick={() => {
+                  setShowActionMenu(false);
+                  setShowDatePicker(true);
+                }}
+                className="w-full px-3 py-2 text-left text-xs font-semibold text-neutral-800 dark:text-[#E4E5EA] hover:bg-neutral-100 dark:hover:bg-white/[0.08] rounded-xl flex items-center gap-2.5 cursor-pointer"
+              >
+                <Calendar size={15} className="text-neutral-500 dark:text-[#8A8A93]" />
+                <span>Cari Berdasarkan Tanggal</span>
+              </button>
+            </div>
             <div className="py-1">
               <button
                 onClick={() => {
@@ -1107,7 +1317,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
       </header>
 
       {/* Main Conversation Stream */}
-      <main className="flex-1 flex flex-col relative w-full pt-[74px] pb-32 lg:pb-36 min-h-screen">
+      <main className="flex-1 min-h-0 overflow-y-auto overscroll-contain relative w-full flex flex-col">
 
         {/* Banner notices */}
         {errorNotice && (
@@ -1166,136 +1376,162 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                 <div
                   className={`flex flex-col ${isUser ? "items-end" : "items-start"} animate-message-in ${gapClass}`}
                 >
-                  {/* Message Bubble Container — long-press membuka menu konteks.
-                      Sudut lancip (tail) ada di BAWAH, mengikuti WhatsApp: sisi
-                      keluar di kanan-bawah, sisi masuk di kiri-bawah. */}
-                  <div
-                    style={{
-                      transform: `translateX(${swipeOffsets[message.id] || 0}px)`,
-                      transition: swipeOffsets[message.id]
-                        ? "none"
-                        : "transform 220ms cubic-bezier(0.22, 1, 0.36, 1)",
-                    }}
-                    onPointerDown={(e) => startLongPress(message, e)}
-                    onPointerUp={() => endSwipe(message)}
-                    onPointerLeave={clearLongPress}
-                    onPointerCancel={() => endSwipe(message)}
-                    onPointerMove={moveLongPress}
-                    onContextMenu={(e) => e.preventDefault()}
-                    className={`relative max-w-[80%] lg:max-w-[65%] px-3 py-2 cursor-pointer select-none touch-manipulation transition-[transform,opacity] duration-150 active:scale-[0.99] ${
-                      isUser
-                        ? `${moodTheme.userBubbleBg} rounded-[12px] rounded-br-[0px] shadow-2xs`
-                        : "bg-white dark:bg-[#1F2025] text-neutral-900 dark:text-[#F2F3F7] rounded-[12px] rounded-bl-[0px] border border-black/5 dark:border-white/10 shadow-2xs"
-                    } ${
-                      // Sembunyikan HANYA kalau preview pengganti benar-benar
-                      // dirender. Kalau tidak, bubble (mis. berisi gambar) akan
-                      // hilang tanpa ada yang menggantikannya.
-                      isSelected &&
-                      menuAnchor &&
-                      message.text &&
-                      message.text !== "[Foto]" &&
-                      !message.image
-                        ? "opacity-0"
-                        : "opacity-100"
-                    }`}
-                  >
-                    {/* Kutipan pesan yang dibalas, seperti WhatsApp */}
-                    {message.replyTo && (
+                  {/* Container dengan swipe-to-reply indicator ala WhatsApp */}
+                  <div className={`relative flex items-center w-full ${isUser ? "justify-end" : "justify-start"}`}>
+                    {/* Visual reply indicator ala WhatsApp yang muncul saat bubble digeser ke kanan */}
+                    {(swipeOffsets[message.id] || 0) > 0 && (
                       <div
-                        style={!isUser ? { borderLeftColor: moodTheme.accentColor } : undefined}
-                        className={`flex flex-col gap-0.5 mb-1.5 pl-2 py-1 rounded-r-md border-l-[3px] ${
-                          isUser
-                            ? "border-neutral-900/40 bg-neutral-900/[0.07]"
-                            : "border-[#F5B838] bg-black/[0.04] dark:bg-white/[0.05]"
+                        style={{
+                          transform: `scale(${Math.min(1, (swipeOffsets[message.id] || 0) / SWIPE_REPLY_THRESHOLD)})`,
+                          opacity: Math.min(1, (swipeOffsets[message.id] || 0) / 25),
+                        }}
+                        className={`absolute left-0 z-10 w-7 h-7 rounded-full flex items-center justify-center transition-colors pointer-events-none ${
+                          (swipeOffsets[message.id] || 0) >= SWIPE_REPLY_THRESHOLD
+                            ? "bg-amber-500 text-neutral-950 shadow-xs"
+                            : "bg-neutral-200 dark:bg-white/10 text-neutral-600 dark:text-neutral-300"
                         }`}
                       >
-                        <span
-                          style={!isUser ? { color: moodTheme.accentHover || moodTheme.accentColor } : undefined}
-                          className={`text-[11px] font-semibold ${
+                        <Reply size={14} />
+                      </div>
+                    )}
+
+                    {/* Message Bubble Container — long-press membuka menu konteks.
+                        Sudut lancip (tail) ada di BAWAH, mengikuti WhatsApp: sisi
+                        keluar di kanan-bawah, sisi masuk di kiri-bawah. */}
+                    <div
+                      id={`msg-${message.id}`}
+                      style={{
+                        transform: `translateX(${swipeOffsets[message.id] || 0}px)`,
+                        transition: swipeOffsets[message.id]
+                          ? "none"
+                          : "transform 220ms cubic-bezier(0.22, 1, 0.36, 1)",
+                        touchAction: "pan-y",
+                      }}
+                      onPointerDown={(e) => startLongPress(message, e)}
+                      onPointerUp={() => endSwipe(message)}
+                      onPointerLeave={clearLongPress}
+                      onPointerCancel={() => endSwipe(message)}
+                      onPointerMove={moveLongPress}
+                      onContextMenu={(e) => e.preventDefault()}
+                      className={`relative max-w-[80%] lg:max-w-[65%] px-3 py-2 cursor-pointer select-none touch-manipulation transition-[transform,opacity,box-shadow] duration-150 active:scale-[0.99] ${
+                        highlightedMessageId === message.id
+                          ? "ring-2 ring-amber-400 dark:ring-amber-400 shadow-md animate-pulse"
+                          : ""
+                      } ${
+                        isUser
+                          ? `${moodTheme.userBubbleBg} rounded-[12px] rounded-br-[0px] shadow-2xs`
+                          : "bg-white dark:bg-[#1F2025] text-neutral-900 dark:text-[#F2F3F7] rounded-[12px] rounded-bl-[0px] border border-black/5 dark:border-white/10 shadow-2xs"
+                      } ${
+                        // Sembunyikan HANYA kalau preview pengganti benar-benar
+                        // dirender. Kalau tidak, bubble (mis. berisi gambar) akan
+                        // hilang tanpa ada yang menggantikannya.
+                        isSelected &&
+                        menuAnchor &&
+                        message.text &&
+                        message.text !== "[Foto]" &&
+                        !message.image
+                          ? "opacity-0"
+                          : "opacity-100"
+                      }`}
+                    >
+                      {/* Kutipan pesan yang dibalas, seperti WhatsApp */}
+                      {message.replyTo && (
+                        <div
+                          style={!isUser ? { borderLeftColor: moodTheme.accentColor } : undefined}
+                          className={`flex flex-col gap-0.5 mb-1.5 pl-2 py-1 rounded-r-md border-l-[3px] ${
                             isUser
-                              ? "text-neutral-900/80"
-                              : "text-[#E5A929]"
+                              ? "border-neutral-900/40 bg-neutral-900/[0.07]"
+                              : "border-[#F5B838] bg-black/[0.04] dark:bg-white/[0.05]"
                           }`}
                         >
-                        {message.replyTo.isUser
-                          ? "Kamu"
-                          : character.name.split(" ")[0]}
-                      </span>
-                      <span
-                        className={`text-[12px] line-clamp-2 leading-snug ${
-                          isUser
-                            ? "text-neutral-900/70"
-                            : "text-neutral-500 dark:text-[#9B9BA3]"
-                        }`}
-                      >
-                        {message.replyTo.text}
-                      </span>
-                    </div>
-                  )}
-
-                  {/* Gambar terlampir, dirender di atas teks */}
-                  {message.image && (
-                    <img
-                      src={message.image.dataUrl}
-                      alt="Lampiran"
-                      className={`rounded-[14px] object-cover max-h-64 w-full ${
-                        message.text && message.text !== "[Foto]" ? "mb-2" : ""
-                      }`}
-                    />
-                  )}
-                  {/* Voice note — pemutar sungguhan dengan waveform asli */}
-                  {message.audio && (
-                    <VoiceNoteBubble
-                      audio={message.audio}
-                      isUser={message.role === "user"}
-                      hapticEnabled={settings.hapticFeedback !== false}
-                    />
-                  )}
-
-                  {/* Sembunyikan placeholder lampiran kalau ada isinya.
-                      Ukuran 15px mengikuti skala tipografi WhatsApp; barisnya
-                      sedikit lebih rapat karena bubble-nya kini lebih ringkas. */}
-                  {message.text &&
-                    message.text !== "[Foto]" &&
-                    message.text !== "[Pesan suara]" && (
-                      <p
-                        className={`text-[15px] leading-[1.35] whitespace-pre-wrap break-words ${
-                          message.audio || message.image ? "mt-2" : ""
-                        }`}
-                      >
-                        {renderFormattedMessage(message.text)}
-                      </p>
+                          <span
+                            style={!isUser ? { color: moodTheme.accentHover || moodTheme.accentColor } : undefined}
+                            className={`text-[11px] font-semibold ${
+                              isUser
+                                ? "text-neutral-900/80"
+                                : "text-[#E5A929]"
+                            }`}
+                          >
+                          {message.replyTo.isUser
+                            ? "Kamu"
+                            : character.name.split(" ")[0]}
+                        </span>
+                        <span
+                          className={`text-[12px] line-clamp-2 leading-snug ${
+                            isUser
+                              ? "text-neutral-900/70"
+                              : "text-neutral-500 dark:text-[#9B9BA3]"
+                          }`}
+                        >
+                          {message.replyTo.text}
+                        </span>
+                      </div>
                     )}
 
-                  {/* Baris meta di DALAM bubble, seperti WhatsApp:
-                      jam + centang status. Diletakkan rata kanan supaya
-                      mengalir di samping teks terakhir. */}
-                  <div
-                    className={`flex items-center justify-end gap-1 mt-0.5 -mb-0.5 ${
-                      isUser ? "text-neutral-900/55" : "text-neutral-400 dark:text-[#8A8A93]"
-                    }`}
-                  >
-                    <span className="text-[11px] leading-none tabular-nums">
-                      {formatMessageTime(message.timestamp)}
-                    </span>
-                    {isUser && (
-                      <MessageTicks
-                        state={message.readByCharacter ? "read" : "sent"}
-                        tone="onBubble"
+                    {/* Gambar terlampir, dirender di atas teks */}
+                    {message.image && (
+                      <img
+                        src={message.image.dataUrl}
+                        alt="Lampiran"
+                        className={`rounded-[14px] object-cover max-h-64 w-full ${
+                          message.text && message.text !== "[Foto]" ? "mb-2" : ""
+                        }`}
                       />
                     )}
-                  </div>
+                    {/* Voice note — pemutar sungguhan dengan waveform asli */}
+                    {message.audio && (
+                      <VoiceNoteBubble
+                        audio={message.audio}
+                        isUser={message.role === "user"}
+                        hapticEnabled={settings.hapticFeedback !== false}
+                      />
+                    )}
 
-                  {/* Badge reaksi, menempel di sudut bubble seperti WhatsApp */}
-                  {message.reaction && (
-                    <span
-                      className={`absolute -bottom-2.5 ${
-                        isUser ? "left-2" : "right-2"
-                      } px-1.5 py-0.5 rounded-full bg-white dark:bg-[#2A2B31] border border-black/10 dark:border-white/15 shadow-sm text-[12px] leading-none`}
+                    {/* Sembunyikan placeholder lampiran kalau ada isinya.
+                        Ukuran 15px mengikuti skala tipografi WhatsApp; barisnya
+                        sedikit lebih rapat karena bubble-nya kini lebih ringkas. */}
+                    {message.text &&
+                      message.text !== "[Foto]" &&
+                      message.text !== "[Pesan suara]" && (
+                        <p
+                          className={`text-[15px] leading-[1.35] whitespace-pre-wrap break-words ${
+                            message.audio || message.image ? "mt-2" : ""
+                          }`}
+                        >
+                          {renderFormattedMessage(message.text)}
+                        </p>
+                      )}
+
+                    {/* Baris meta di DALAM bubble, seperti WhatsApp:
+                        jam + centang status. Diletakkan rata kanan supaya
+                        mengalir di samping teks terakhir. */}
+                    <div
+                      className={`flex items-center justify-end gap-1 mt-0.5 -mb-0.5 ${
+                        isUser ? "text-neutral-900/55" : "text-neutral-400 dark:text-[#8A8A93]"
+                      }`}
                     >
-                      {message.reaction}
-                    </span>
-                  )}
+                      <span className="text-[11px] leading-none tabular-nums">
+                        {formatMessageTime(message.timestamp)}
+                      </span>
+                      {isUser && (
+                        <MessageTicks
+                          state={message.readByCharacter ? "read" : "sent"}
+                          tone="onBubble"
+                        />
+                      )}
+                    </div>
+
+                    {/* Badge reaksi, menempel di sudut bubble seperti WhatsApp */}
+                    {message.reaction && (
+                      <span
+                        className={`absolute -bottom-2.5 ${
+                          isUser ? "left-2" : "right-2"
+                        } px-1.5 py-0.5 rounded-full bg-white dark:bg-[#2A2B31] border border-black/10 dark:border-white/15 shadow-sm text-[12px] leading-none`}
+                      >
+                        {message.reaction}
+                      </span>
+                    )}
+                  </div>
                 </div>
 
                 {/* Menu konteks dirender sekali di luar loop, bukan per pesan */}
@@ -1311,13 +1547,13 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                 <div className="w-full aspect-[9/16] max-h-52 bg-neutral-100 dark:bg-white/[0.08] rounded-xl flex flex-col items-center justify-center text-neutral-400 dark:text-neutral-500 gap-2 border border-black/5 dark:border-white/5">
                   <Camera className="w-7 h-7 animate-bounce text-pink-400" />
                   <span className="text-[11px] font-semibold text-neutral-600 dark:text-neutral-300">
-                    Sedang mengambil foto... 📷
+                    Sedang mengambil foto...
                   </span>
                 </div>
                 <div className="h-2 w-2/3 bg-neutral-200 dark:bg-white/10 rounded-full" />
               </div>
               <span className="text-[11px] text-neutral-400 dark:text-[#71717A] mt-1 px-1">
-                {character.name.split(" ")[0]} sedang mengambil foto... 📷
+                {character.name.split(" ")[0]} sedang mengambil foto...
               </span>
             </div>
           ) : (
@@ -1335,8 +1571,8 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
             )
           )}
 
-          {/* Spacer ekstra di bawah agar pesan terakhir & typing indicator tidak terpotong oleh footer yang fixed */}
-          <div ref={messagesEndRef} className="h-16 lg:h-20 shrink-0 w-full" />
+          {/* Spacer ekstra di bawah */}
+          <div ref={messagesEndRef} className="h-4 shrink-0 w-full" />
         </div>
       </main>
 
@@ -1408,7 +1644,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
       )}
 
       {/* Bottom Input Bar Matching Screen 3 (Right Phone) */}
-      <footer className="fixed bottom-0 inset-x-0 z-40 bg-white/85 dark:bg-[#16171B]/85 backdrop-blur-md border-t border-black/[0.06] dark:border-white/10 pb-safe max-w-md lg:max-w-none mx-auto shadow-sm relative">
+      <footer className="shrink-0 z-30 bg-white/85 dark:bg-[#16171B]/85 backdrop-blur-md border-t border-black/[0.06] dark:border-white/10 pb-safe w-full shadow-sm relative">
         {/* Floating Input Action Popover (Aksi Roleplay & Opsi) */}
         {showInputMenu && (
           <div
@@ -1417,7 +1653,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
           >
             <div className="px-3 py-1.5 border-b border-neutral-100 dark:border-white/10 mb-1 flex items-center justify-between">
               <span className="text-[11px] font-bold text-neutral-400 dark:text-[#71717A] uppercase tracking-wider">
-                Opsi & Format Chat
+                Opsi Chat
               </span>
               <button
                 type="button"
@@ -1440,9 +1676,9 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                 <Sparkles size={16} />
               </div>
               <div className="flex flex-col">
-                <span className="font-bold text-[13px]">Aksi Roleplay (__ )</span>
+                <span className="font-bold text-[13px]">Aksi Roleplay (_aksi_)</span>
                 <span className="text-[10.5px] text-neutral-400 font-normal">
-                  Contoh: _memberi kue_
+                  Format aksi: _tindakan_
                 </span>
               </div>
             </button>
@@ -1465,7 +1701,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
               <div className="flex flex-col">
                 <span className="font-bold text-[13px]">Minta Foto / PAP</span>
                 <span className="text-[10.5px] text-neutral-400 font-normal">
-                  Kirim teks "coba pap dong"
+                  Kirim teks minta foto
                 </span>
               </div>
             </button>
@@ -1571,19 +1807,8 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
               className="w-full bg-transparent text-[14px] text-neutral-900 dark:text-[#F2F3F7] placeholder:text-neutral-400 dark:placeholder:text-white/35 resize-none outline-none leading-relaxed py-1 max-h-[130px] scrollbar-thin disabled:opacity-50"
             />
 
-            {/* Tombol Attachment (Aksi, Gambar & Tambah) */}
+            {/* Tombol Attachment (Gambar & Tambah) */}
             <div className="flex items-center gap-1 pb-1 text-neutral-500 dark:text-[#8A8A93] shrink-0">
-              {/* Tombol Cepat Format Aksi Roleplay */}
-              <button
-                type="button"
-                onClick={handleInsertActionFormat}
-                className="px-2 py-0.5 rounded-lg text-xs font-mono font-bold text-neutral-600 dark:text-[#C9CAD1] hover:text-[#F5B838] dark:hover:text-[#F5B838] bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 active:scale-90 transition-all cursor-pointer flex items-center shrink-0"
-                title="Sisipkan format aksi roleplay (__)"
-                aria-label="Sisipkan format aksi roleplay"
-              >
-                <span className="italic">_aksi_</span>
-              </button>
-
               <ChatImagePicker
                 onImageSelected={handleImageSelected}
                 disabled={isTyping}
@@ -1722,6 +1947,58 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
             setTimeout(() => setSuccessNotice(null), 2500);
           }}
         />
+      )}
+
+      {/* Date Search Modal - Minimalist, NO emojis */}
+      {showDatePicker && (
+        <div className="fixed inset-0 z-50 bg-black/60 dark:bg-black/70 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white dark:bg-[#16171B] rounded-2xl max-w-xs w-full p-5 shadow-2xl border border-black/10 dark:border-white/10 flex flex-col gap-4">
+            <div className="flex items-center justify-between pb-2 border-b border-neutral-100 dark:border-white/10">
+              <h3 className="text-sm font-bold text-neutral-900 dark:text-[#F2F3F7]">
+                Cari Berdasarkan Tanggal
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowDatePicker(false)}
+                className="w-7 h-7 rounded-full bg-neutral-100 dark:bg-white/[0.08] hover:bg-neutral-200 dark:hover:bg-white/[0.14] text-neutral-600 dark:text-[#9B9BA3] flex items-center justify-center cursor-pointer"
+              >
+                <X size={14} />
+              </button>
+            </div>
+            <div>
+              <label className="text-xs font-semibold text-neutral-500 dark:text-[#8A8A93] mb-1.5 block">
+                Pilih Tanggal Percakapan
+              </label>
+              <input
+                type="date"
+                defaultValue={new Date().toISOString().split("T")[0]}
+                id="search-date-input"
+                className="w-full bg-[#F0F1F5] dark:bg-white/[0.08] text-neutral-900 dark:text-[#F2F3F7] rounded-xl px-3 py-2 text-sm border border-transparent focus:border-[#F5B838] outline-none"
+              />
+            </div>
+            <div className="flex items-center gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => setShowDatePicker(false)}
+                className="flex-1 py-2 rounded-xl bg-neutral-100 dark:bg-white/[0.08] hover:bg-neutral-200 dark:hover:bg-white/[0.14] font-semibold text-neutral-700 dark:text-[#C9CAD1] text-xs cursor-pointer transition-colors"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const input = document.getElementById("search-date-input") as HTMLInputElement | null;
+                  if (input && input.value) {
+                    handleJumpToDate(input.value);
+                  }
+                }}
+                className="flex-1 py-2 rounded-xl bg-[#F5B838] hover:bg-[#E5A929] font-bold text-neutral-950 text-xs shadow-xs cursor-pointer transition-colors"
+              >
+                Cari
+              </button>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );
