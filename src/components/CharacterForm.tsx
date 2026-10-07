@@ -393,12 +393,12 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({
               <label className="text-xs font-semibold text-neutral-700 dark:text-[#C9CAD1]">
                 Bio Singkat
               </label>
-              <input
-                type="text"
+              <textarea
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
-                placeholder="Contoh: Teman sekelas yang diam-diam perhatian"
-                className="bg-[#F0F1F5] dark:bg-white/[0.06] text-sm text-neutral-900 dark:text-[#F2F3F7] placeholder:text-neutral-400 dark:placeholder:text-white/35 rounded-2xl px-4 py-3 border-none focus:outline-none focus:ring-2 focus:ring-[#F5B838]/50"
+                rows={2}
+                placeholder="Contoh: Teman sekelas yang diam-diam perhatian..."
+                className="bg-[#F0F1F5] dark:bg-white/[0.06] text-sm text-neutral-900 dark:text-[#F2F3F7] placeholder:text-neutral-400 dark:placeholder:text-white/35 rounded-2xl p-3.5 border-none focus:outline-none focus:ring-2 focus:ring-[#F5B838]/50 resize-y min-h-[56px] leading-relaxed"
               />
             </div>
 
@@ -471,12 +471,12 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({
                 })}
               </div>
 
-              <input
-                type="text"
+              <textarea
                 value={speakingStyle}
                 onChange={(e) => setSpeakingStyle(e.target.value)}
-                placeholder="Contoh: Santai dan akrab, suka pakai emoji ✨"
-                className="bg-[#F0F1F5] dark:bg-white/[0.06] text-sm text-neutral-900 dark:text-[#F2F3F7] placeholder:text-neutral-400 dark:placeholder:text-white/35 rounded-2xl px-4 py-3 border-none focus:outline-none focus:ring-2 focus:ring-[#F5B838]/50"
+                rows={2}
+                placeholder="Contoh: Santai dan akrab, suka bergurau..."
+                className="bg-[#F0F1F5] dark:bg-white/[0.06] text-sm text-neutral-900 dark:text-[#F2F3F7] placeholder:text-neutral-400 dark:placeholder:text-white/35 rounded-2xl p-3.5 border-none focus:outline-none focus:ring-2 focus:ring-[#F5B838]/50 resize-y min-h-[56px] leading-relaxed"
               />
             </div>
 

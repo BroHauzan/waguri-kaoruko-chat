@@ -180,7 +180,7 @@ export const CharacterDetailSheet: React.FC<CharacterDetailSheetProps> = ({
               <span className="text-[11px] font-semibold text-neutral-400 dark:text-[#71717A] uppercase tracking-wider block mb-1">
                 Ekspresi Terakhir
               </span>
-              <p className="text-[13px] italic text-neutral-700 dark:text-[#D1D2D9] leading-relaxed line-clamp-2">
+              <p className="text-[13px] italic text-neutral-700 dark:text-[#D1D2D9] leading-relaxed break-words whitespace-pre-wrap">
                 "{lastCharMessage ? lastCharMessage.text : character.greeting}"
               </p>
             </div>

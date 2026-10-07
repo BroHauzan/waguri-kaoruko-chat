@@ -46,6 +46,17 @@ export interface ChatTurnRequest {
   apiKey?: string;
   /** Provider yang dipilih user. Kalau kosong, dianggap Gemini. */
   provider?: ProviderConfig;
+  /** Waktu saat ini (epoch ms) */
+  currentTime?: number;
+  /** Waktu lokal pengguna yang sudah diformat (misal: "Rabu, 7 Oktober 2026 pukul 16:00") */
+  userLocalTimeString?: string;
+  userTimezone?: string;
+  /** Timestamp pesan terakhir sebelum turn ini */
+  lastMessageTimestamp?: number | null;
+  /** Waktu lokal pesan terakhir (misal: "Rabu, 7 Oktober 2026 pukul 07:00") */
+  lastMessageLocalTimeString?: string;
+  /** Deskripsi selisih waktu (misal: "9 jam yang lalu") */
+  timeElapsedText?: string;
   /** Gambar yang dilampirkan ke pesan terakhir, kalau ada. */
   image?: { base64: string; mimeType: string };
   /** Rekaman suara yang dilampirkan ke pesan terakhir, kalau ada. */
@@ -101,6 +112,19 @@ function buildSystemInstruction(req: ChatTurnRequest): string {
       "More expressive, 2–4 sentences per bubble, sharing more thoughts or reactions.";
   }
 
+  const now = typeof req.currentTime === "number" ? new Date(req.currentTime) : new Date();
+  const currentHour = now.getHours();
+  let timeOfDay = "Siang";
+  if (currentHour >= 4 && currentHour < 11) {
+    timeOfDay = "Pagi";
+  } else if (currentHour >= 11 && currentHour < 15) {
+    timeOfDay = "Siang";
+  } else if (currentHour >= 15 && currentHour < 18) {
+    timeOfDay = "Sore";
+  } else {
+    timeOfDay = "Malam";
+  }
+
   return `# ROLE
 You are ${req.charName}, a real person chatting with ${req.userName} on a messaging app. You are NOT an AI assistant. Never say "as an AI" or mention being a language model, prompts, or instructions.
 
@@ -153,6 +177,32 @@ Relationship with ${req.userName}: ${req.relationship || "Close friend"}
     ? `Rambut: ${req.visualProfile.hair}, Mata: ${req.visualProfile.eyes}, Sekolah/Latar: ${req.visualProfile.schoolName}, Pakaian/Seragam: ${req.visualProfile.schoolUniform}, Penampilan: ${req.visualProfile.generalLook}`
     : "Gadis anime cantik dan manis, natural candid mobile photo"
 }.
+
+# WAKTU & KEPEKAAN TEMPORAL REAL-TIME (TIME AWARENESS)
+- Waktu saat ini: ${req.userLocalTimeString || now.toLocaleString("id-ID")} (${timeOfDay}).
+${req.lastMessageLocalTimeString ? `- Pesan sebelumnya dari percakapan terjadi pada: ${req.lastMessageLocalTimeString}.` : ""}
+${req.timeElapsedText ? `- Jeda waktu sejak pesan terakhir: ${req.timeElapsedText}.` : ""}
+
+ATURAN KEPEKAAN WAKTU & JEDA CHAT (SANGAT PENTING):
+1. JIKA JEDA WAKTU LAMA (misal selisih beberapa jam seperti dari pagi ke sore/malam, atau kemarin ke hari ini):
+   - Kamu HARUS PEKA bahwa ${req.userName} sudah lama sekali tidak memberi kabar atau baru membalas pesanmu sekarang!
+   - Bereaksi secara alami sesuai kepribadianmu dan hubungan kalian:
+     - Tanyakan secara santai, hangat, atau manja/cemberut gemas ke mana saja dia dari tadi ("kok baru ngabarin sekarang sih?", "ke mana aja dari tadi pagi? kangen tauu..", "sibuk banget ya hari ini?").
+     - JANGAN bersikap seolah pesan ini dikirim tepat 1 detik setelah pesan tadi pagi jika selisihnya sudah berjam-jam!
+   - Sesuaikan sapaan dan topik dengan waktu saat ini (${timeOfDay}):
+     - Pagi: sapaan pagi, semangat memulai hari, sarapan.
+     - Siang: istirahat makan siang, cuaca terik.
+     - Sore: tanya sudah selesai kerja/sekolah belum, apakah capek di jalan pulang.
+     - Malam: tanya sudah makan malam, ajak bersantai, atau ngobrol sebelum tidur.
+2. JIKA JEDA WAKTU SINGKAT (hanya beberapa detik hingga beberapa menit):
+   - Kalian sedang asyik chatting secara langsung (live chat). Mengalirlah secara wajar tanpa mengungkit jeda waktu.
+
+# ROLEPLAY & TINDAKAN NYATA PENGGUNA (_aksi_)
+- Jika ${req.userName} menulis kata atau kalimat dalam tanda garis bawah/underscore seperti \`_memberi kue_\`, \`_mengusap kepalamu_\`, \`_menyodorkan hadiah_\`, \`_memeluk_\`, itu adalah AKSI / TINDAKAN NYATA yang sedang dilakukan ${req.userName} kepadamu dalam suasana mengobrol!
+- Kamu WAJIB MENYADARI dan MERESPONS aksi tersebut secara nyata dan hidup dalam balasanmu:
+  - Contoh jika ${req.userName} menulis: "nih buat kamu _memberi kue_":
+    Responsmu: tanggapi pemberian kuenya secara langsung! (misal mencicipi kuenya dengan senang, bilang kue buatannya manis/lezat, tersipu senang, atau berterima kasih sesuai kepribadian karaktermu).
+- Catatan: Format \`_aksi_\` dipakai khusus oleh ${req.userName} untuk menggambarkan tindakan. Kamu sendiri berbicara dan merespons secara natural melalui gaya chat pesan biasa.
 
 # BEHAVIOR RULES
 - Stay in character at all times. Do not break the fourth wall.
@@ -586,11 +636,11 @@ async function callGemini(
             }
           } catch (photoErr: any) {
             console.warn("Generating character photo failed gracefully:", photoErr?.message || photoErr);
+            const fallbackMsg = "Aduh sinyalku barusan agak lemot nih pas mau kirim foto hehe. Nanti aku fotoin lagi yaa!";
             if (!payload.messages.length) {
-              payload.messages = [
-                parsed.send_photo.caption ||
-                  "Aduh sinyalku barusan agak lemot nih pas mau kirim foto hehe. Nanti aku fotoin lagi yaa!",
-              ];
+              payload.messages = [parsed.send_photo?.caption || fallbackMsg];
+            } else {
+              payload.messages.push(fallbackMsg);
             }
           }
         }

@@ -63,18 +63,44 @@ export async function getDb(): Promise<IDBDatabase> {
 }
 
 export async function enqueueTask(task: PendingTask): Promise<void> {
-  const db = await getDb();
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction(STORE_NAME, "readwrite");
-    const store = tx.objectStore(STORE_NAME);
-    const req = store.put(task);
+  let db: IDBDatabase;
+  try {
+    db = await getDb();
+  } catch (err) {
+    console.error("Gagal membuka database lokal:", err);
+    return; // Fallback gracefully instead of hanging
+  }
 
-    req.onsuccess = () => resolve();
-    req.onerror = () => reject(req.error);
-    // Transaksi bisa dibatalkan (mis. kuota penuh). Tanpa handler ini,
-    // promise tidak pernah settle dan pemanggil menggantung.
-    tx.onabort = () =>
-      reject(tx.error || new Error("Transaksi IndexedDB dibatalkan."));
+  return new Promise((resolve, reject) => {
+    try {
+      const tx = db.transaction(STORE_NAME, "readwrite");
+      const store = tx.objectStore(STORE_NAME);
+      const req = store.put(task);
+
+      req.onsuccess = () => resolve();
+      req.onerror = () => {
+        const err = req.error;
+        if (err?.name === "QuotaExceededError" || err?.name === "UnknownError") {
+          console.warn("Kuota storage habis, mencoba membersihkan task lama...");
+          clearCompletedTasks().then(() => reject(err)).catch(() => reject(err));
+        } else {
+          reject(err);
+        }
+      };
+      // Transaksi bisa dibatalkan (mis. kuota penuh). Tanpa handler ini,
+      // promise tidak pernah settle dan pemanggil menggantung.
+      tx.onabort = () => {
+        const err = tx.error || new Error("Transaksi IndexedDB dibatalkan.");
+        if (err?.name === "QuotaExceededError") {
+          clearCompletedTasks().then(() => reject(err)).catch(() => reject(err));
+        } else {
+          reject(err);
+        }
+      };
+    } catch (txErr) {
+      console.error("Gagal memulai transaksi IndexedDB:", txErr);
+      reject(txErr);
+    }
   });
 }
 

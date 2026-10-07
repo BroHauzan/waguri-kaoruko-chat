@@ -27,6 +27,7 @@ export default function App() {
     character: Character;
     messageText: string;
   } | null>(null);
+  const [isOffline, setIsOffline] = useState(!navigator.onLine);
 
   // Theme — resolves `auto` against the OS preference, live.
   useTheme(settings.theme || "dark");
@@ -82,12 +83,14 @@ export default function App() {
     });
 
     const handleVisibilityOrOnline = () => {
-      if (document.visibilityState === "visible") {
+      setIsOffline(!navigator.onLine);
+      if (document.visibilityState === "visible" && navigator.onLine) {
         backgroundQueue.resumePendingTasks(storage.getSettings());
       }
     };
     window.addEventListener("visibilitychange", handleVisibilityOrOnline);
     window.addEventListener("online", handleVisibilityOrOnline);
+    window.addEventListener("offline", handleVisibilityOrOnline);
 
     // Listen for Service Worker notificationclick message
     const handleSwMessage = (event: MessageEvent) => {
@@ -104,6 +107,7 @@ export default function App() {
       unsubscribeQueue();
       window.removeEventListener("visibilitychange", handleVisibilityOrOnline);
       window.removeEventListener("online", handleVisibilityOrOnline);
+      window.removeEventListener("offline", handleVisibilityOrOnline);
       navigator.serviceWorker?.removeEventListener("message", handleSwMessage);
     };
   }, []);
@@ -199,6 +203,16 @@ export default function App() {
     }
   };
 
+  const handleTogglePinCharacter = (characterId: string) => {
+    storage.togglePin(characterId);
+    setCharacters(storage.getCharacters());
+  };
+
+  const handleToggleArchiveCharacter = (characterId: string) => {
+    storage.toggleArchive(characterId);
+    setCharacters(storage.getCharacters());
+  };
+
   const handleSaveCharacterForm = (char: Character) => {
     storage.saveCharacter(char);
     const updated = storage.getCharacters();
@@ -278,8 +292,11 @@ export default function App() {
             activeCharacterId={isDesktop ? activeCharacter?.id : undefined}
             onSelectCharacter={handleSelectCharacter}
             onDeleteCharacter={handleDeleteCharacter}
+            onTogglePinCharacter={handleTogglePinCharacter}
+            onToggleArchiveCharacter={handleToggleArchiveCharacter}
             onCreateNew={() => setCurrentTab("create")}
             language={settings.language || "id"}
+            hapticFeedback={settings.hapticFeedback !== false}
           />
         )}
 
@@ -329,6 +346,12 @@ export default function App() {
     />
   ) : null;
 
+  const offlineBanner = isOffline ? (
+    <div className="fixed top-0 left-0 right-0 z-50 bg-[#F5B838] text-neutral-900 text-xs font-bold px-4 py-2 text-center shadow-md animate-fade-in">
+      Koneksi terputus. Pesan akan terkirim otomatis saat online.
+    </div>
+  ) : null;
+
   /* Desktop: dua panel seperti WhatsApp Web (daftar di kiri, obrolan di kanan).
      Setiap panel punya `transform-gpu` supaya elemen `fixed` di dalamnya
      (header, input bar, tab bar, modal) menempel ke panel, bukan ke layar.
@@ -353,6 +376,7 @@ export default function App() {
         </section>
 
         {notificationBanner}
+        {offlineBanner}
       </div>
     );
   }
@@ -365,6 +389,7 @@ export default function App() {
       </div>
 
       {notificationBanner}
+      {offlineBanner}
     </div>
   );
 }

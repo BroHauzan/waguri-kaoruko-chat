@@ -113,6 +113,8 @@ const STORAGE_KEYS = {
   CHARACTERS: "waguri_v5_official_characters",
   CHATS: "waguri_v5_official_chats",
   SETTINGS: "waguri_v5_official_settings",
+  PINNED: "waguri_v5_pinned_characters",
+  ARCHIVED: "waguri_v5_archived_characters",
 };
 
 export const storage = {
@@ -159,11 +161,71 @@ export const storage = {
       }
 
       localStorage.setItem(STORAGE_KEYS.CHARACTERS, JSON.stringify(deduped));
-      return deduped;
+      const pinnedSet = new Set(this.getPinnedIds());
+      const archivedSet = new Set(this.getArchivedIds());
+      return deduped.map((c) => ({
+        ...c,
+        isPinned: pinnedSet.has(c.id),
+        isArchived: archivedSet.has(c.id),
+      }));
     } catch (e) {
       console.error("Error reading characters from localStorage", e);
       return INITIAL_CHARACTERS;
     }
+  },
+
+  getPinnedIds(): string[] {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEYS.PINNED);
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  },
+
+  isPinned(characterId: string): boolean {
+    return this.getPinnedIds().includes(characterId);
+  },
+
+  togglePin(characterId: string): boolean {
+    const pinned = new Set(this.getPinnedIds());
+    let nextState = false;
+    if (pinned.has(characterId)) {
+      pinned.delete(characterId);
+      nextState = false;
+    } else {
+      pinned.add(characterId);
+      nextState = true;
+    }
+    localStorage.setItem(STORAGE_KEYS.PINNED, JSON.stringify([...pinned]));
+    return nextState;
+  },
+
+  getArchivedIds(): string[] {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEYS.ARCHIVED);
+      return raw ? JSON.parse(raw) : [];
+    } catch {
+      return [];
+    }
+  },
+
+  isArchived(characterId: string): boolean {
+    return this.getArchivedIds().includes(characterId);
+  },
+
+  toggleArchive(characterId: string): boolean {
+    const archived = new Set(this.getArchivedIds());
+    let nextState = false;
+    if (archived.has(characterId)) {
+      archived.delete(characterId);
+      nextState = false;
+    } else {
+      archived.add(characterId);
+      nextState = true;
+    }
+    localStorage.setItem(STORAGE_KEYS.ARCHIVED, JSON.stringify([...archived]));
+    return nextState;
   },
 
   getCharacterById(id: string): Character | undefined {
@@ -186,6 +248,16 @@ export const storage = {
     const chars = this.getCharacters().filter((c) => c.id !== id);
     localStorage.setItem(STORAGE_KEYS.CHARACTERS, JSON.stringify(chars));
     this.deleteChat(id);
+    const pinned = new Set(this.getPinnedIds());
+    if (pinned.has(id)) {
+      pinned.delete(id);
+      localStorage.setItem(STORAGE_KEYS.PINNED, JSON.stringify([...pinned]));
+    }
+    const archived = new Set(this.getArchivedIds());
+    if (archived.has(id)) {
+      archived.delete(id);
+      localStorage.setItem(STORAGE_KEYS.ARCHIVED, JSON.stringify([...archived]));
+    }
   },
 
   getChats(): Record<string, Chat> {
@@ -422,5 +494,7 @@ export const storage = {
     localStorage.removeItem(STORAGE_KEYS.CHARACTERS);
     localStorage.removeItem(STORAGE_KEYS.CHATS);
     localStorage.removeItem(STORAGE_KEYS.SETTINGS);
+    localStorage.removeItem(STORAGE_KEYS.PINNED);
+    localStorage.removeItem(STORAGE_KEYS.ARCHIVED);
   },
 };

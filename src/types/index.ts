@@ -28,6 +28,8 @@ export interface Character {
   defaultMood: string;        // happy, neutral, playful, dll
   customInstructions?: string; // instruksi khusus per karakter
   visualProfile?: CharacterVisualProfile; // Profil visual untuk foto / PAP
+  isPinned?: boolean;         // Obrolan disematkan / favorit
+  isArchived?: boolean;       // Obrolan diarsipkan
   createdAt: number;
 }
 

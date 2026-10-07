@@ -87,7 +87,8 @@ export async function handleApiRequest(
       sendJsonResponse(res, 200, result);
     } catch (err: any) {
       console.error("API /api/chat error:", err);
-      sendJsonResponse(res, 500, {
+      const statusCode = err?.status || (err?.message?.includes("429") ? 429 : 500);
+      sendJsonResponse(res, statusCode, {
         error: "Failed to generate chat response",
         details: err?.message || String(err),
       });
@@ -102,7 +103,8 @@ export async function handleApiRequest(
       sendJsonResponse(res, 200, result);
     } catch (err: any) {
       console.error("API /api/summarize error:", err);
-      sendJsonResponse(res, 500, {
+      const statusCode = err?.status || (err?.message?.includes("429") ? 429 : 500);
+      sendJsonResponse(res, statusCode, {
         error: "Failed to summarize chat",
         details: err?.message || String(err),
       });
@@ -117,7 +119,8 @@ export async function handleApiRequest(
       sendJsonResponse(res, 200, result);
     } catch (err: any) {
       console.error("API /api/lore error:", err);
-      sendJsonResponse(res, 500, {
+      const statusCode = err?.status || (err?.message?.includes("429") ? 429 : 500);
+      sendJsonResponse(res, statusCode, {
         error: "Failed to fetch character lore",
         details: err?.message || String(err),
       });
@@ -132,7 +135,8 @@ export async function handleApiRequest(
       sendJsonResponse(res, 200, result);
     } catch (err: any) {
       console.error("API /api/photo error:", err);
-      sendJsonResponse(res, 500, {
+      const statusCode = err?.status || (err?.message?.includes("429") ? 429 : 500);
+      sendJsonResponse(res, statusCode, {
         error: "Failed to generate character photo",
         details: err?.message || String(err),
       });

@@ -18,6 +18,7 @@ import {
   Sliders,
   BarChart2,
   X,
+  Sparkles,
 } from "lucide-react";
 import {
   Character,
@@ -129,6 +130,87 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const isMountedRef = useRef(true);
+  
+  const [cooldownTime, setCooldownTime] = useState(0);
+  const [showInputMenu, setShowInputMenu] = useState(false);
+  const inputMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!showInputMenu) return;
+    const handleClickOutside = (e: MouseEvent) => {
+      if (inputMenuRef.current && !inputMenuRef.current.contains(e.target as Node)) {
+        setShowInputMenu(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [showInputMenu]);
+
+  const handleInsertActionFormat = () => {
+    haptics.light(settings.hapticFeedback !== false);
+    const textarea = textareaRef.current;
+    if (!textarea) {
+      setInputText((prev) => prev + "__");
+      return;
+    }
+
+    const start = textarea.selectionStart ?? inputText.length;
+    const end = textarea.selectionEnd ?? inputText.length;
+    const selected = inputText.substring(start, end);
+
+    let nextText = "";
+    let nextStart = 0;
+    let nextEnd = 0;
+
+    if (selected.length > 0) {
+      nextText = inputText.substring(0, start) + `_${selected}_` + inputText.substring(end);
+      nextStart = start + 1;
+      nextEnd = end + 1;
+    } else {
+      nextText = inputText.substring(0, start) + "__" + inputText.substring(end);
+      nextStart = start + 1;
+      nextEnd = start + 1;
+    }
+
+    setInputText(nextText);
+    setTimeout(() => {
+      if (textareaRef.current) {
+        textareaRef.current.focus();
+        textareaRef.current.setSelectionRange(nextStart, nextEnd);
+        adjustHeight();
+      }
+    }, 10);
+  };
+
+  const renderFormattedMessage = (text: string) => {
+    if (!text) return null;
+    const parts = text.split(/(_[^_\n]+_)/g);
+    return parts.map((part, idx) => {
+      if (part.startsWith("_") && part.endsWith("_") && part.length > 2) {
+        const content = part.slice(1, -1);
+        return (
+          <span
+            key={idx}
+            className="italic font-medium opacity-90 underline decoration-dotted decoration-current/30 underline-offset-3"
+            title="Aksi roleplay"
+          >
+            _{content}_
+          </span>
+        );
+      }
+      return <React.Fragment key={idx}>{part}</React.Fragment>;
+    });
+  };
+
+  useEffect(() => {
+    let timer: number;
+    if (cooldownTime > 0) {
+      timer = window.setInterval(() => {
+        setCooldownTime((prev) => (prev > 0 ? prev - 1 : 0));
+      }, 1000);
+    }
+    return () => clearInterval(timer);
+  }, [cooldownTime]);
 
   const MAX_INPUT_HEIGHT = 130; // ~5 baris teks WhatsApp style
 
@@ -534,15 +616,34 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
       console.error("Chat error:", err);
       haptics.error(isHapticEnabled);
       if (isMountedRef.current) {
-        // Surface the real reason when the server sends one — a missing API
-        // key used to masquerade as "Koneksi terganggu", which sent people
-        // hunting for a network problem that didn't exist.
-        const detail = String(err?.message || "").trim();
-        setErrorNotice(
-          detail && detail !== "Failed to generate chat response"
-            ? detail
-            : "Koneksi terganggu. Silakan kirim ulang pesan."
-        );
+        if (err?.status === 429) {
+          const cooldown = 60; // 60 seconds
+          setCooldownTime(cooldown);
+          const simulatedMsg: Message = {
+            id: `msg_char_${Date.now()}`,
+            role: "char",
+            text: "Aduh, Kaoruko lagi istirahat sebentar nih! Tunggu bentar ya, nanti aku bales lagi! 🥺",
+            emotion: "playful",
+            intensity: 6,
+            timestamp: Date.now(),
+          };
+          onUpdateChat({
+            ...chat,
+            messages: [...chat.messages, simulatedMsg],
+            currentMood: { emotion: "playful", intensity: 6 },
+            updatedAt: Date.now(),
+          });
+        } else {
+          // Surface the real reason when the server sends one — a missing API
+          // key used to masquerade as "Koneksi terganggu", which sent people
+          // hunting for a network problem that didn't exist.
+          const detail = String(err?.message || "").trim();
+          setErrorNotice(
+            detail && detail !== "Failed to generate chat response"
+              ? detail
+              : "Koneksi terganggu. Silakan kirim ulang pesan."
+          );
+        }
       }
     } finally {
       // Always unmark on every exit path. Every path above already removed
@@ -1162,7 +1263,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                           message.audio || message.image ? "mt-2" : ""
                         }`}
                       >
-                        {message.text}
+                        {renderFormattedMessage(message.text)}
                       </p>
                     )}
 
@@ -1307,7 +1408,70 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
       )}
 
       {/* Bottom Input Bar Matching Screen 3 (Right Phone) */}
-      <footer className="fixed bottom-0 inset-x-0 z-40 bg-white/85 dark:bg-[#16171B]/85 backdrop-blur-md border-t border-black/[0.06] dark:border-white/10 pb-safe max-w-md lg:max-w-none mx-auto shadow-sm">
+      <footer className="fixed bottom-0 inset-x-0 z-40 bg-white/85 dark:bg-[#16171B]/85 backdrop-blur-md border-t border-black/[0.06] dark:border-white/10 pb-safe max-w-md lg:max-w-none mx-auto shadow-sm relative">
+        {/* Floating Input Action Popover (Aksi Roleplay & Opsi) */}
+        {showInputMenu && (
+          <div
+            ref={inputMenuRef}
+            className="absolute bottom-[66px] right-4 sm:right-6 w-60 bg-white dark:bg-[#16171B] rounded-2xl shadow-2xl border border-black/10 dark:border-white/10 p-2 z-50 animate-slide-up flex flex-col"
+          >
+            <div className="px-3 py-1.5 border-b border-neutral-100 dark:border-white/10 mb-1 flex items-center justify-between">
+              <span className="text-[11px] font-bold text-neutral-400 dark:text-[#71717A] uppercase tracking-wider">
+                Opsi & Format Chat
+              </span>
+              <button
+                type="button"
+                onClick={() => setShowInputMenu(false)}
+                className="text-neutral-400 hover:text-neutral-600 dark:hover:text-white cursor-pointer"
+              >
+                <X size={13} />
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                setShowInputMenu(false);
+                handleInsertActionFormat();
+              }}
+              className="w-full px-3 py-2 text-left text-xs font-semibold text-neutral-800 dark:text-[#E4E5EA] hover:bg-neutral-100 dark:hover:bg-white/[0.08] rounded-xl flex items-center gap-2.5 cursor-pointer transition-colors"
+            >
+              <div className="w-8 h-8 rounded-lg bg-amber-500/10 text-[#F5B838] flex items-center justify-center shrink-0">
+                <Sparkles size={16} />
+              </div>
+              <div className="flex flex-col">
+                <span className="font-bold text-[13px]">Aksi Roleplay (__ )</span>
+                <span className="text-[10.5px] text-neutral-400 font-normal">
+                  Contoh: _memberi kue_
+                </span>
+              </div>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setShowInputMenu(false);
+                setInputText((prev) => (prev ? `${prev} coba pap dong` : "coba pap dong"));
+                setTimeout(() => {
+                  textareaRef.current?.focus();
+                  adjustHeight();
+                }, 10);
+              }}
+              className="w-full px-3 py-2 text-left text-xs font-semibold text-neutral-800 dark:text-[#E4E5EA] hover:bg-neutral-100 dark:hover:bg-white/[0.08] rounded-xl flex items-center gap-2.5 cursor-pointer transition-colors"
+            >
+              <div className="w-8 h-8 rounded-lg bg-pink-500/10 text-pink-500 flex items-center justify-center shrink-0">
+                <Camera size={16} />
+              </div>
+              <div className="flex flex-col">
+                <span className="font-bold text-[13px]">Minta Foto / PAP</span>
+                <span className="text-[10.5px] text-neutral-400 font-normal">
+                  Kirim teks "coba pap dong"
+                </span>
+              </div>
+            </button>
+          </div>
+        )}
+
         {/* Kutipan balasan, seperti WhatsApp */}
         {replyTo && (
           <div className="px-3.5 pt-3 animate-fade-in">
@@ -1393,19 +1557,33 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
               ref={textareaRef}
               rows={1}
               value={inputText}
+              disabled={isTyping || cooldownTime > 0}
               onChange={(e) => setInputText(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter" && !e.shiftKey) {
                   e.preventDefault();
-                  handleSend();
+                  if (!isTyping && cooldownTime === 0) {
+                    handleSend();
+                  }
                 }
               }}
-              placeholder={dict.messagePlaceholder || "Message"}
-              className="w-full bg-transparent text-[14px] text-neutral-900 dark:text-[#F2F3F7] placeholder:text-neutral-400 dark:placeholder:text-white/35 resize-none outline-none leading-relaxed py-1 max-h-[130px] scrollbar-thin"
+              placeholder={cooldownTime > 0 ? `Tunggu ${cooldownTime}s...` : (dict.messagePlaceholder || "Message")}
+              className="w-full bg-transparent text-[14px] text-neutral-900 dark:text-[#F2F3F7] placeholder:text-neutral-400 dark:placeholder:text-white/35 resize-none outline-none leading-relaxed py-1 max-h-[130px] scrollbar-thin disabled:opacity-50"
             />
 
-            {/* Tombol Attachment (Gambar & Tambah) */}
-            <div className="flex items-center gap-0.5 pb-1 text-neutral-500 dark:text-[#8A8A93] shrink-0">
+            {/* Tombol Attachment (Aksi, Gambar & Tambah) */}
+            <div className="flex items-center gap-1 pb-1 text-neutral-500 dark:text-[#8A8A93] shrink-0">
+              {/* Tombol Cepat Format Aksi Roleplay */}
+              <button
+                type="button"
+                onClick={handleInsertActionFormat}
+                className="px-2 py-0.5 rounded-lg text-xs font-mono font-bold text-neutral-600 dark:text-[#C9CAD1] hover:text-[#F5B838] dark:hover:text-[#F5B838] bg-black/5 dark:bg-white/10 hover:bg-black/10 dark:hover:bg-white/15 active:scale-90 transition-all cursor-pointer flex items-center shrink-0"
+                title="Sisipkan format aksi roleplay (__)"
+                aria-label="Sisipkan format aksi roleplay"
+              >
+                <span className="italic">_aksi_</span>
+              </button>
+
               <ChatImagePicker
                 onImageSelected={handleImageSelected}
                 disabled={isTyping}
@@ -1417,12 +1595,19 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
 
               <button
                 type="button"
-                onClick={() => setShowActionMenu(!showActionMenu)}
-                className="p-1 rounded-full flex items-center justify-center hover:text-neutral-800 dark:hover:text-white active:scale-90 transition-all cursor-pointer"
-                title="Lampiran"
-                aria-label="Lampiran"
+                onClick={() => {
+                  haptics.light(settings.hapticFeedback !== false);
+                  setShowInputMenu((v) => !v);
+                }}
+                className={`p-1 rounded-full flex items-center justify-center active:scale-90 transition-all cursor-pointer ${
+                  showInputMenu
+                    ? "text-[#F5B838]"
+                    : "hover:text-neutral-800 dark:hover:text-white"
+                }`}
+                title="Menu Opsi Chat"
+                aria-label="Menu Opsi Chat"
               >
-                <Plus size={20} />
+                <Plus size={20} className={showInputMenu ? "rotate-45 transition-transform" : "transition-transform"} />
               </button>
             </div>
           </div>
@@ -1430,11 +1615,11 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
           {/* Tombol Send / Voice Action */}
           <button
             type="button"
-            disabled={isTyping || isPreparingImage || isPreparingAudio}
+            disabled={isTyping || isPreparingImage || isPreparingAudio || cooldownTime > 0}
             onClick={() => {
               // Ada teks atau lampiran → kirim. Kosong → mulai merekam.
               if (inputText.trim() || attachedImage) {
-                handleSend();
+                if (cooldownTime === 0) handleSend();
                 return;
               }
               if (!isRecordingSupported()) {
@@ -1448,8 +1633,8 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
             style={{
               backgroundColor: isPreparingAudio ? undefined : moodTheme.accentColor,
             }}
-            className={`w-11 h-11 rounded-full text-neutral-950 flex items-center justify-center shadow-xs active:scale-95 transition-all cursor-pointer shrink-0 mb-0.5 disabled:opacity-50 ${
-              isPreparingAudio
+            className={`w-11 h-11 rounded-full text-neutral-950 flex items-center justify-center shadow-xs active:scale-95 transition-all cursor-pointer shrink-0 mb-0.5 disabled:opacity-50 disabled:cursor-not-allowed ${
+              isPreparingAudio || cooldownTime > 0
                 ? "bg-neutral-300 dark:bg-white/20"
                 : "hover:brightness-95"
             }`}

@@ -20,6 +20,19 @@ export const translations = {
     noChatsFound: "Tidak Ada Obrolan Ditemukan",
     noChatsPrompt: "Mulai percakapan baru dengan menekan tombol tambah.",
     deleteChatConfirm: "Hapus percakapan dengan {name}?",
+    favorite: "Favorit",
+    unfavorite: "Batal Favorit",
+    archive: "Arsipkan",
+    unarchive: "Buka dari Arsip",
+    deleteChatAction: "Hapus Obrolan",
+    archivedHeading: "Diarsipkan",
+    archivedTitle: "Pesan yang Diarsipkan",
+    noArchivedChats: "Tidak ada obrolan yang diarsipkan",
+    backToChats: "Kembali ke Pesan",
+    chatOptions: "Opsi Obrolan",
+    confirmDeleteCharacterTitle: "Hapus Obrolan Ini?",
+    confirmDeleteCharacterDesc: "Karakter {name} beserta seluruh riwayat percakapan akan dihapus secara permanen.",
+    confirmDeleteAction: "Hapus",
 
     // Chat Screen Header & Menus
     online: "Online",
@@ -105,7 +118,7 @@ export const translations = {
     dangerZoneTitle: "Zona Bahaya",
     resetAppTitle: "Hapus Semua Data Aplikasi",
     resetAppDesc: "Menghapus semua karakter buatan, riwayat chat, dan pengaturan kembali ke awal.",
-    resetBtn: "Reset ke Pengaturan Awal",
+    resetBtn: "Bersihkan Cache & Reset Data Sesi",
     resetConfirmTitle: "Reset Semua Data?",
     resetConfirmDesc: "Tindakan ini tidak bisa dibatalkan. Seluruh riwayat obrolan, karakter yang kamu buat, dan API key akan dihapus secara permanen.",
     resetConfirmBtn: "Ya, Hapus Semua",
@@ -152,6 +165,19 @@ export const translations = {
     noChatsFound: "No Chats Found",
     noChatsPrompt: "Start a new conversation by tapping the add button.",
     deleteChatConfirm: "Delete conversation with {name}?",
+    favorite: "Favorite",
+    unfavorite: "Unfavorite",
+    archive: "Archive",
+    unarchive: "Unarchive",
+    deleteChatAction: "Delete Chat",
+    archivedHeading: "Archived",
+    archivedTitle: "Archived Chats",
+    noArchivedChats: "No archived chats",
+    backToChats: "Back to Chats",
+    chatOptions: "Chat Options",
+    confirmDeleteCharacterTitle: "Delete this chat?",
+    confirmDeleteCharacterDesc: "Character {name} and all chat history will be permanently deleted.",
+    confirmDeleteAction: "Delete",
 
     // Chat Screen Header & Menus
     online: "Online",
@@ -237,7 +263,7 @@ export const translations = {
     dangerZoneTitle: "Danger Zone",
     resetAppTitle: "Reset All App Data",
     resetAppDesc: "Removes all custom characters, chat histories, and resets settings to defaults.",
-    resetBtn: "Reset to Factory Defaults",
+    resetBtn: "Clear Cache & Reset Session Data",
     resetConfirmTitle: "Reset All Data?",
     resetConfirmDesc: "This action cannot be undone. All conversations, custom characters, and API key configurations will be permanently cleared.",
     resetConfirmBtn: "Yes, Reset Everything",
@@ -275,7 +301,7 @@ export function t(
   params?: Record<string, string>
 ): string {
   const dict = translations[lang] || translations.id;
-  let str = dict[key] || translations.id[key] || (key as string);
+  let str: string = dict[key] || translations.id[key] || (key as string);
   if (params) {
     Object.entries(params).forEach(([k, v]) => {
       str = str.replace(new RegExp(`\\{${k}\\}`, "g"), v);

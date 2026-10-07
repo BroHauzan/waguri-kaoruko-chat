@@ -70,6 +70,52 @@ export async function sendMessageToGemini({
 
   const provider = providerPayload(settings);
 
+  // Perhitungan waktu saat ini & jeda dari pesan terakhir
+  const now = Date.now();
+  const lastMsg = chat.messages.length > 0 ? chat.messages[chat.messages.length - 1] : null;
+  const lastMessageTimestamp = lastMsg ? lastMsg.timestamp : null;
+
+  const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Jakarta";
+  const userLocalTimeString = new Date(now).toLocaleString("id-ID", {
+    timeZone: userTimezone,
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+
+  let lastMessageLocalTimeString: string | undefined = undefined;
+  let timeElapsedText: string | undefined = undefined;
+
+  if (lastMessageTimestamp) {
+    lastMessageLocalTimeString = new Date(lastMessageTimestamp).toLocaleString("id-ID", {
+      timeZone: userTimezone,
+      weekday: "long",
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+
+    const elapsedMs = Math.max(0, now - lastMessageTimestamp);
+    const elapsedMinutes = Math.floor(elapsedMs / (60 * 1000));
+    const elapsedHours = Math.floor(elapsedMs / (60 * 60 * 1000));
+    const elapsedDays = Math.floor(elapsedMs / (24 * 60 * 60 * 1000));
+
+    if (elapsedMinutes < 2) {
+      timeElapsedText = "Baru saja (kurang dari 2 menit yang lalu)";
+    } else if (elapsedMinutes < 60) {
+      timeElapsedText = `${elapsedMinutes} menit yang lalu`;
+    } else if (elapsedHours < 24) {
+      timeElapsedText = `${elapsedHours} jam yang lalu`;
+    } else {
+      timeElapsedText = `${elapsedDays} hari yang lalu`;
+    }
+  }
+
   const payload = {
     charName: character.name,
     userName: settings.userName || "Kamu",
@@ -91,6 +137,12 @@ export async function sendMessageToGemini({
     replyLength: settings.replyLength,
     apiKey: provider.apiKey,
     provider,
+    currentTime: now,
+    userLocalTimeString,
+    userTimezone,
+    lastMessageTimestamp,
+    lastMessageLocalTimeString,
+    timeElapsedText,
     // Hanya kirim data mentahnya — dataUrl penuh terlalu besar untuk payload.
     image: image
       ? { base64: image.base64, mimeType: image.mimeType }
@@ -137,11 +189,10 @@ export async function sendMessageToGemini({
 
   if (!res.ok) {
     const errorBody = await res.json().catch(() => ({}));
-    // `details` carries the actionable reason (e.g. missing API key);
-    // `error` is the generic label. Prefer the specific one.
-    throw new Error(
-      errorBody.details || errorBody.error || `Server responded with status ${res.status}`
-    );
+    const detail = errorBody.details || errorBody.error || `Server responded with status ${res.status}`;
+    const err = new Error(detail) as any;
+    err.status = res.status;
+    throw err;
   }
 
   const data = await res.json();
