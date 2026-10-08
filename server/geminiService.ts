@@ -133,37 +133,54 @@ interface ModelPayload {
     caption?: string;
   };
   updated_instruction?: string;
+  updated_speaking_style?: string;
   preferred_user_name?: string;
+}
+
+export interface UserPreferenceDetection {
+  instruction?: string;
+  nickname?: string;
+  speakingStyle?: string;
 }
 
 /**
  * Fail-safe regex detector untuk memastikan permintaan panggilan nama / gaya bahasa
  * dari user selalu tertangkap meskipun LLM lupa mengisi field JSON khusus.
  */
-export function detectUserPreferenceRequest(message: string): {
-  instruction?: string;
-  nickname?: string;
-} | null {
+export function detectUserPreferenceRequest(
+  message: string,
+  currentSpeakingStyle?: string
+): UserPreferenceDetection | null {
   if (!message) return null;
   const m = message.trim();
 
-  // Pola IDN: "bisa ga kamu kalo manggil aku rin aja", "panggil aku mas ya", "manggil aku sayang"
+  // Pola IDN panggilan:
+  // "bisa ga kamu panggil aku rin aja", "bisa ga panggil aku rin", "manggil aku rin aja ya", "panggil aku rin aja", "panggil aku mas", "panggil sayang dong", "jangan panggil aku kamu, panggil aku rin"
   const matchId = m.match(
-    /(?:bisa\s+(?:ga|nggak|engga)\s+(?:kamu\s+)?)?(?:kalo\s+|kalau\s+)?(?:panggil|manggil)\s+aku\s+([a-zA-Z0-9_\s]{2,20}?)(?:\s+aja|\s+ya|\s+dong|\s+mulai\s+sekarang|\?|$)/i
+    /(?:(?:jangan\s+panggil\s+[^,]*,\s*)?(?:bisa\s+(?:ga|nggak|engga)\s+(?:kamu\s+)?)?(?:kalo\s+|kalau\s+)?(?:mulai\s+sekarang\s+)?(?:panggil|manggil)\s+aku\s+([a-zA-Z0-9_\s]{2,20}?)(?:\s+aja|\s+ya|\s+dong|\s+mulai\s+sekarang|\s+deh|\?|$))/i
   );
   if (matchId && matchId[1]) {
     const raw = matchId[1].trim();
     const cleanNick = raw.replace(/[.,!?]/g, "").trim();
-    const bannedWords = ["apa", "gimana", "kenapa", "gitu", "begitu", "terus"];
+    const bannedWords = ["apa", "gimana", "kenapa", "gitu", "begitu", "terus", "siapa", "kamu", "aku", "dong", "aja", "ya"];
     if (cleanNick && !bannedWords.includes(cleanNick.toLowerCase()) && cleanNick.length <= 15) {
+      const callRule = `Selalu panggil pengguna dengan sebutan "${cleanNick}".`;
+      let nextSpeakingStyle = currentSpeakingStyle ? currentSpeakingStyle.trim() : "";
+      if (nextSpeakingStyle) {
+        const cleaned = nextSpeakingStyle.replace(/(?:Selalu )?panggil pengguna dengan sebutan "[^"]*"\.?\s*/gi, "").trim();
+        nextSpeakingStyle = `${callRule} ${cleaned}`.trim();
+      } else {
+        nextSpeakingStyle = callRule;
+      }
       return {
         instruction: `Selalu panggil pengguna dengan sebutan "${cleanNick}"`,
         nickname: cleanNick,
+        speakingStyle: nextSpeakingStyle,
       };
     }
   }
 
-  // Pola ENG: "can you call me rin from now on", "call me babe"
+  // Pola ENG panggilan: "can you call me rin from now on", "call me babe", "call me rin please"
   const matchEn = m.match(
     /(?:can\s+you\s+|could\s+you\s+|please\s+)?call\s+me\s+([a-zA-Z0-9_\s]{2,20}?)(?:\s+from\s+now\s+on|\s+instead|\s+please|\?|$)/i
   );
@@ -171,9 +188,43 @@ export function detectUserPreferenceRequest(message: string): {
     const raw = matchEn[1].trim();
     const cleanNick = raw.replace(/[.,!?]/g, "").trim();
     if (cleanNick && cleanNick.length <= 15) {
+      const callRule = `Always address the user as "${cleanNick}".`;
+      let nextSpeakingStyle = currentSpeakingStyle ? currentSpeakingStyle.trim() : "";
+      if (nextSpeakingStyle) {
+        const cleaned = nextSpeakingStyle.replace(/(?:Always )?address the user as "[^"]*"\.?\s*/gi, "").trim();
+        nextSpeakingStyle = `${callRule} ${cleaned}`.trim();
+      } else {
+        nextSpeakingStyle = callRule;
+      }
       return {
         instruction: `Always address the user as "${cleanNick}"`,
         nickname: cleanNick,
+        speakingStyle: nextSpeakingStyle,
+      };
+    }
+  }
+
+  // Pola IDN nada/gaya bicara:
+  // "bisa ga gaya bicaramu lebih cuek", "ngomongnya lebih santai ya", "bicara lebih manja dong", "ngomongnya pake bahasa sunda"
+  const matchTone = m.match(
+    /(?:bisa\s+(?:ga|nggak|engga)\s+)?(?:gaya\s+bicara(?:mu)?\s+|ngomongnya\s+|bicara(?:nya)?\s+)?(?:lebih\s+([a-zA-Z0-9_\s]+?)|pake\s+bahasa\s+([a-zA-Z]+?))(?:\s+dong|\s+ya|\s+aja|\s+deh|\?|$)/i
+  );
+  if (matchTone) {
+    const rawTone = (matchTone[1] || matchTone[2] || "").trim().replace(/[.,!?]/g, "");
+    const cleanTone = rawTone.replace(/\b(?:dong|ya|aja|deh|banget)\b/gi, "").trim();
+    if (cleanTone && cleanTone.length <= 25) {
+      const toneRule = matchTone[1]
+        ? `Gaya bicara lebih ${cleanTone}.`
+        : `Gunakan campuran bahasa ${cleanTone} santai.`;
+      let nextSpeakingStyle = currentSpeakingStyle ? currentSpeakingStyle.trim() : "";
+      if (nextSpeakingStyle) {
+        nextSpeakingStyle = `${toneRule} ${nextSpeakingStyle}`.trim();
+      } else {
+        nextSpeakingStyle = toneRule;
+      }
+      return {
+        instruction: toneRule,
+        speakingStyle: nextSpeakingStyle,
       };
     }
   }
@@ -385,12 +436,13 @@ ${req.customInstructions && req.customInstructions.trim() ? req.customInstructio
   2. Directly address ${req.userName} with the newly requested name or style in this turn (e.g. "of course, i'll call you rin from now on hehe").
   3. YOU MUST INCLUDE the \`updated_instruction\` field in your JSON response summarizing the persistent rule (e.g., "Always address the user as rin").
   4. If a specific nickname was requested, set \`preferred_user_name\` to that name (e.g., "rin").
+  5. YOU MUST INCLUDE the \`updated_speaking_style\` field with the character's speaking style updated to incorporate the new address or tone requested by the user.
 
 # EXAMPLE DIALOGUES (match this voice)
 ${examplesText}
 
 # OUTPUT FORMAT
-Return ONLY valid JSON matching the provided schema. Every bubble in "messages" must strictly follow the anti-slop rules (lowercase, no trailing periods, no exclamation marks). Include updated_instruction and preferred_user_name if the user requested any preference changes.`;
+Return ONLY valid JSON matching the provided schema. Every bubble in "messages" must strictly follow the anti-slop rules (lowercase, no trailing periods, no exclamation marks). Include updated_instruction, updated_speaking_style, and preferred_user_name if the user requested any preference changes.`;
   }
 
   // DEFAULT: BAHASA INDONESIA
@@ -551,17 +603,18 @@ Ikuti instruksi ini kecuali jika bertentangan dengan aturan baku anti-slop di at
 ${req.customInstructions && req.customInstructions.trim() ? req.customInstructions : "tidak ada"}
 
 # ADAPTASI PERMINTAAN PENGGUNA SECARA INSTAN & MODIFIKASI SISTEM (CRITICAL)
-- JIKA ${req.userName} dalam pesannya meminta perubahan cara memanggil (misal: "bisa ga kamu kalo manggil aku rin aja", "panggil aku mas ya", "panggil sayang aja dong", "jangan panggil aku kamu"), meminta perubahan gaya bicara (misal: "bisa ga lebih manja/lembut"), atau perubahan dinamika hubungan:
+- JIKA ${req.userName} dalam pesannya meminta perubahan cara memanggil (misal: "bisa ga kamu kalo manggil aku rin aja", "panggil aku mas ya", "panggil sayang aja dong", "jangan panggil aku kamu"), meminta perubahan gaya bicara (misal: "bisa ga lebih manja/lembut", "ngomongnya lebih santai"), atau perubahan dinamika hubungan:
   1. KAMU WAJIB LANGSUNG MENERIMA DAN MENERAPKAN PERMINTAAN TERSEBUT DI BALASAN INI JUGA!
   2. Langsung panggil ${req.userName} dengan sebutan/gaya yang diminta dalam responmu saat ini (misal: "bisaaa bangett, mulai sekarang aku panggil kamu rin yaa hehehe").
   3. WAJIB ISI field \`updated_instruction\` di JSON responsmu dengan aturan ringkas yang akan diingat secara permanen (misal: "Selalu panggil pengguna dengan sebutan rin").
   4. Jika ada nama panggilan spesifik untuk pengguna, WAJIB ISI field \`preferred_user_name\` dengan nama tersebut (misal: "rin").
+  5. WAJIB ISI field \`updated_speaking_style\` dengan teks gaya bicara karakter yang telah diperbarui sesuai sebutan atau gaya baru yang diminta (misal: menambahkan aturan sebutan 'rin' atau nada baru ke gaya bicara karakter).
 
 # CONTOH DIALOG (sesuaikan dengan nada ini)
 ${examplesText}
 
 # FORMAT KELUARAN
-Kembalikan HANYA JSON valid yang cocok dengan skema. Setiap bubble di "messages" wajib mematuhi aturan anti-slop (huruf kecil semua, tanpa titik akhir, tanpa tanda seru). Sertakan updated_instruction dan preferred_user_name jika pengguna meminta modifikasi panggilan atau gaya bicara.`;
+Kembalikan HANYA JSON valid yang cocok dengan skema. Setiap bubble di "messages" wajib mematuhi aturan anti-slop (huruf kecil semua, tanpa titik akhir, tanpa tanda seru). Sertakan updated_instruction, updated_speaking_style, dan preferred_user_name jika pengguna meminta modifikasi panggilan atau gaya bicara.`;
 }
 
 /** Baris history + pesan terbaru, dipakai provider bergaya OpenAI.
@@ -638,6 +691,7 @@ const RESPONSE_SCHEMA_HINT = `{
   "emotion": "one of: happy | sad | angry | annoyed | excited | shy | jealous | bored | worried | neutral | playful",
   "intensity": 1,
   "updated_instruction": "Isi hanya jika pengguna meminta perubahan nama panggilan/cara memanggil/gaya bicara/hubungan, misal: 'Selalu panggil pengguna dengan sebutan rin'",
+  "updated_speaking_style": "Gaya bicara karakter yang telah diperbarui jika ada permintaan penyesuaian sebutan atau gaya bicara",
   "preferred_user_name": "Nama panggilan pengguna jika diminta, misal: 'rin'"
 }`;
 
@@ -674,6 +728,7 @@ function normalizePayload(raw: any): ModelPayload | null {
 
   const intensityRaw = Number(candidate.intensity);
   const updatedInstructionRaw = candidate.updated_instruction;
+  const updatedSpeakingStyleRaw = candidate.updated_speaking_style;
   const preferredUserNameRaw = candidate.preferred_user_name;
 
   return {
@@ -685,6 +740,10 @@ function normalizePayload(raw: any): ModelPayload | null {
     updated_instruction:
       typeof updatedInstructionRaw === "string" && updatedInstructionRaw.trim()
         ? updatedInstructionRaw.trim()
+        : undefined,
+    updated_speaking_style:
+      typeof updatedSpeakingStyleRaw === "string" && updatedSpeakingStyleRaw.trim()
+        ? updatedSpeakingStyleRaw.trim()
         : undefined,
     preferred_user_name:
       typeof preferredUserNameRaw === "string" && preferredUserNameRaw.trim()
@@ -935,6 +994,11 @@ async function callGemini(
                   type: Type.STRING,
                   description:
                     "Isi HANYA jika pengguna meminta perubahan nama panggilan, cara memanggil, gaya bicara, atau hubungan (misal: 'panggil aku rin aja'). Rangkum aturan tersebut dalam kalimat padat (misal: 'Selalu panggil pengguna dengan sebutan rin').",
+                },
+                updated_speaking_style: {
+                  type: Type.STRING,
+                  description:
+                    "Gaya bicara karakter yang telah diperbarui jika pengguna meminta perubahan cara memanggil atau gaya bicara (misal: menambahkan aturan sebutan 'rin' atau nada baru ke dalam gaya bicara karakter).",
                 },
                 preferred_user_name: {
                   type: Type.STRING,
@@ -1232,16 +1296,28 @@ export async function handleChatTurn(
 
   // Tangkap instruksi pembaruan gaya/panggilan baik dari AI maupun fail-safe regex
   let finalUpdatedInstruction = payload.updated_instruction;
+  let finalUpdatedSpeakingStyle = payload.updated_speaking_style;
   let finalPreferredUserName = payload.preferred_user_name;
 
-  if (!finalUpdatedInstruction) {
-    const fallback = detectUserPreferenceRequest(req.message);
-    if (fallback) {
+  const fallback = detectUserPreferenceRequest(req.message, req.speakingStyle);
+  if (fallback) {
+    if (!finalUpdatedInstruction && fallback.instruction) {
       finalUpdatedInstruction = fallback.instruction;
-      if (fallback.nickname && !finalPreferredUserName) {
-        finalPreferredUserName = fallback.nickname;
-      }
     }
+    if (!finalUpdatedSpeakingStyle && fallback.speakingStyle) {
+      finalUpdatedSpeakingStyle = fallback.speakingStyle;
+    }
+    if (!finalPreferredUserName && fallback.nickname) {
+      finalPreferredUserName = fallback.nickname;
+    }
+  }
+
+  // Jika ada preferredUserName tapi updatedSpeakingStyle belum memuatnya
+  if (finalPreferredUserName && !finalUpdatedSpeakingStyle) {
+    const callRule = `Selalu panggil pengguna dengan sebutan "${finalPreferredUserName}".`;
+    const curStyle = req.speakingStyle || "";
+    const cleaned = curStyle.replace(/(?:Selalu )?panggil pengguna dengan sebutan "[^"]*"\.?\s*/gi, "").trim();
+    finalUpdatedSpeakingStyle = `${callRule} ${cleaned}`.trim();
   }
 
   return {
@@ -1250,6 +1326,7 @@ export async function handleChatTurn(
     intensity: deduped.intensity,
     photo: sanitizedPhoto,
     updatedInstruction: finalUpdatedInstruction || undefined,
+    updatedSpeakingStyle: finalUpdatedSpeakingStyle || undefined,
     preferredUserName: finalPreferredUserName || undefined,
   };
 }
@@ -1358,7 +1435,20 @@ export async function handleFetchLore(req: LoreRequest) {
 
   const ai = new GoogleGenAI({ apiKey });
   const prompt = `Cari informasi resmi atau kanon anime/manga/game tentang karakter: "${req.characterName}".
-Dapatkan kepribadian, gaya bicara, latar belakang (nama sekolah/organisasi), dan ciri fisik lengkap (rambut, mata, seragam sekolah atau pakaian khas).`;
+Dapatkan kepribadian, gaya bicara, latar belakang (nama sekolah/organisasi), dan ciri fisik lengkap (rambut, mata, seragam sekolah atau pakaian khas).
+
+ATURAN WAJIB TATA BAHASA & GAYA BAHASA (MAIN SKILL PEDOMAN CHAT):
+1. Field "speechStyle" (Gaya Bicara):
+   - WAJIB disusun mengikuti pedoman chat instan sahabat dekat alami (Main Skill).
+   - Format wajib: gabungkan kepribadian khas karakter dengan kaidah Main Skill:
+     "Gaya chat santai sahabat dekat ala WhatsApp/LINE, seluruh pesan huruf kecil tanpa kapital awal, tanpa tanda titik di akhir kalimat, dilarang tanda seru, panggilan selalu aku-kamu, sering selipkan vokal panjang (iyaaa, bangett, okeyyy, belumm) dan partikel santai (ihhh, sihh, donggg, hehehe), diksi santai (nggak/engga, udah, lagi, bikin, gimana, kenapa)".
+2. Field "firstMessage" (Pesan Sapaan Pertama):
+   - WAJIB berupa 1-2 kalimat chat WhatsApp/LINE santai seolah baru menyapa sahabat dekat:
+     * Seluruh huruf kecil (tidak ada huruf kapital).
+     * Dilarang menggunakan tanda titik di akhir pesan.
+     * Dilarang menggunakan tanda seru (!).
+     * Dilarang membuka dengan template bot seperti "halo!", "tentu saja!", "hai ada yang bisa dibantu?".
+     * Buat mengalir akrab (contoh: "eh kamu udah pulang belumm, lagi ngapain nih hehehe" atau "tadi di sekolah seru engga, cerita donggg").`;
 
   let responseText = "";
   try {

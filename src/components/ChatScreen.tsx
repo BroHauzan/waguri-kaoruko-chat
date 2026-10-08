@@ -756,7 +756,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
       }
 
       // Update karakter & preferensi secara otomatis jika ada permintaan perubahan panggilan / gaya bicara
-      if (response.updatedInstruction || response.preferredUserName) {
+      if (response.updatedInstruction || response.updatedSpeakingStyle || response.preferredUserName) {
         let currentInstructions = character.customInstructions || "";
         const instructionToAdd = response.updatedInstruction;
 
@@ -766,11 +766,22 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
             : `- ${instructionToAdd}`;
         }
 
+        let newSpeakingStyle = character.speakingStyle || "";
+        if (response.updatedSpeakingStyle && response.updatedSpeakingStyle.trim()) {
+          newSpeakingStyle = response.updatedSpeakingStyle.trim();
+        } else if (response.preferredUserName) {
+          const callRule = `Selalu panggil pengguna dengan sebutan "${response.preferredUserName}".`;
+          const cleaned = newSpeakingStyle.replace(/(?:Selalu )?panggil pengguna dengan sebutan "[^"]*"\.?\s*/gi, "").trim();
+          newSpeakingStyle = `${callRule} ${cleaned}`.trim();
+        }
+
         const updatedChar: Character = {
           ...character,
+          speakingStyle: newSpeakingStyle,
           customInstructions: currentInstructions,
         };
 
+        storage.saveCharacter(updatedChar);
         onUpdateCharacter(updatedChar);
 
         // Jika ada pembaruan nama panggilan user
@@ -786,8 +797,8 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
         // Tampilkan feedback visual bahwa karakter mengingat preferensi pengguna
         const toastMsg =
           settings.language === "en"
-            ? `Memory adapted: ${response.preferredUserName ? `called as "${response.preferredUserName}"` : "style updated"}`
-            : `Preferensi disimpan: ${response.preferredUserName ? `kamu dipanggil "${response.preferredUserName}"` : "gaya bicara disesuaikan"}`;
+            ? `Speaking style updated: ${response.preferredUserName ? `called as "${response.preferredUserName}"` : "tone adapted"}`
+            : `Gaya bicara diperbarui: ${response.preferredUserName ? `kamu dipanggil "${response.preferredUserName}"` : "gaya bicara disesuaikan"}`;
         setSuccessNotice(toastMsg);
         setTimeout(() => setSuccessNotice(null), 3500);
       }

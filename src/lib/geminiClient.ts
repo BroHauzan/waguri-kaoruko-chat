@@ -31,6 +31,7 @@ export interface SendMessageResult {
     caption?: string;
   };
   updatedInstruction?: string;
+  updatedSpeakingStyle?: string;
   preferredUserName?: string;
 }
 
@@ -214,7 +215,28 @@ export async function sendMessageToGemini({
     throw err;
   }
 
-  const data = await res.json();
+  const data: SendMessageResult = await res.json();
+
+  // Client-side fail-safe jika server atau LLM belum mengisi preferredUserName / updatedSpeakingStyle
+  if (!data.updatedSpeakingStyle && !data.preferredUserName && userMessage) {
+    const m = userMessage.trim();
+    const matchId = m.match(
+      /(?:(?:jangan\s+panggil\s+[^,]*,\s*)?(?:bisa\s+(?:ga|nggak|engga)\s+(?:kamu\s+)?)?(?:kalo\s+|kalau\s+)?(?:mulai\s+sekarang\s+)?(?:panggil|manggil)\s+aku\s+([a-zA-Z0-9_\s]{2,20}?)(?:\s+aja|\s+ya|\s+dong|\s+mulai\s+sekarang|\s+deh|\?|$))/i
+    );
+    if (matchId && matchId[1]) {
+      const cleanNick = matchId[1].replace(/[.,!?]/g, "").trim();
+      const bannedWords = ["apa", "gimana", "kenapa", "gitu", "begitu", "terus", "siapa", "kamu", "aku", "dong", "aja", "ya"];
+      if (cleanNick && !bannedWords.includes(cleanNick.toLowerCase()) && cleanNick.length <= 15) {
+        data.preferredUserName = cleanNick;
+        data.updatedInstruction = `Selalu panggil pengguna dengan sebutan "${cleanNick}"`;
+        const callRule = `Selalu panggil pengguna dengan sebutan "${cleanNick}".`;
+        const curStyle = character.speakingStyle || "";
+        const cleaned = curStyle.replace(/(?:Selalu )?panggil pengguna dengan sebutan "[^"]*"\.?\s*/gi, "").trim();
+        data.updatedSpeakingStyle = `${callRule} ${cleaned}`.trim();
+      }
+    }
+  }
+
   return data;
 }
 

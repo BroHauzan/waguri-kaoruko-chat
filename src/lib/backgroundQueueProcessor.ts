@@ -184,7 +184,7 @@ class BackgroundQueueProcessor {
           storage.saveChat(updatedChat);
 
           // Update preferensi karakter jika ada instruksi panggilan / gaya baru
-          if (response.updatedInstruction || response.preferredUserName) {
+          if (response.updatedInstruction || response.updatedSpeakingStyle || response.preferredUserName) {
             const allChars = storage.getCharacters();
             const targetChar = allChars.find((c) => c.id === currentTask.characterId);
             if (targetChar) {
@@ -197,8 +197,19 @@ class BackgroundQueueProcessor {
                   ? `${instructions.trim()}\n- ${response.updatedInstruction}`
                   : `- ${response.updatedInstruction}`;
               }
+
+              let newSpeakingStyle = targetChar.speakingStyle || "";
+              if (response.updatedSpeakingStyle && response.updatedSpeakingStyle.trim()) {
+                newSpeakingStyle = response.updatedSpeakingStyle.trim();
+              } else if (response.preferredUserName) {
+                const callRule = `Selalu panggil pengguna dengan sebutan "${response.preferredUserName}".`;
+                const cleaned = newSpeakingStyle.replace(/(?:Selalu )?panggil pengguna dengan sebutan "[^"]*"\.?\s*/gi, "").trim();
+                newSpeakingStyle = `${callRule} ${cleaned}`.trim();
+              }
+
               storage.saveCharacter({
                 ...targetChar,
+                speakingStyle: newSpeakingStyle,
                 customInstructions: instructions,
               });
             }

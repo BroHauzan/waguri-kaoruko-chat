@@ -21,11 +21,15 @@ const PERSONALITY_TAGS = [
   "Kalem",
 ];
 
+export const MAIN_SKILL_SPEAKING_STYLE =
+  "Gaya chat santai sahabat dekat ala WhatsApp/LINE, seluruh pesan huruf kecil tanpa kapital awal, tanpa tanda titik di akhir kalimat, dilarang tanda seru, panggilan selalu aku-kamu, sering selipkan vokal panjang (iyaaa, bangett, okeyyy, belumm) dan partikel santai (ihhh, sihh, donggg, hehehe), diksi santai (nggak/engga, udah, lagi, bikin, gimana, kenapa)";
+
 const STYLE_TAGS = [
-  "Santai & Akrab",
-  "Ekspresif & Santai",
-  "Lembut & Manis",
-  "Singkat & Cuek",
+  "Sahabat Santai (aku-kamu)",
+  "Huruf Kecil & Tanpa Titik",
+  "Vokal Panjang (iyaaa/bangett)",
+  "Partikel Chat (ihhh/donggg/hehehe)",
+  "Hangat & Pengertian",
 ];
 
 export const CharacterForm: React.FC<CharacterFormProps> = ({
@@ -39,8 +43,12 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({
   const [nameError, setNameError] = useState("");
   const [bio, setBio] = useState(initialCharacter?.tagline || "");
   const [personality, setPersonality] = useState(initialCharacter?.personality || "");
-  const [speakingStyle, setSpeakingStyle] = useState(initialCharacter?.speakingStyle || "");
-  const [firstMsg, setFirstMsg] = useState(initialCharacter?.greeting || "");
+  const [speakingStyle, setSpeakingStyle] = useState(
+    initialCharacter?.speakingStyle || MAIN_SKILL_SPEAKING_STYLE
+  );
+  const [firstMsg, setFirstMsg] = useState(
+    initialCharacter?.greeting || "eh kamu lagi santai engga, lagi ngapain nih hehehe"
+  );
   const [hair, setHair] = useState(initialCharacter?.visualProfile?.hair || "");
   const [eyes, setEyes] = useState(initialCharacter?.visualProfile?.eyes || "");
   const [schoolName, setSchoolName] = useState(initialCharacter?.visualProfile?.schoolName || "");
@@ -80,8 +88,26 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({
         if (lore.name) setName(lore.name);
         if (lore.tagline) setBio(lore.tagline);
         if (lore.personality) setPersonality(lore.personality);
-        if (lore.speechStyle) setSpeakingStyle(lore.speechStyle);
-        if (lore.firstMessage) setFirstMsg(lore.firstMessage);
+        if (lore.speechStyle) {
+          let formattedStyle = lore.speechStyle.trim();
+          if (
+            !formattedStyle.toLowerCase().includes("tanpa titik") ||
+            !formattedStyle.toLowerCase().includes("huruf kecil")
+          ) {
+            formattedStyle = `${formattedStyle}. Gaya chat santai sahabat dekat ala WhatsApp/LINE, seluruh pesan huruf kecil tanpa kapital awal, tanpa tanda titik di akhir kalimat, dilarang tanda seru, panggilan selalu aku-kamu, sering selipkan vokal panjang (iyaaa, bangett, okeyyy, belumm) dan partikel santai (ihhh, sihh, donggg, hehehe), diksi santai (nggak/engga, udah, lagi, bikin, gimana, kenapa)`;
+          }
+          setSpeakingStyle(formattedStyle);
+        }
+        if (lore.firstMessage) {
+          let cleanFirstMsg = lore.firstMessage
+            .replace(/!+/g, "")
+            .replace(/\.+$/g, "")
+            .trim();
+          if (cleanFirstMsg) {
+            cleanFirstMsg = cleanFirstMsg.charAt(0).toLowerCase() + cleanFirstMsg.slice(1);
+          }
+          setFirstMsg(cleanFirstMsg);
+        }
 
         if (lore.visualProfile) {
           setHair(lore.visualProfile.hair || "");
@@ -443,9 +469,14 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({
 
             {/* Gaya Bicara */}
             <div className="flex flex-col gap-2">
-              <label className="text-xs font-semibold text-neutral-700 dark:text-[#C9CAD1]">
-                Gaya Bicara
-              </label>
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold text-neutral-700 dark:text-[#C9CAD1]">
+                  Gaya Bicara
+                </label>
+                <span className="text-[10px] font-medium text-amber-600 dark:text-[#F5B838]">
+                  Pedoman Main Skill
+                </span>
+              </div>
 
               {/* Chips Sederhana */}
               <div className="flex flex-wrap gap-1.5">
@@ -474,10 +505,13 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({
               <textarea
                 value={speakingStyle}
                 onChange={(e) => setSpeakingStyle(e.target.value)}
-                rows={2}
-                placeholder="Contoh: Santai dan akrab, suka bergurau..."
-                className="bg-neutral-100 dark:bg-white/[0.06] text-sm text-neutral-900 dark:text-[#F2F3F7] placeholder:text-neutral-400 dark:placeholder:text-white/35 rounded-lg p-3 border-none focus:outline-none focus:ring-2 focus:ring-amber-500/40 resize-y min-h-[52px] leading-relaxed"
+                rows={3}
+                placeholder="Gaya chat santai sahabat dekat, seluruh pesan huruf kecil tanpa kapital awal, tanpa tanda titik di akhir, tanpa tanda seru, vokal panjang (iyaaa, bangett), partikel santai (ihhh, donggg, hehehe)..."
+                className="bg-neutral-100 dark:bg-white/[0.06] text-sm text-neutral-900 dark:text-[#F2F3F7] placeholder:text-neutral-400 dark:placeholder:text-white/35 rounded-lg p-3 border-none focus:outline-none focus:ring-2 focus:ring-amber-500/40 resize-y min-h-[64px] leading-relaxed"
               />
+              <p className="text-[11px] text-neutral-400 dark:text-[#8A8A93] leading-tight">
+                Pedoman bawaan dari Main Skill. Kamu bebas mengedit atau menyesuaikan gaya bicara ini sesuai keinginanmu kapan saja.
+              </p>
             </div>
 
             {/* Pesan Sapaan */}
@@ -489,7 +523,7 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({
                 value={firstMsg}
                 onChange={(e) => setFirstMsg(e.target.value)}
                 rows={2}
-                placeholder="Contoh: Hai! Lagi apa sekarang? Kangen deh ngobrol :)"
+                placeholder="Contoh: eh kamu lagi santai engga, lagi ngapain nih hehehe"
                 className="bg-neutral-100 dark:bg-white/[0.06] text-sm text-neutral-900 dark:text-[#F2F3F7] placeholder:text-neutral-400 dark:placeholder:text-white/35 rounded-lg p-3 border-none focus:outline-none focus:ring-2 focus:ring-amber-500/40 resize-none"
               />
             </div>

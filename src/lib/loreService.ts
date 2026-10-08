@@ -60,7 +60,20 @@ export async function fetchCharacterLore(
   const ai = new GoogleGenAI({ apiKey: keyToUse });
 
   const prompt = `Cari informasi resmi atau kanon anime/manga/game tentang karakter: "${trimmedName}".
-Dapatkan kepribadian, gaya bicara, latar belakang (nama sekolah/organisasi), dan ciri fisik lengkap (rambut, mata, seragam sekolah atau pakaian khas).`;
+Dapatkan kepribadian, gaya bicara, latar belakang (nama sekolah/organisasi), dan ciri fisik lengkap (rambut, mata, seragam sekolah atau pakaian khas).
+
+ATURAN WAJIB TATA BAHASA & GAYA BAHASA (MAIN SKILL PEDOMAN CHAT):
+1. Field "speechStyle" (Gaya Bicara):
+   - WAJIB disusun mengikuti pedoman chat instan sahabat dekat alami (Main Skill).
+   - Format wajib: gabungkan kepribadian khas karakter dengan kaidah Main Skill:
+     "Gaya chat santai sahabat dekat ala WhatsApp/LINE, seluruh pesan huruf kecil tanpa kapital awal, tanpa tanda titik di akhir kalimat, dilarang tanda seru, panggilan selalu aku-kamu, sering selipkan vokal panjang (iyaaa, bangett, okeyyy, belumm) dan partikel santai (ihhh, sihh, donggg, hehehe), diksi santai (nggak/engga, udah, lagi, bikin, gimana, kenapa)".
+2. Field "firstMessage" (Pesan Sapaan Pertama):
+   - WAJIB berupa 1-2 kalimat chat WhatsApp/LINE santai seolah baru menyapa sahabat dekat:
+     * Seluruh huruf kecil (tidak ada huruf kapital).
+     * Dilarang menggunakan tanda titik di akhir pesan.
+     * Dilarang menggunakan tanda seru (!).
+     * Dilarang membuka dengan template bot seperti "halo!", "tentu saja!", "hai ada yang bisa dibantu?".
+     * Buat mengalir akrab (contoh: "eh kamu udah pulang belumm, lagi ngapain nih hehehe" atau "tadi di sekolah seru engga, cerita donggg").`;
 
   let responseText = "";
   try {
