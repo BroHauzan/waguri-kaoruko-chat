@@ -12,11 +12,13 @@
     <!-- Web App Manifest -->
     <link rel="manifest" href="/manifest.json" />
 
-    <!-- PWA Mobile Meta Tags -->
+    <!-- PWA Mobile Meta Tags & Theme Controls -->
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="theme-color" content="#0b141a" />
+    <meta name="theme-color" content="#0B0C0F" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="supported-color-schemes" content="light dark" />
     <link rel="apple-touch-icon" href="/waguri-pfp.jpg" />
     <meta name="format-detection" content="telephone=no" />
     <title>Waguri Kaoruko - AI Character Chat</title>
@@ -42,14 +44,17 @@
             mode === "dark" ||
             (mode === "auto" &&
               window.matchMedia("(prefers-color-scheme: dark)").matches);
+          var root = document.documentElement;
+          var cs = dark ? "only dark" : "only light";
           if (dark) {
-            document.documentElement.classList.add("dark");
-            document.documentElement.setAttribute("data-theme", "dark");
+            root.classList.add("dark");
+            root.setAttribute("data-theme", "dark");
           } else {
-            document.documentElement.classList.remove("dark");
-            document.documentElement.setAttribute("data-theme", "light");
+            root.classList.remove("dark");
+            root.setAttribute("data-theme", "light");
           }
-          document.documentElement.style.colorScheme = dark ? "dark" : "light";
+          root.style.colorScheme = cs;
+          root.style.backgroundColor = dark ? "#0B0C0F" : "#F4F5F7";
         } catch (e) {
           document.documentElement.classList.add("dark");
           document.documentElement.setAttribute("data-theme", "dark");

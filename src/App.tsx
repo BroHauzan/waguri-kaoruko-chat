@@ -224,10 +224,9 @@ export default function App() {
     setSettings(updatedSettings);
     setShowOnboardingModal(false);
 
-    // Otomatis buka obrolan karakter utama jika ada
-    if (characters.length > 0 && !activeCharacterRef.current) {
-      handleSelectCharacter(characters[0]);
-    }
+    // Tetap berada di menu utama (Home / daftar obrolan), jangan langsung diarahkan ke chat
+    setActiveCharacter(null);
+    setCurrentTab("chats");
   };
 
   const handleSelectCharacter = (char: Character, pushHistory = true) => {

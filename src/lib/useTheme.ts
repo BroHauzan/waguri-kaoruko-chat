@@ -31,21 +31,50 @@ export function applyTheme(mode: ThemeMode = "auto"): "light" | "dark" {
     root.setAttribute("data-theme", "light");
   }
 
+  // W3C standard: 'only light' / 'only dark' menonaktifkan paksaan forced-dark browser mobile
+  const colorSchemeVal = isDark ? "only dark" : "only light";
+  root.style.colorScheme = colorSchemeVal;
+  root.style.backgroundColor = isDark ? "#0B0C0F" : "#F4F5F7";
+
   if (document.body) {
     if (isDark) {
       document.body.classList.add("dark");
+      document.body.setAttribute("data-theme", "dark");
     } else {
       document.body.classList.remove("dark");
+      document.body.setAttribute("data-theme", "light");
     }
+    document.body.style.colorScheme = colorSchemeVal;
+    document.body.style.backgroundColor = isDark ? "#0B0C0F" : "#F4F5F7";
   }
-
-  root.style.colorScheme = resolved;
 
   // Update meta theme-color pada browser mobile & PWA
   const metas = document.querySelectorAll('meta[name="theme-color"]');
   metas.forEach((meta) => {
     meta.setAttribute("content", isDark ? "#0B0C0F" : "#F4F5F7");
   });
+
+  // Sinkronkan meta color-scheme untuk memberitahu browser mobile (Mi Browser, Samsung Internet, dll)
+  let colorSchemeMeta = document.querySelector('meta[name="color-scheme"]');
+  if (!colorSchemeMeta) {
+    colorSchemeMeta = document.createElement("meta");
+    colorSchemeMeta.setAttribute("name", "color-scheme");
+    document.head.appendChild(colorSchemeMeta);
+  }
+  colorSchemeMeta.setAttribute("content", isDark ? "dark" : "light");
+
+  let supportedMeta = document.querySelector('meta[name="supported-color-schemes"]');
+  if (!supportedMeta) {
+    supportedMeta = document.createElement("meta");
+    supportedMeta.setAttribute("name", "supported-color-schemes");
+    document.head.appendChild(supportedMeta);
+  }
+  supportedMeta.setAttribute("content", isDark ? "dark" : "light");
+
+  const statusBarMeta = document.querySelector('meta[name="apple-mobile-web-app-status-bar-style"]');
+  if (statusBarMeta) {
+    statusBarMeta.setAttribute("content", isDark ? "black-translucent" : "default");
+  }
 
   return resolved;
 }

@@ -49,12 +49,31 @@
 }
 
 @layer base {
-  :root {
+  :root,
+  html,
+  body {
     color-scheme: light;
+    background-color: #F4F5F7;
+    color: #18181B;
   }
+
+  :root[data-theme="light"],
+  html[data-theme="light"],
+  body[data-theme="light"] {
+    color-scheme: only light;
+    background-color: #F4F5F7;
+    color: #18181B;
+  }
+
   :root.dark,
-  :root[data-theme="dark"] {
-    color-scheme: dark;
+  :root[data-theme="dark"],
+  html.dark,
+  html[data-theme="dark"],
+  body.dark,
+  body[data-theme="dark"] {
+    color-scheme: only dark;
+    background-color: #0B0C0F;
+    color: #F2F3F7;
   }
 
   body {
@@ -125,7 +144,10 @@
       inset 0 -1px 1px rgba(255, 255, 255, 0.25),
       0 12px 32px -8px rgba(20, 20, 30, 0.28);
   }
-  :root.dark .liquid-glass {
+  :root.dark .liquid-glass,
+  :root[data-theme="dark"] .liquid-glass,
+  html.dark .liquid-glass,
+  html[data-theme="dark"] .liquid-glass {
     background-color: rgba(24, 24, 28, 0.62);
     border-color: rgba(255, 255, 255, 0.12);
     box-shadow:
@@ -143,7 +165,10 @@
       inset 0 1px 1.5px rgba(255, 255, 255, 0.9),
       0 20px 48px -12px rgba(20, 20, 30, 0.32);
   }
-  :root.dark .liquid-glass-strong {
+  :root.dark .liquid-glass-strong,
+  :root[data-theme="dark"] .liquid-glass-strong,
+  html.dark .liquid-glass-strong,
+  html[data-theme="dark"] .liquid-glass-strong {
     background-color: rgba(28, 28, 32, 0.8);
     border-color: rgba(255, 255, 255, 0.14);
     box-shadow:
@@ -162,7 +187,10 @@
       inset 0 -1px 1.5px rgba(255, 255, 255, 0.3),
       0 18px 42px -10px rgba(20, 20, 30, 0.3);
   }
-  :root.dark .liquid-glass-nav {
+  :root.dark .liquid-glass-nav,
+  :root[data-theme="dark"] .liquid-glass-nav,
+  html.dark .liquid-glass-nav,
+  html[data-theme="dark"] .liquid-glass-nav {
     background-color: rgba(26, 26, 30, 0.68);
     border-color: rgba(255, 255, 255, 0.13);
     box-shadow:
@@ -179,7 +207,10 @@
     border: 1px solid rgba(255, 255, 255, 0.35);
     box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.6);
   }
-  :root.dark .liquid-glass-button {
+  :root.dark .liquid-glass-button,
+  :root[data-theme="dark"] .liquid-glass-button,
+  html.dark .liquid-glass-button,
+  html[data-theme="dark"] .liquid-glass-button {
     background-color: rgba(255, 255, 255, 0.1);
     border-color: rgba(255, 255, 255, 0.18);
     box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.16);
@@ -195,7 +226,10 @@
       inset 0 1px 2px rgba(255, 255, 255, 0.9),
       0 -20px 60px -15px rgba(20, 20, 30, 0.35);
   }
-  :root.dark .liquid-glass-sheet {
+  :root.dark .liquid-glass-sheet,
+  :root[data-theme="dark"] .liquid-glass-sheet,
+  html.dark .liquid-glass-sheet,
+  html[data-theme="dark"] .liquid-glass-sheet {
     background-color: rgba(22, 22, 26, 0.82);
     border-top-color: rgba(255, 255, 255, 0.14);
     box-shadow:
