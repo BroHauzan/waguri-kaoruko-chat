@@ -27,6 +27,7 @@ export interface CharacterVisualProfile {
 export interface ChatTurnRequest {
   charName: string;
   userName: string;
+  userPersona?: string;
   personality: string;
   speakingStyle: string;
   backstory: string;
@@ -253,7 +254,7 @@ Name: ${req.charName}
 Personality: ${req.personality || "Friendly, warm, expressive"}
 Speaking style: ${req.speakingStyle || "Casual English texting"}
 Backstory: ${req.backstory || "A close companion"}
-Relationship with ${req.userName}: ${req.relationship || (isRomantic ? "Loving girlfriend / partner" : "Close best friend")}
+Relationship with ${req.userName}: ${req.relationship || (isRomantic ? "Loving girlfriend / partner" : "Close best friend")}${req.userPersona ? `\nUser Persona & Background (${req.userName}): ${req.userPersona}` : ""}
 
 # CORE ANTI-SLOP INSTANT MESSAGING DIRECTIVE (MANDATORY & ABSOLUTE)
 This document is the core system standard for your chat style. You MUST write like an authentic human texting casually on a smartphone, completely free of generic AI patterns.
@@ -412,7 +413,7 @@ Nama: ${req.charName}
 Kepribadian: ${req.personality || "Hangat, manis, ekspresif"}
 Gaya bicara: ${req.speakingStyle || "Santai anak muda"}
 Latar belakang: ${req.backstory || "Teman dekat"}
-Hubungan dengan ${req.userName}: ${req.relationship || (isRomantic ? "Pacar / kekasih yang saling menyayangi" : "Sahabat dekat")}
+Hubungan dengan ${req.userName}: ${req.relationship || (isRomantic ? "Pacar / kekasih yang saling menyayangi" : "Sahabat dekat")}${req.userPersona ? `\nPersona & Profil Pengguna (${req.userName}): ${req.userPersona}` : ""}
 
 # PEDOMAN INTERAKSI CHAT (WAJIB MUTLAK ANTI-SLOP)
 Dokumen ini adalah aturan baku pembentukan gaya bahasa seluruh karakter. Kamu WAJIB berbicara mengikuti ritme chat manusia asli yang mengetik santai lewat ponsel pintar, bebas dari pola kaku AI.

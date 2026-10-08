@@ -31,6 +31,9 @@ interface ChatsListScreenProps {
   onCreateNew: () => void;
   language?: AppLanguage;
   hapticFeedback?: boolean;
+  isArchivedView?: boolean;
+  onOpenArchived?: () => void;
+  onCloseArchived?: () => void;
 }
 
 export const ChatsListScreen: React.FC<ChatsListScreenProps> = ({
@@ -46,9 +49,30 @@ export const ChatsListScreen: React.FC<ChatsListScreenProps> = ({
   onCreateNew,
   language = "id",
   hapticFeedback = true,
+  isArchivedView: isArchivedViewProp,
+  onOpenArchived,
+  onCloseArchived,
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
-  const [showArchivedView, setShowArchivedView] = useState(false);
+  const [internalShowArchivedView, setInternalShowArchivedView] = useState(false);
+  const showArchivedView = isArchivedViewProp !== undefined ? isArchivedViewProp : internalShowArchivedView;
+
+  const handleOpenArchived = () => {
+    if (onOpenArchived) {
+      onOpenArchived();
+    } else {
+      setInternalShowArchivedView(true);
+    }
+  };
+
+  const handleCloseArchived = () => {
+    if (onCloseArchived) {
+      onCloseArchived();
+    } else {
+      setInternalShowArchivedView(false);
+    }
+  };
+
   const [actionCharacter, setActionCharacter] = useState<Character | null>(null);
   const [characterToDelete, setCharacterToDelete] = useState<Character | null>(null);
 
@@ -197,7 +221,7 @@ export const ChatsListScreen: React.FC<ChatsListScreenProps> = ({
         <div className="px-5 pt-3 pb-2 flex items-center justify-between">
           <button
             type="button"
-            onClick={() => setShowArchivedView(false)}
+            onClick={handleCloseArchived}
             className="w-10 h-10 rounded-full bg-white dark:bg-[#16171B] border border-black/10 dark:border-white/10 shadow-xs flex items-center justify-center text-neutral-700 dark:text-[#C9CAD1] hover:bg-neutral-50 dark:hover:bg-white/[0.04] active:scale-95 transition-all cursor-pointer"
             title={dict.backToChats}
             aria-label={dict.backToChats}
@@ -309,7 +333,7 @@ export const ChatsListScreen: React.FC<ChatsListScreenProps> = ({
         {!showArchivedView && archivedCount > 0 && !searchQuery && (
           <button
             type="button"
-            onClick={() => setShowArchivedView(true)}
+            onClick={handleOpenArchived}
             className="w-full flex items-center justify-between px-4 py-3 bg-white dark:bg-[#16171B] rounded-[20px] shadow-xs border border-black/5 dark:border-white/10 mb-3 hover:bg-neutral-50 dark:hover:bg-white/[0.04] active:scale-[0.99] transition-all cursor-pointer text-left"
           >
             <div className="flex items-center gap-3">
@@ -341,7 +365,7 @@ export const ChatsListScreen: React.FC<ChatsListScreenProps> = ({
             </p>
             {showArchivedView ? (
               <button
-                onClick={() => setShowArchivedView(false)}
+                onClick={handleCloseArchived}
                 className="mt-4 px-5 py-2.5 rounded-full text-xs font-semibold bg-neutral-100 dark:bg-white/[0.08] text-neutral-800 dark:text-[#E4E5EA] hover:bg-neutral-200 dark:hover:bg-white/[0.14] transition-all shadow-xs cursor-pointer"
               >
                 {dict.backToChats}

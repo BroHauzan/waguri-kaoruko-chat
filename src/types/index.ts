@@ -148,6 +148,7 @@ export type AppLanguage = 'id' | 'en';
 
 export interface Settings {
   userName: string;
+  userPersona?: string;
   model: string;
   imageModel?: string;
   temperature: number;

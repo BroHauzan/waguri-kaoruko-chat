@@ -63,6 +63,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   onClearAllData,
 }) => {
   const [userName, setUserName] = useState(settings.userName || "Hauzan");
+  const [userPersona, setUserPersona] = useState(settings.userPersona || "");
   const [model] = useState(settings.model || "gemini-3.1-flash-lite");
   const [temperature, setTemperature] = useState(settings.temperature ?? 0.8);
   const [replyLength, setReplyLength] = useState(settings.replyLength || "Sedang");
@@ -92,6 +93,18 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   }, []);
 
   // Sinkronkan state lokal saat prop settings dari parent berubah
+  useEffect(() => {
+    if (settings.userName && settings.userName !== userName) {
+      setUserName(settings.userName);
+    }
+  }, [settings.userName]);
+
+  useEffect(() => {
+    if (settings.userPersona !== undefined && settings.userPersona !== userPersona) {
+      setUserPersona(settings.userPersona);
+    }
+  }, [settings.userPersona]);
+
   useEffect(() => {
     if (settings.theme && settings.theme !== theme) {
       setTheme(settings.theme);
@@ -195,6 +208,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     onSaveSettings({
       ...settings,
       userName,
+      userPersona,
       model,
       temperature,
       replyLength,
@@ -220,6 +234,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     onSaveSettings({
       ...settings,
       userName,
+      userPersona,
       model,
       temperature,
       replyLength,
@@ -245,6 +260,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     onSaveSettings({
       ...settings,
       userName,
+      userPersona,
       model,
       temperature,
       replyLength,
@@ -265,6 +281,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     onSaveSettings({
       ...settings,
       userName,
+      userPersona,
       model,
       temperature,
       replyLength,
@@ -675,6 +692,34 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                     placeholder={dict.nicknamePlaceholder}
                   />
                 </div>
+
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center justify-between">
+                    <label className="text-xs font-medium text-neutral-500 dark:text-[#8A8A93]">
+                      {language === "en" ? "Persona / About You" : "Persona / Profil Pengguna"}
+                    </label>
+                    <span className="text-[10px] text-neutral-400 dark:text-[#8A8A93]">
+                      {language === "en" ? "Optional" : "Opsional"}
+                    </span>
+                  </div>
+                  <textarea
+                    value={userPersona}
+                    onChange={(e) => setUserPersona(e.target.value)}
+                    rows={3}
+                    maxLength={200}
+                    className="w-full px-3 py-2 text-xs bg-neutral-100 dark:bg-white/5 rounded-xl border border-black/10 dark:border-white/10 text-neutral-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-[#F5B838] resize-none leading-relaxed"
+                    placeholder={
+                      language === "en"
+                        ? "e.g., Architecture student who loves lo-fi music and coffee."
+                        : "Misal: Mahasiswa arsitektur yang suka musik lo-fi dan kopi."
+                    }
+                  />
+                  <span className="text-[10px] text-neutral-400 dark:text-[#8A8A93]">
+                    {language === "en"
+                      ? "AI characters will remember this to make conversations more personal."
+                      : "Karakter AI akan mengingat info ini agar obrolan terasa lebih personal."}
+                  </span>
+                </div>
               </div>
 
               <div className="flex justify-end pt-2">
@@ -684,6 +729,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                     onSaveSettings({
                       ...settings,
                       userName,
+                      userPersona,
                       theme,
                       language,
                       temperature,

@@ -136,6 +136,7 @@ export async function sendMessageToGemini({
   const payload = {
     charName: character.name,
     userName: settings.userName || (isEn ? "You" : "Kamu"),
+    userPersona: settings.userPersona,
     personality: character.personality,
     speakingStyle: character.speakingStyle,
     backstory: character.backstory,

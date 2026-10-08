@@ -16,6 +16,7 @@ import { DesktopEmptyState } from "./components/DesktopEmptyState";
 import { checkAndExecuteScheduledRoutines } from "./lib/routineService";
 import { UpdateChangelogModal } from "./components/UpdateChangelogModal";
 import { hasSeenLatestUpdate } from "./lib/appUpdates";
+import { OnboardingModal } from "./components/OnboardingModal";
 
 export default function App() {
   const [characters, setCharacters] = useState<Character[]>([]);
@@ -32,10 +33,13 @@ export default function App() {
   } | null>(null);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [showOnboardingModal, setShowOnboardingModal] = useState(false);
+  const [isArchivedView, setIsArchivedView] = useState(false);
 
   const activeCharacterRef = useRef<Character | null>(null);
   const editingCharacterRef = useRef<Character | null>(null);
   const currentTabRef = useRef<NavTab>("chats");
+  const isArchivedViewRef = useRef(false);
 
   useEffect(() => {
     activeCharacterRef.current = activeCharacter;
@@ -48,6 +52,10 @@ export default function App() {
   useEffect(() => {
     currentTabRef.current = currentTab;
   }, [currentTab]);
+
+  useEffect(() => {
+    isArchivedViewRef.current = isArchivedView;
+  }, [isArchivedView]);
 
   // Theme — resolves `auto` against the OS preference, live.
   useTheme(settings.theme || "dark");
@@ -65,8 +73,10 @@ export default function App() {
     setChats(loadedChats);
     setSettings(loadedSettings);
 
-    // Tampilkan pop-up pembaruan jika user belum pernah melihat update versi terkini
-    if (!hasSeenLatestUpdate()) {
+    // Periksa apakah user baru perlu mengisi profil awal (onboarding)
+    if (!storage.isOnboardingCompleted()) {
+      setShowOnboardingModal(true);
+    } else if (!hasSeenLatestUpdate()) {
       setShowUpdateModal(true);
     }
 
@@ -74,20 +84,6 @@ export default function App() {
       setShowUpdateModal(true);
     };
     window.addEventListener("waguri_open_update_changelog", handleOpenUpdateModal);
-
-    // Saat pengguna pertama kali membuka aplikasi, langsung buka obrolan Waguri Kaoruko yang menyapa duluan
-    if (
-      loadedCharacters.length === 1 &&
-      (loadedCharacters[0].id === "waguri-kaoruko-sahabat" || loadedCharacters[0].id === "waguri-kaoruko")
-    ) {
-      const charId = loadedCharacters[0].id;
-      const kaorukoChat =
-        loadedChats[charId] ||
-        storage.getChatByCharacterId(charId, loadedCharacters[0]);
-      if (kaorukoChat.messages.length <= 1) {
-        setActiveCharacter(loadedCharacters[0]);
-      }
-    }
 
     // Resume any pending tasks in IndexedDB from previous sessions or reloads
     backgroundQueue.resumePendingTasks(loadedSettings);
@@ -150,9 +146,17 @@ export default function App() {
       window.history.replaceState({ screen: "main", tab: "chats" }, "");
     }
 
-    const handlePopState = () => {
+    const handlePopState = (event: PopStateEvent) => {
+      const state = event.state;
       if (activeCharacterRef.current) {
         setActiveCharacter(null);
+        if (state?.screen === "archived") {
+          setIsArchivedView(true);
+        } else {
+          setIsArchivedView(false);
+        }
+      } else if (isArchivedViewRef.current) {
+        setIsArchivedView(false);
       } else if (editingCharacterRef.current) {
         setEditingCharacter(null);
       } else if (currentTabRef.current !== "chats") {
@@ -169,7 +173,9 @@ export default function App() {
       capApp
         .addListener("backButton", ({ canGoBack }: { canGoBack: boolean }) => {
           if (activeCharacterRef.current) {
-            setActiveCharacter(null);
+            handleCloseChat();
+          } else if (isArchivedViewRef.current) {
+            handleCloseArchived();
           } else if (editingCharacterRef.current) {
             setEditingCharacter(null);
           } else if (currentTabRef.current !== "chats") {
@@ -191,11 +197,49 @@ export default function App() {
     };
   }, []);
 
+  const handleOpenArchived = () => {
+    setIsArchivedView(true);
+    if (!isDesktop) {
+      window.history.pushState({ screen: "archived" }, "");
+    }
+  };
+
+  const handleCloseArchived = () => {
+    if (window.history.state?.screen === "archived") {
+      window.history.back();
+    } else {
+      setIsArchivedView(false);
+    }
+  };
+
+  const handleCompleteOnboarding = (name: string, persona: string) => {
+    const updatedSettings: Settings = {
+      ...settings,
+      userName: name,
+      userPersona: persona,
+    };
+    storage.saveSettings(updatedSettings);
+    storage.setOnboardingCompleted();
+    setSettings(updatedSettings);
+    setShowOnboardingModal(false);
+
+    if (!hasSeenLatestUpdate()) {
+      setShowUpdateModal(true);
+    }
+  };
+
   const handleSelectCharacter = (char: Character, pushHistory = true) => {
     const chat = storage.getChatByCharacterId(char.id, char);
     setChats((prev) => ({ ...prev, [char.id]: chat }));
     if (pushHistory && !isDesktop) {
-      window.history.pushState({ screen: "chat", characterId: char.id }, "");
+      window.history.pushState(
+        {
+          screen: "chat",
+          characterId: char.id,
+          fromArchived: isArchivedViewRef.current,
+        },
+        ""
+      );
     }
     setActiveCharacter(char);
     // Mark character as read when chat is opened
@@ -407,6 +451,9 @@ export default function App() {
             typingCharacterIds={typingCharacterIds}
             unreadCharacterIds={unreadCharacterIds}
             activeCharacterId={isDesktop ? activeCharacter?.id : undefined}
+            isArchivedView={isArchivedView}
+            onOpenArchived={handleOpenArchived}
+            onCloseArchived={handleCloseArchived}
             onSelectCharacter={handleSelectCharacter}
             onDeleteCharacter={handleDeleteCharacter}
             onTogglePinCharacter={handleTogglePinCharacter}
@@ -442,6 +489,7 @@ export default function App() {
         currentTab={currentTab}
         onTabChange={(tab) => {
           setEditingCharacter(null);
+          setIsArchivedView(false);
           setCurrentTab(tab);
         }}
         activeChatsCount={activeChatsCount}
@@ -477,6 +525,16 @@ export default function App() {
     />
   );
 
+  const onboardingModalNode = (
+    <OnboardingModal
+      isOpen={showOnboardingModal}
+      initialName={settings.userName}
+      initialPersona={settings.userPersona}
+      onComplete={handleCompleteOnboarding}
+      language={settings.language || "id"}
+    />
+  );
+
   /* Desktop: dua panel seperti WhatsApp Web (daftar di kiri, obrolan di kanan).
      Setiap panel punya `transform-gpu` supaya elemen `fixed` di dalamnya
      (header, input bar, tab bar, modal) menempel ke panel, bukan ke layar.
@@ -503,6 +561,7 @@ export default function App() {
         {notificationBanner}
         {offlineBanner}
         {updateChangelogModalNode}
+        {onboardingModalNode}
       </div>
     );
   }
@@ -517,6 +576,7 @@ export default function App() {
       {notificationBanner}
       {offlineBanner}
       {updateChangelogModalNode}
+      {onboardingModalNode}
     </div>
   );
 }

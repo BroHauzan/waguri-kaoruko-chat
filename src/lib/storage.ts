@@ -150,6 +150,7 @@ const INITIAL_CHARACTERS: Character[] = [WAGURI_FRIEND_CHARACTER];
 
 const DEFAULT_SETTINGS: Settings = {
   userName: "Rizky",
+  userPersona: "",
   model: "combo/waguriapp",
   imageModel: "gemini-3.1-flash-lite-image",
   temperature: 0.9,
@@ -170,6 +171,7 @@ const STORAGE_KEYS = {
   PINNED: "waguri_v5_pinned_characters",
   ARCHIVED: "waguri_v5_archived_characters",
   SCHEDULED_TASKS: "waguri_v5_scheduled_tasks",
+  ONBOARDING: "waguri_v5_onboarding_completed",
 };
 
 export const storage = {
@@ -611,6 +613,34 @@ export const storage = {
     }
   },
 
+  isOnboardingCompleted(): boolean {
+    try {
+      if (localStorage.getItem(STORAGE_KEYS.ONBOARDING) === "true") {
+        return true;
+      }
+      const rawChats = localStorage.getItem(STORAGE_KEYS.CHATS);
+      if (rawChats) {
+        const chats = JSON.parse(rawChats);
+        const hasHistory = Object.values(chats).some((c: any) => (c?.messages?.length || 0) > 1);
+        if (hasHistory) {
+          localStorage.setItem(STORAGE_KEYS.ONBOARDING, "true");
+          return true;
+        }
+      }
+      return false;
+    } catch {
+      return false;
+    }
+  },
+
+  setOnboardingCompleted(): void {
+    try {
+      localStorage.setItem(STORAGE_KEYS.ONBOARDING, "true");
+    } catch (e) {
+      console.error("Gagal menyimpan status onboarding", e);
+    }
+  },
+
   clearAllData(): void {
     localStorage.removeItem(STORAGE_KEYS.CHARACTERS);
     localStorage.removeItem(STORAGE_KEYS.CHATS);
@@ -618,5 +648,6 @@ export const storage = {
     localStorage.removeItem(STORAGE_KEYS.PINNED);
     localStorage.removeItem(STORAGE_KEYS.ARCHIVED);
     localStorage.removeItem(STORAGE_KEYS.SCHEDULED_TASKS);
+    localStorage.removeItem(STORAGE_KEYS.ONBOARDING);
   },
 };
