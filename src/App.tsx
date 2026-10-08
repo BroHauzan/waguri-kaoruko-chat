@@ -16,6 +16,7 @@ import { DesktopEmptyState } from "./components/DesktopEmptyState";
 import { UpdateChangelogModal } from "./components/UpdateChangelogModal";
 import { hasSeenLatestUpdate, markLatestUpdateAsSeen } from "./lib/appUpdates";
 import { OnboardingModal } from "./components/OnboardingModal";
+import { checkAndExecuteScheduledRoutines } from "./lib/routineService";
 
 export default function App() {
   const [characters, setCharacters] = useState<Character[]>([]);
@@ -306,7 +307,7 @@ export default function App() {
   // Periodic scheduled routines checker (evaluates tasks every 30 seconds)
   useEffect(() => {
     const runScheduler = () => {
-      checkAndExecuteScheduledRoutines((updatedChat) => {
+      checkAndExecuteScheduledRoutines((updatedChat: Chat) => {
         handleUpdateChat(updatedChat);
         const char = characters.find((c) => c.id === updatedChat.characterId);
         if (char && activeCharacterRef.current?.id !== char.id) {

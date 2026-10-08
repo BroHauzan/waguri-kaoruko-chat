@@ -1,7 +1,7 @@
 // Service Worker for Waguri Kaoruko AI Chat
 // Handles background notifications, notificationclick routing, and push-like alerts
 
-const CACHE_NAME = 'waguri-chat-v1.5.1';
+const CACHE_NAME = 'waguri-chat-v1.5.2';
 
 self.addEventListener('install', (event) => {
   self.skipWaiting();

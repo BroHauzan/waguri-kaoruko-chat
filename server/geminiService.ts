@@ -109,6 +109,14 @@ export function sanitizeAntislop(text: string): string {
   return s;
 }
 
+export function resolveGeminiKey(userKey?: string): string {
+  let key = (userKey || "").trim();
+  if (!key || key.startsWith("sk-") || key === "MY_GEMINI_API_KEY") {
+    key = (process.env.GEMINI_API_KEY || "").trim();
+  }
+  return key;
+}
+
 export interface ChatTurnResponse {
   messages: string[];
   emotion: string;
@@ -119,6 +127,8 @@ export interface ChatTurnResponse {
   };
   /** Instruksi permanen baru hasil permintaan pengguna (misal: "Selalu panggil pengguna dengan sebutan rin") */
   updatedInstruction?: string;
+  /** Gaya bicara baru yang diperbarui */
+  updatedSpeakingStyle?: string;
   /** Nama panggilan baru untuk pengguna jika pengguna meminta dipanggil nama tertentu */
   preferredUserName?: string;
 }
