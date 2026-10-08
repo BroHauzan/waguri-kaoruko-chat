@@ -75,6 +75,7 @@ import { CharacterDetailSheet } from "./CharacterDetailSheet";
 import { formatDateSeparator, isSameDay } from "../lib/dateUtils";
 import { getMoodTheme } from "../lib/moodConfig";
 import { getDictionary } from "../lib/i18n";
+import { getEffectiveUserBubbleBg } from "../lib/bubbleThemes";
 
 interface ChatScreenProps {
   character: Character;
@@ -111,6 +112,11 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
   const moodTheme = getMoodTheme(
     chat.currentMood?.emotion || character.defaultMood || "neutral",
     settings.language || "id"
+  );
+  // Warna bubble user ditentukan oleh tema pilihan user (tidak dipaksa mengikuti mood karakter)
+  const userBubbleBg = getEffectiveUserBubbleBg(
+    settings.bubbleTheme || "amber",
+    moodTheme.userBubbleBg
   );
   const [showDetailSheet, setShowDetailSheet] = useState(false);
   const [showActionMenu, setShowActionMenu] = useState(false);
@@ -1543,7 +1549,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                           : ""
                       } ${
                         isUser
-                          ? `${moodTheme.userBubbleBg} rounded-[12px] rounded-br-[0px] shadow-2xs`
+                          ? `${userBubbleBg} rounded-[12px] rounded-br-[0px] shadow-2xs`
                           : "bg-white dark:bg-[#1F2025] text-neutral-900 dark:text-[#F2F3F7] rounded-[12px] rounded-bl-[0px] border border-black/5 dark:border-white/10 shadow-2xs"
                       } ${
                         // Sembunyikan HANYA kalau preview pengganti benar-benar
@@ -1717,7 +1723,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
             hasImage={Boolean(selectedMessage.image)}
             imageUrl={selectedMessage.image?.dataUrl}
             isUser={selectedMessage.role === "user"}
-            userBubbleBg={moodTheme.userBubbleBg}
+            userBubbleBg={userBubbleBg}
             anchorRect={menuAnchor}
             actions={contextMenuActions}
             quickReactions={["❤️", "😂", "😮", "😢", "🙏"]}

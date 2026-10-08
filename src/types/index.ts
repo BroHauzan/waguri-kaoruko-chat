@@ -133,6 +133,17 @@ export interface AIProvider {
   createdAt: number;
 }
 
+export type BubbleThemeId =
+  | 'amber'
+  | 'blue'
+  | 'emerald'
+  | 'pink'
+  | 'purple'
+  | 'rose'
+  | 'orange'
+  | 'monochrome'
+  | 'dynamic';
+
 export type AppLanguage = 'id' | 'en';
 
 export interface Settings {
@@ -145,6 +156,7 @@ export interface Settings {
   hapticFeedback?: boolean;
   moodColorPreset?: MoodColorPreset;
   theme?: ThemeMode;
+  bubbleTheme?: BubbleThemeId;
   language?: AppLanguage;
   /** Daftar provider AI yang bisa dipilih user. Disimpan di localStorage. */
   providers?: AIProvider[];

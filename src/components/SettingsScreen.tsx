@@ -25,6 +25,7 @@ import {
   Moon,
   Monitor,
   Crown,
+  History,
 } from "lucide-react";
 import { Character, Chat, Settings, ThemeMode, AppLanguage } from "../types";
 import { haptics } from "../lib/haptics";
@@ -39,6 +40,12 @@ import {
 } from "../lib/pushNotification";
 import { QuotaModal } from "./QuotaModal";
 import { getDailyUsage, DailyUsageInfo } from "../lib/quotaService";
+import {
+  BubbleThemeId,
+  BUBBLE_THEMES,
+  BUBBLE_THEME_LIST,
+} from "../lib/bubbleThemes";
+import { LATEST_APP_UPDATE } from "../lib/appUpdates";
 
 interface SettingsScreenProps {
   settings: Settings;
@@ -61,6 +68,9 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const [replyLength, setReplyLength] = useState(settings.replyLength || "Sedang");
   const [hapticFeedback, setHapticFeedback] = useState(settings.hapticFeedback !== false);
   const [theme, setTheme] = useState<ThemeMode>(settings.theme || "dark");
+  const [bubbleTheme, setBubbleTheme] = useState<BubbleThemeId>(
+    settings.bubbleTheme || "amber"
+  );
   const [language, setLanguage] = useState<AppLanguage>(settings.language || "id");
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [notifPermission, setNotifPermission] = useState<string>(getNotificationPermission());
@@ -87,6 +97,12 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       setTheme(settings.theme);
     }
   }, [settings.theme]);
+
+  useEffect(() => {
+    if (settings.bubbleTheme && settings.bubbleTheme !== bubbleTheme) {
+      setBubbleTheme(settings.bubbleTheme);
+    }
+  }, [settings.bubbleTheme]);
 
   useEffect(() => {
     if (settings.language && settings.language !== language) {
@@ -185,6 +201,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       hapticFeedback,
       theme: next,
       language,
+      bubbleTheme,
     });
 
     const valLabel =
@@ -194,6 +211,31 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         ? dict.themeDark
         : dict.themeAuto;
     showToast(t("themeToast", language, { val: valLabel }));
+  };
+
+  const handleSelectBubbleTheme = (nextBubbleTheme: BubbleThemeId) => {
+    setBubbleTheme(nextBubbleTheme);
+    haptics.light(hapticFeedback);
+
+    onSaveSettings({
+      ...settings,
+      userName,
+      model,
+      temperature,
+      replyLength,
+      hapticFeedback,
+      theme,
+      language,
+      bubbleTheme: nextBubbleTheme,
+    });
+
+    const themeObj = BUBBLE_THEMES[nextBubbleTheme];
+    const name = language === "en" ? themeObj?.nameEn : themeObj?.name;
+    showToast(
+      language === "en"
+        ? `Bubble color set to ${name}`
+        : `Warna bubble chat: ${name}`
+    );
   };
 
   const handleSelectLanguage = (nextLang: AppLanguage) => {
@@ -209,6 +251,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       hapticFeedback,
       theme,
       language: nextLang,
+      bubbleTheme,
     });
 
     const langName = nextLang === "en" ? "English" : "Bahasa Indonesia";
@@ -228,6 +271,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       hapticFeedback: newVal,
       theme,
       language,
+      bubbleTheme,
     });
     showToast(
       newVal
@@ -242,9 +286,17 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
   // Helper untuk subtitle menu
   const getThemeSubtitle = () => {
-    if (theme === "light") return dict.themeLight;
-    if (theme === "dark") return dict.themeDark;
-    return dict.themeAuto;
+    const globalThemeName =
+      theme === "light"
+        ? dict.themeLight
+        : theme === "dark"
+        ? dict.themeDark
+        : dict.themeAuto;
+    const bubbleThemeName =
+      language === "en"
+        ? BUBBLE_THEMES[bubbleTheme]?.nameEn || "Amber Warm"
+        : BUBBLE_THEMES[bubbleTheme]?.name || "Amber Warm";
+    return `${globalThemeName} • Bubble: ${bubbleThemeName}`;
   };
 
   const getLanguageSubtitle = () => {
@@ -319,6 +371,15 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       title: language === "en" ? "Reply Notifications" : "Notifikasi Balasan",
       subtitle: getNotifSubtitle(),
       onClick: () => setActiveModal("notifications"),
+    },
+    {
+      id: "changelog" as const,
+      icon: History,
+      title: language === "en" ? "What's New" : "Apa yang Baru",
+      subtitle: `${LATEST_APP_UPDATE.version} • ${LATEST_APP_UPDATE.date}`,
+      onClick: () => {
+        window.dispatchEvent(new CustomEvent("waguri_open_update_changelog"));
+      },
     },
   ];
 
@@ -864,7 +925,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-white dark:bg-[#16171B] rounded-3xl max-w-sm w-full p-5 shadow-2xl border border-black/10 dark:border-white/10 flex flex-col gap-4 text-neutral-900 dark:text-[#F2F3F7]"
+              className="bg-white dark:bg-[#16171B] rounded-3xl max-w-md w-full max-h-[90vh] overflow-y-auto p-5 shadow-2xl border border-black/10 dark:border-white/10 flex flex-col gap-4 text-neutral-900 dark:text-[#F2F3F7]"
             >
               <div className="flex items-center justify-between pb-2 border-b border-neutral-100 dark:border-white/10">
                 <div className="flex items-center gap-2">
@@ -878,43 +939,94 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 <button
                   type="button"
                   onClick={() => setActiveModal("none")}
-                  className="w-8 h-8 rounded-full bg-neutral-100 dark:bg-white/[0.08] flex items-center justify-center hover:bg-neutral-200 dark:hover:bg-white/[0.14]"
+                  className="w-8 h-8 rounded-full bg-neutral-100 dark:bg-white/[0.08] flex items-center justify-center hover:bg-neutral-200 dark:hover:bg-white/[0.14] cursor-pointer"
                 >
                   <X size={16} />
                 </button>
               </div>
 
-              <div className="grid grid-cols-3 bg-[#F0F1F5] dark:bg-white/[0.06] p-1.5 rounded-2xl gap-1">
-                {themeOptions.map((opt) => {
-                  const isActive = theme === opt.id;
-                  const Icon = opt.icon;
-                  return (
-                    <button
-                      key={opt.id}
-                      type="button"
-                      onClick={() => handleSelectTheme(opt.id)}
-                      className="relative py-2.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
-                    >
-                      {isActive && (
-                        <motion.div
-                          layoutId="themePillModal"
-                          transition={{ type: "spring", bounce: 0, duration: 0.4 }}
-                          className="absolute inset-0 rounded-xl bg-[#F5B838] shadow-xs"
-                        />
-                      )}
-                      <span
-                        className={`relative z-10 flex flex-col items-center justify-center gap-1.5 ${
-                          isActive
-                            ? "text-neutral-950 font-bold"
-                            : "text-neutral-600 dark:text-[#8A8A93]"
+              {/* Mode Tampilan Global */}
+              <div>
+                <span className="text-xs font-semibold text-neutral-500 dark:text-[#8A8A93] uppercase tracking-wider block mb-2">
+                  {language === "en" ? "Global Theme" : "Mode Tampilan"}
+                </span>
+                <div className="grid grid-cols-3 bg-[#F0F1F5] dark:bg-white/[0.06] p-1.5 rounded-2xl gap-1">
+                  {themeOptions.map((opt) => {
+                    const isActive = theme === opt.id;
+                    const Icon = opt.icon;
+                    return (
+                      <button
+                        key={opt.id}
+                        type="button"
+                        onClick={() => handleSelectTheme(opt.id)}
+                        className="relative py-2.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer"
+                      >
+                        {isActive && (
+                          <motion.div
+                            layoutId="themePillModal"
+                            transition={{ type: "spring", bounce: 0, duration: 0.4 }}
+                            className="absolute inset-0 rounded-xl bg-[#F5B838] shadow-xs"
+                          />
+                        )}
+                        <span
+                          className={`relative z-10 flex flex-col items-center justify-center gap-1.5 ${
+                            isActive
+                              ? "text-neutral-950 font-bold"
+                              : "text-neutral-600 dark:text-[#8A8A93]"
+                          }`}
+                        >
+                          <Icon size={18} />
+                          <span>{opt.label}</span>
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Tema Warna Bubble Chat */}
+              <div className="pt-2 border-t border-neutral-100 dark:border-white/10">
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-xs font-semibold text-neutral-500 dark:text-[#8A8A93] uppercase tracking-wider">
+                    {language === "en" ? "Chat Bubble Color" : "Warna Bubble Chat"}
+                  </span>
+                  <span className="text-[11px] text-neutral-400 dark:text-[#8A8A93]">
+                    {language === "en" ? "User Accent" : "Warna Pengisi"}
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-3 gap-2">
+                  {BUBBLE_THEME_LIST.map((b) => {
+                    const isSelected = bubbleTheme === b.id;
+                    return (
+                      <button
+                        key={b.id}
+                        type="button"
+                        onClick={() => handleSelectBubbleTheme(b.id)}
+                        className={`p-2.5 rounded-2xl text-left transition-all border flex flex-col gap-2 cursor-pointer ${
+                          isSelected
+                            ? "border-neutral-900 dark:border-white bg-neutral-100/70 dark:bg-white/[0.08] shadow-2xs"
+                            : "border-black/5 dark:border-white/5 hover:border-black/15 dark:hover:border-white/15 bg-[#F0F1F5]/40 dark:bg-white/[0.02]"
                         }`}
                       >
-                        <Icon size={18} />
-                        <span>{opt.label}</span>
-                      </span>
-                    </button>
-                  );
-                })}
+                        <div className="flex items-center justify-between">
+                          <span
+                            className="w-4 h-4 rounded-full shrink-0 shadow-2xs border border-black/10 dark:border-white/20"
+                            style={{
+                              background: b.previewColor,
+                            }}
+                          />
+                          {isSelected && (
+                            <Check size={12} strokeWidth={2.5} className="text-neutral-900 dark:text-white" />
+                          )}
+                        </div>
+                        <span className="text-[11px] font-semibold text-neutral-800 dark:text-[#E4E5EA] truncate leading-tight">
+                          {language === "en" ? b.nameEn : b.name}
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
 
               <p className="text-xs text-neutral-500 dark:text-[#8A8A93] leading-relaxed">

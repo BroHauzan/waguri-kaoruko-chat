@@ -157,6 +157,7 @@ const DEFAULT_SETTINGS: Settings = {
   hapticFeedback: true,
   moodColorPreset: "dynamic",
   theme: "dark",
+  bubbleTheme: "amber",
   language: "id",
   providers: [BUILTIN_NARA_PROVIDER, BUILTIN_GEMINI_PROVIDER],
   activeProviderId: BUILTIN_NARA_PROVIDER.id,
@@ -542,6 +543,10 @@ export const storage = {
       }
       if (merged.language !== "id" && merged.language !== "en") {
         merged.language = "id";
+      }
+
+      if (!merged.bubbleTheme) {
+        merged.bubbleTheme = "amber";
       }
 
       return merged;

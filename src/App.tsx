@@ -14,6 +14,8 @@ import { backgroundQueue } from "./lib/backgroundQueueProcessor";
 import { useMediaQuery, DESKTOP_QUERY } from "./lib/useMediaQuery";
 import { DesktopEmptyState } from "./components/DesktopEmptyState";
 import { checkAndExecuteScheduledRoutines } from "./lib/routineService";
+import { UpdateChangelogModal } from "./components/UpdateChangelogModal";
+import { hasSeenLatestUpdate } from "./lib/appUpdates";
 
 export default function App() {
   const [characters, setCharacters] = useState<Character[]>([]);
@@ -29,6 +31,7 @@ export default function App() {
     messageText: string;
   } | null>(null);
   const [isOffline, setIsOffline] = useState(!navigator.onLine);
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
 
   const activeCharacterRef = useRef<Character | null>(null);
   const editingCharacterRef = useRef<Character | null>(null);
@@ -61,6 +64,16 @@ export default function App() {
     setCharacters(loadedCharacters);
     setChats(loadedChats);
     setSettings(loadedSettings);
+
+    // Tampilkan pop-up pembaruan jika user belum pernah melihat update versi terkini
+    if (!hasSeenLatestUpdate()) {
+      setShowUpdateModal(true);
+    }
+
+    const handleOpenUpdateModal = () => {
+      setShowUpdateModal(true);
+    };
+    window.addEventListener("waguri_open_update_changelog", handleOpenUpdateModal);
 
     // Saat pengguna pertama kali membuka aplikasi, langsung buka obrolan Waguri Kaoruko yang menyapa duluan
     if (
@@ -123,6 +136,7 @@ export default function App() {
 
     return () => {
       unsubscribeQueue();
+      window.removeEventListener("waguri_open_update_changelog", handleOpenUpdateModal);
       window.removeEventListener("visibilitychange", handleVisibilityOrOnline);
       window.removeEventListener("online", handleVisibilityOrOnline);
       window.removeEventListener("offline", handleVisibilityOrOnline);
@@ -455,6 +469,14 @@ export default function App() {
     </div>
   ) : null;
 
+  const updateChangelogModalNode = (
+    <UpdateChangelogModal
+      isOpen={showUpdateModal}
+      onClose={() => setShowUpdateModal(false)}
+      language={settings.language || "id"}
+    />
+  );
+
   /* Desktop: dua panel seperti WhatsApp Web (daftar di kiri, obrolan di kanan).
      Setiap panel punya `transform-gpu` supaya elemen `fixed` di dalamnya
      (header, input bar, tab bar, modal) menempel ke panel, bukan ke layar.
@@ -480,6 +502,7 @@ export default function App() {
 
         {notificationBanner}
         {offlineBanner}
+        {updateChangelogModalNode}
       </div>
     );
   }
@@ -493,6 +516,7 @@ export default function App() {
 
       {notificationBanner}
       {offlineBanner}
+      {updateChangelogModalNode}
     </div>
   );
 }
