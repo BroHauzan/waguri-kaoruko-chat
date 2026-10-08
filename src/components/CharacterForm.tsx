@@ -46,6 +46,7 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({
   const [speakingStyle, setSpeakingStyle] = useState(
     initialCharacter?.speakingStyle || MAIN_SKILL_SPEAKING_STYLE
   );
+  const [backstory, setBackstory] = useState(initialCharacter?.backstory || "");
   const [firstMsg, setFirstMsg] = useState(
     initialCharacter?.greeting || "eh kamu lagi santai engga, lagi ngapain nih hehehe"
   );
@@ -80,9 +81,26 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({
     try {
       const settings = storage.getSettings();
       const activeProvider = getActiveProvider(settings);
-      const apiKey = activeProvider.apiKey || settings.providers?.find((p) => p.apiKey)?.apiKey || "";
 
-      const lore = await fetchCharacterLore(name.trim(), apiKey);
+      // Hanya ambil API key jika provider bertipe 'gemini' (jangan gunakan key dari Nara Router / OpenAI / sk-...)
+      let geminiApiKey = "";
+      if (activeProvider.type === "gemini" && activeProvider.apiKey?.trim()) {
+        geminiApiKey = activeProvider.apiKey.trim();
+      } else {
+        const foundGemini = settings.providers?.find(
+          (p) => p.type === "gemini" && p.apiKey?.trim()
+        );
+        if (foundGemini?.apiKey?.trim()) {
+          geminiApiKey = foundGemini.apiKey.trim();
+        }
+      }
+
+      // Pastikan bukan token sk- (misal jika user salah input key OpenAI/Nara di kolom Gemini)
+      if (geminiApiKey.startsWith("sk-")) {
+        geminiApiKey = "";
+      }
+
+      const lore = await fetchCharacterLore(name.trim(), geminiApiKey);
 
       if (lore) {
         if (lore.name) setName(lore.name);
@@ -126,9 +144,21 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({
       }
     } catch (err: any) {
       console.error("Auto fetch lore failed:", err);
+      let errorMsg = err?.message || "Gagal mengambil data dari internet. Coba periksa koneksi atau API key.";
+      try {
+        const parsed = JSON.parse(errorMsg);
+        if (parsed?.error?.message) {
+          errorMsg = parsed.error.message;
+        }
+      } catch {
+        // bukan JSON string
+      }
+      if (errorMsg.includes("API key not valid") || errorMsg.includes("API_KEY_INVALID")) {
+        errorMsg = "API Key Gemini tidak valid. Silakan cek API key di Pengaturan > Provider AI atau gunakan setelan server.";
+      }
       setLoreNotice({
         type: "error",
-        message: err?.message || "Gagal mengambil data dari internet. Coba periksa koneksi atau API key.",
+        message: errorMsg,
       });
       setTimeout(() => setLoreNotice(null), 6000);
     } finally {
@@ -205,7 +235,7 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({
       category: (initialCharacter?.category as CharacterCategory) || "Santai",
       personality: personality.trim() || "Ramah, ceria, perhatian",
       speakingStyle: speakingStyle.trim() || "Santai sehari-hari",
-      backstory: initialCharacter?.backstory || "Sahabat dekat yang selalu ada waktu untukmu",
+      backstory: backstory.trim() || initialCharacter?.backstory || "Sahabat dekat yang selalu ada waktu untukmu",
       relationship: initialCharacter?.relationship || "Teman dekat",
       greeting: firstMsg.trim() || "Hai! Lagi apa kamu sekarang? Kangen nih ngobrol.",
       exampleDialogues: initialCharacter?.exampleDialogues || [],
@@ -461,10 +491,27 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({
               <textarea
                 value={personality}
                 onChange={(e) => setPersonality(e.target.value)}
-                rows={2}
+                rows={4}
                 placeholder="Contoh: Ceria, sedikit tsundere tapi perhatian..."
-                className="bg-neutral-100 dark:bg-white/[0.06] text-sm text-neutral-900 dark:text-[#F2F3F7] placeholder:text-neutral-400 dark:placeholder:text-white/35 rounded-lg p-3 border-none focus:outline-none focus:ring-2 focus:ring-amber-500/40 resize-none"
+                className="bg-neutral-100 dark:bg-white/[0.06] text-sm text-neutral-900 dark:text-[#F2F3F7] placeholder:text-neutral-400 dark:placeholder:text-white/35 rounded-lg p-3 border-none focus:outline-none focus:ring-2 focus:ring-amber-500/40 resize-y min-h-[90px] leading-relaxed"
               />
+            </div>
+
+            {/* Latar Belakang / Cerita Karakter (Backstory) */}
+            <div className="flex flex-col gap-1.5">
+              <label className="text-xs font-semibold text-neutral-700 dark:text-[#C9CAD1]">
+                Latar Belakang & Persona Karakter (Backstory)
+              </label>
+              <textarea
+                value={backstory}
+                onChange={(e) => setBackstory(e.target.value)}
+                rows={4}
+                placeholder="Cerita latar belakang, hubungan masa lalu, asal usul, atau detail lore panjang karakter..."
+                className="bg-neutral-100 dark:bg-white/[0.06] text-sm text-neutral-900 dark:text-[#F2F3F7] placeholder:text-neutral-400 dark:placeholder:text-white/35 rounded-lg p-3 border-none focus:outline-none focus:ring-2 focus:ring-amber-500/40 resize-y min-h-[90px] leading-relaxed"
+              />
+              <p className="text-[11px] text-neutral-400 dark:text-[#8A8A93] leading-tight">
+                Kamu bisa menempelkan (paste) deskripsi lore atau persona karakter yang panjang di sini tanpa terpotong.
+              </p>
             </div>
 
             {/* Gaya Bicara */}

@@ -1426,7 +1426,11 @@ export interface LoreRequest {
 }
 
 export async function handleFetchLore(req: LoreRequest) {
-  const apiKey = (req.apiKey?.trim() || process.env.GEMINI_API_KEY || "").trim();
+  let apiKey = req.apiKey?.trim();
+  // Jika apiKey tidak ada, atau berformat OpenAI/Nara (sk-), atau placeholder: fallback ke GEMINI_API_KEY server
+  if (!apiKey || apiKey.startsWith("sk-") || apiKey === "MY_GEMINI_API_KEY") {
+    apiKey = (process.env.GEMINI_API_KEY || "").trim();
+  }
   if (!apiKey || apiKey === "MY_GEMINI_API_KEY") {
     throw new Error(
       "GEMINI_API_KEY belum diset. Masukkan API key di Pengaturan atau file .env server."
@@ -1545,7 +1549,10 @@ export interface GeneratePhotoApiRequest {
 }
 
 export async function handleGeneratePhoto(req: GeneratePhotoApiRequest) {
-  const apiKey = (req.apiKey?.trim() || process.env.GEMINI_API_KEY || "").trim();
+  let apiKey = req.apiKey?.trim();
+  if (!apiKey || apiKey.startsWith("sk-") || apiKey === "MY_GEMINI_API_KEY") {
+    apiKey = (process.env.GEMINI_API_KEY || "").trim();
+  }
   if (!apiKey || apiKey === "MY_GEMINI_API_KEY") {
     throw new Error("GEMINI_API_KEY belum diset.");
   }

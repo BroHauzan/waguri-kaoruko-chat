@@ -705,9 +705,9 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   <textarea
                     value={userPersona}
                     onChange={(e) => setUserPersona(e.target.value)}
-                    rows={3}
-                    maxLength={200}
-                    className="w-full px-3 py-2 text-xs bg-neutral-100 dark:bg-white/5 rounded-xl border border-black/10 dark:border-white/10 text-neutral-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-[#F5B838] resize-none leading-relaxed"
+                    rows={4}
+                    maxLength={5000}
+                    className="w-full px-3 py-2 text-xs bg-neutral-100 dark:bg-white/5 rounded-xl border border-black/10 dark:border-white/10 text-neutral-900 dark:text-white focus:outline-none focus:ring-1 focus:ring-[#F5B838] resize-y min-h-[90px] leading-relaxed"
                     placeholder={
                       language === "en"
                         ? "e.g., Architecture student who loves lo-fi music and coffee."

@@ -26,12 +26,17 @@ export async function fetchCharacterLore(
     throw new Error("Nama karakter harus diisi sebelum mencari data.");
   }
 
+  // Filter apiKey: abaikan jika diawali sk- (format OpenAI / Nara Router)
+  const cleanApiKey = apiKey?.trim() && !apiKey.trim().startsWith("sk-") ? apiKey.trim() : undefined;
+
+  let backendErrorMessage = "";
+
   // 1. Coba panggil backend API /api/lore terlebih dahulu
   try {
     const res = await fetch(`${API_BASE}/api/lore`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ characterName: trimmedName, apiKey }),
+      body: JSON.stringify({ characterName: trimmedName, apiKey: cleanApiKey }),
     });
 
     if (res.ok) {
@@ -42,6 +47,7 @@ export async function fetchCharacterLore(
     } else {
       const errData = await res.json().catch(() => null);
       if (errData?.details || errData?.error) {
+        backendErrorMessage = errData?.details || errData?.error;
         console.warn("Backend /api/lore returned error:", errData);
       }
     }
@@ -49,11 +55,12 @@ export async function fetchCharacterLore(
     console.warn("Backend /api/lore unreachable, attempting client SDK direct call...", backendErr);
   }
 
-  // 2. Client-side fallback jika backend gagal atau tidak tersedia tapi apiKey tersedia
-  const keyToUse = apiKey || "";
+  // 2. Client-side fallback jika backend gagal atau tidak tersedia tapi cleanApiKey tersedia
+  const keyToUse = cleanApiKey || "";
   if (!keyToUse) {
     throw new Error(
-      "Gagal mengambil lore dari server. Pastikan server dev berjalan atau masukkan API Key di Pengaturan > Provider AI."
+      backendErrorMessage ||
+        "Gagal mengambil lore dari server. Pastikan server dev berjalan atau masukkan Gemini API Key di Pengaturan > Provider AI."
     );
   }
 

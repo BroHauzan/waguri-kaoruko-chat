@@ -39,6 +39,26 @@ export const haptics = {
     }
   },
 
+  // Medium tactile pulse for primary buttons & confirmations
+  impact(enabled = true) {
+    if (!enabled || !this.isSupported()) return;
+    try {
+      navigator.vibrate(20);
+    } catch {
+      // safe fallback
+    }
+  },
+
+  // Tactile double micro-pulse for success actions
+  success(enabled = true) {
+    if (!enabled || !this.isSupported()) return;
+    try {
+      navigator.vibrate([15, 30, 20]);
+    } catch {
+      // safe fallback
+    }
+  },
+
   // Subtle buzz when error occurs
   error(enabled = true) {
     if (!enabled || !this.isSupported()) return;

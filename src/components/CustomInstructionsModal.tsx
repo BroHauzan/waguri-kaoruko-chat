@@ -84,18 +84,18 @@ export const CustomInstructionsModal: React.FC<CustomInstructionsModalProps> = (
           {/* Inset Grouped Card */}
           <div className="bg-[#F0F1F5] dark:bg-[#1C1C1E] rounded-[16px] p-4 flex flex-col gap-3">
             <textarea
-              className="w-full bg-transparent resize-none border-0 outline-none text-[15px] text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-[#8E8E93] p-0 leading-relaxed focus:ring-0 focus:outline-none"
+              className="w-full bg-transparent resize-y min-h-[120px] border-0 outline-none text-[15px] text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-[#8E8E93] p-0 leading-relaxed focus:ring-0 focus:outline-none"
               id="instruction-input"
-              maxLength={500}
-              placeholder="Tulis instruksi tambahan di sini..."
-              rows={5}
+              maxLength={5000}
+              placeholder="Tulis instruksi persona tambahan, detail kepribadian khusus, atau preferensi obrolan kamu di sini..."
+              rows={6}
               value={instructions}
               onChange={(e) => setInstructions(e.target.value)}
             />
             <div className="flex items-center justify-between pt-1 border-t border-black/5 dark:border-white/5">
               <span className="text-[12px] text-neutral-500 dark:text-[#8E8E93]">Instruksi persona personal</span>
               <span className="text-[12px] text-neutral-500 dark:text-[#8E8E93] tabular-nums font-medium">
-                {instructions.length} / 500
+                {instructions.length} / 5000
               </span>
             </div>
           </div>

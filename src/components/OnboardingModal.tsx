@@ -22,14 +22,16 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
   const [name, setName] = useState(initialName === "Rizky" ? "" : initialName);
   const [persona, setPersona] = useState(initialPersona);
 
-  if (!isOpen) return null;
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const cleanName = name.trim();
     if (!cleanName) return;
 
-    haptics.impact();
+    try {
+      haptics.impact();
+    } catch {
+      // safe fallback
+    }
     onComplete(cleanName, persona.trim());
   };
 
@@ -37,14 +39,15 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
 
   return (
     <AnimatePresence>
-      <div className="fixed inset-0 z-[130] bg-black/70 dark:bg-black/85 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6 animate-fade-in">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.94, y: 16 }}
-          animate={{ opacity: 1, scale: 1, y: 0 }}
-          exit={{ opacity: 0, scale: 0.95, y: 8 }}
-          transition={{ duration: 0.25, ease: "easeOut" }}
-          className="bg-white dark:bg-[#16171B] rounded-3xl max-w-md w-full max-h-[92vh] flex flex-col shadow-2xl border border-black/10 dark:border-white/10 text-neutral-900 dark:text-[#F2F3F7] overflow-hidden"
-        >
+      {isOpen && (
+        <div className="fixed inset-0 z-[130] bg-black/70 dark:bg-black/85 backdrop-blur-xs flex items-center justify-center p-4 sm:p-6 animate-fade-in">
+          <motion.div
+            initial={{ opacity: 0, scale: 0.94, y: 16 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 8 }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+            className="bg-white dark:bg-[#16171B] rounded-3xl max-w-md w-full max-h-[92vh] flex flex-col shadow-2xl border border-black/10 dark:border-white/10 text-neutral-900 dark:text-[#F2F3F7] overflow-hidden"
+          >
           {/* Header */}
           <div className="p-6 pb-4 border-b border-neutral-100 dark:border-white/10">
             <div className="w-10 h-10 rounded-2xl bg-amber-50 dark:bg-[#F5B838]/15 text-[#F5B838] flex items-center justify-center mb-3">
@@ -95,14 +98,14 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
               <textarea
                 value={persona}
                 onChange={(e) => setPersona(e.target.value)}
-                rows={3}
-                maxLength={200}
+                rows={4}
+                maxLength={4000}
                 placeholder={
                   isEn
                     ? "e.g., Architecture student who loves lo-fi music and black coffee. Easygoing classmate."
                     : "Misal: Mahasiswa arsitektur yang suka musik lo-fi dan kopi. Teman sekelas yang santai."
                 }
-                className="w-full px-3.5 py-2.5 text-xs bg-neutral-100 dark:bg-white/[0.06] rounded-xl border border-black/10 dark:border-white/10 text-neutral-900 dark:text-[#F2F3F7] placeholder:text-neutral-400 dark:placeholder:text-[#71717A] focus:outline-none focus:ring-2 focus:ring-[#F5B838]/50 focus:border-[#F5B838] transition-all resize-none leading-relaxed"
+                className="w-full px-3.5 py-2.5 text-xs bg-neutral-100 dark:bg-white/[0.06] rounded-xl border border-black/10 dark:border-white/10 text-neutral-900 dark:text-[#F2F3F7] placeholder:text-neutral-400 dark:placeholder:text-[#71717A] focus:outline-none focus:ring-2 focus:ring-[#F5B838]/50 focus:border-[#F5B838] transition-all resize-y min-h-[85px] leading-relaxed"
               />
               <p className="text-[11px] text-neutral-400 dark:text-[#8A8A93] leading-tight">
                 {isEn
@@ -124,7 +127,8 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
             </div>
           </form>
         </motion.div>
-      </div>
+        </div>
+      )}
     </AnimatePresence>
   );
 };

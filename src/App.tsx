@@ -13,9 +13,8 @@ import { haptics } from "./lib/haptics";
 import { backgroundQueue } from "./lib/backgroundQueueProcessor";
 import { useMediaQuery, DESKTOP_QUERY } from "./lib/useMediaQuery";
 import { DesktopEmptyState } from "./components/DesktopEmptyState";
-import { checkAndExecuteScheduledRoutines } from "./lib/routineService";
 import { UpdateChangelogModal } from "./components/UpdateChangelogModal";
-import { hasSeenLatestUpdate } from "./lib/appUpdates";
+import { hasSeenLatestUpdate, markLatestUpdateAsSeen } from "./lib/appUpdates";
 import { OnboardingModal } from "./components/OnboardingModal";
 
 export default function App() {
@@ -220,11 +219,13 @@ export default function App() {
     };
     storage.saveSettings(updatedSettings);
     storage.setOnboardingCompleted();
+    markLatestUpdateAsSeen();
     setSettings(updatedSettings);
     setShowOnboardingModal(false);
 
-    if (!hasSeenLatestUpdate()) {
-      setShowUpdateModal(true);
+    // Otomatis buka obrolan karakter utama jika ada
+    if (characters.length > 0 && !activeCharacterRef.current) {
+      handleSelectCharacter(characters[0]);
     }
   };
 
