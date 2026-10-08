@@ -1,4 +1,4 @@
-export const FREE_DAILY_MESSAGE_LIMIT = 200;
+export const FREE_DAILY_MESSAGE_LIMIT = 1000;
 export const PAID_ACTIVATION_CODE = "brohauzan";
 
 const STORAGE_KEYS = {

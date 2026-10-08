@@ -1,9 +1,37 @@
 import { AIProvider, Settings } from "../types";
 import { isPaidUser } from "./quotaService";
 
+export const ATRIA_API_KEYS = [
+  "atr_HlXNzlKb09Mi3a9eM8hWBaN1DrT5uzu7",
+  "atr_LpDwanXdzDf0-j_hkBfPzU9aH_XFX7xp",
+  "atr_Rl-b8A40ryFcTwIQvJEOsEKyLi66KcED",
+  "atr_tsM2na9EhSG6uol7QFVsqGRYwe2rwPi7",
+  "atr_3gqX1egrAg5F0DCmMvUUzby4sxnMURQA",
+  "atr_pm48VZ6kW6Uw0wlX5r--drfsiT6s1zzB",
+  "atr_xuEX2NUa4iNw4u-32AyM7aBQJISESurv",
+  "atr_RVP95pol_56B-5PaQ_IMigE0zWavGlIB",
+  "atr_uBraTieXmzZRrNq_zb_gS6UmO0nqLfKU",
+  "atr_QwtaE8p5g0AUMZlo9D3dv8iZ5IN0lmcy",
+];
+
+/**
+ * Provider bawaan Atria Dawn (OpenAI-compatible).
+ * Default utama untuk semua pengguna.
+ */
+export const BUILTIN_ATRIA_PROVIDER: AIProvider = {
+  id: "builtin-atria",
+  name: "Atria Dawn",
+  type: "openai-compatible",
+  baseUrl: "https://api.atria-asi.ai/v1",
+  apiKey: ATRIA_API_KEYS[0],
+  model: "Atria-Dawn-Preview",
+  imageModel: "gemini-3.1-flash-lite-image",
+  isBuiltin: true,
+  createdAt: 0,
+};
+
 /**
  * Provider bawaan Nara Router (OpenAI-compatible).
- * Default untuk semua pengguna Akun Free.
  */
 export const BUILTIN_NARA_PROVIDER: AIProvider = {
   id: "builtin-nara",
@@ -63,18 +91,22 @@ export function isProviderAllowedForCurrentTier(provider: AIProvider): boolean {
 
 /**
  * Mengembalikan daftar provider yang tersedia.
- * Menjamin BUILTIN_NARA_PROVIDER dan BUILTIN_GEMINI_PROVIDER selalu ada.
+ * Menjamin BUILTIN_ATRIA_PROVIDER, BUILTIN_NARA_PROVIDER, dan BUILTIN_GEMINI_PROVIDER selalu ada.
  */
 export function getProviderList(settings: Settings): AIProvider[] {
   const list = settings.providers;
   if (!Array.isArray(list) || list.length === 0) {
-    return [BUILTIN_NARA_PROVIDER, BUILTIN_GEMINI_PROVIDER];
+    return [BUILTIN_ATRIA_PROVIDER, BUILTIN_NARA_PROVIDER, BUILTIN_GEMINI_PROVIDER];
   }
 
   const result = [...list];
+  // Pastikan Atria Dawn ada di paling atas sebagai default provider
+  if (!result.some((p) => p.id === BUILTIN_ATRIA_PROVIDER.id)) {
+    result.unshift(BUILTIN_ATRIA_PROVIDER);
+  }
   // Pastikan Nara Router ada
   if (!result.some((p) => p.id === BUILTIN_NARA_PROVIDER.id)) {
-    result.unshift(BUILTIN_NARA_PROVIDER);
+    result.splice(1, 0, BUILTIN_NARA_PROVIDER);
   }
   // Pastikan Gemini ada
   if (!result.some((p) => p.id === BUILTIN_GEMINI_PROVIDER.id)) {
@@ -86,7 +118,7 @@ export function getProviderList(settings: Settings): AIProvider[] {
 
 /**
  * Provider aktif dengan validasi tier akun:
- * - Jika akun Free, Gemini dilarang dan otomatis fallback ke Nara Router.
+ * - Jika akun Free, Gemini dilarang dan otomatis fallback ke Atria Dawn.
  * - Jika akun Paid, bebas menggunakan provider apa pun.
  */
 export function getActiveProvider(settings: Settings): AIProvider {
@@ -95,19 +127,19 @@ export function getActiveProvider(settings: Settings): AIProvider {
 
   const chosen = list.find((p) => p.id === settings.activeProviderId);
 
-  // Jika akun Free mencoba memakai Gemini, arahkan ke Nara Router
+  // Jika akun Free mencoba memakai Gemini, arahkan ke Atria Dawn
   if (!paid && chosen && isProviderPaidOnly(chosen)) {
-    const nara = list.find((p) => p.id === BUILTIN_NARA_PROVIDER.id);
-    return nara || BUILTIN_NARA_PROVIDER;
+    const atria = list.find((p) => p.id === BUILTIN_ATRIA_PROVIDER.id);
+    return atria || BUILTIN_ATRIA_PROVIDER;
   }
 
   if (chosen) {
     return chosen;
   }
 
-  // Fallback default: Nara Router jika Free, atau entri pertama
-  const nara = list.find((p) => p.id === BUILTIN_NARA_PROVIDER.id);
-  return !paid && nara ? nara : list[0] || BUILTIN_NARA_PROVIDER;
+  // Fallback default: Atria Dawn
+  const atria = list.find((p) => p.id === BUILTIN_ATRIA_PROVIDER.id);
+  return atria || list[0] || BUILTIN_ATRIA_PROVIDER;
 }
 
 export function makeProviderId(): string {

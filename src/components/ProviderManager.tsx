@@ -21,6 +21,7 @@ import {
   getProviderList,
   makeProviderId,
   isProviderPaidOnly,
+  BUILTIN_ATRIA_PROVIDER,
   BUILTIN_NARA_PROVIDER,
   BUILTIN_GEMINI_PROVIDER,
 } from "../lib/providers";
@@ -233,7 +234,7 @@ export const ProviderManager: React.FC<ProviderManagerProps> = ({
             const paid = isPaidUser();
             const isPaidOnly = isProviderPaidOnly(provider);
             const isLocked = isPaidOnly && !paid;
-            const isDefaultFree = provider.id === BUILTIN_NARA_PROVIDER.id;
+            const isDefault = provider.id === BUILTIN_ATRIA_PROVIDER.id;
 
             return (
               <div
@@ -256,10 +257,10 @@ export const ProviderManager: React.FC<ProviderManagerProps> = ({
                       {provider.name}
                     </span>
 
-                    {/* Badge Default Free */}
-                    {isDefaultFree && (
+                    {/* Badge Default */}
+                    {isDefault && (
                       <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 shrink-0 uppercase">
-                        Default Free
+                        Default
                       </span>
                     )}
 

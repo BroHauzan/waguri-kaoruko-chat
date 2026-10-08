@@ -33,10 +33,80 @@ const STORAGE_KEY = "waguri_last_seen_update_id";
  */
 export const APP_UPDATES: AppUpdateInfo[] = [
   {
+    id: "2026.10.08-atria-dawn-and-1000-quota",
+    version: "v1.6.0",
+    date: "8 Oktober 2026",
+    badge: "Terbaru",
+    bannerGradient: "from-amber-500 via-orange-500 to-rose-600",
+    bannerImage: "/waguri-pfp.jpg",
+    title: {
+      id: "Model Atria Dawn Default & Kuota 1.000 Pesan",
+      en: "Default Atria Dawn Model & 1,000 Messages Quota",
+    },
+    subtitle: {
+      id: "Integrasi model AI Atria Dawn Preview dengan rotasi 10 API key, serta lonjakan kuota harian akun gratis menjadi 1.000 pesan per hari.",
+      en: "Integrated Atria Dawn Preview model with 10-key rotation pool and expanded free daily message limit to 1,000 messages.",
+    },
+    highlights: {
+      id: [
+        {
+          title: "Model Atria Dawn Preview Bawaan",
+          description:
+            "Atria Dawn kini menjadi model AI default utama yang super cepat dan cerdas dengan reasoning yang tajam untuk semua percakapan.",
+          tag: "Model AI",
+        },
+        {
+          title: "Rotasi Cerdas 10 API Keys",
+          description:
+            "Didukung kolam 10 API key berkecepatan tinggi dengan auto-failover dan load balancing otomatis untuk menjamin ketersediaan tanpa gangguan.",
+          tag: "Infrastruktur",
+        },
+        {
+          title: "Kuota Harian Melonjak ke 1.000 Pesan",
+          description:
+            "Batas pesan harian pengguna gratis dinaikkan 5x lipat dari 200 menjadi 1.000 pesan per hari agar kamu bisa bebas mengobrol seharian penuh.",
+          tag: "Kuota",
+        },
+        {
+          title: "Perbaikan Tema Browser Bawaan",
+          description:
+            "Mencegah pemaksaan mode gelap (force dark mode) di browser bawaan HP saat pengguna memilih mode terang (light mode).",
+          tag: "Tampilan",
+        },
+      ],
+      en: [
+        {
+          title: "Default Atria Dawn Preview Model",
+          description:
+            "Atria Dawn is now the primary default AI model, delivering ultra-fast responses and sharp reasoning for all character conversations.",
+          tag: "AI Model",
+        },
+        {
+          title: "Smart 10-Key Rotation Pool",
+          description:
+            "Powered by 10 high-speed API keys with automatic failover and load balancing to ensure continuous uninterrupted availability.",
+          tag: "Infrastructure",
+        },
+        {
+          title: "Daily Quota Expanded to 1,000 Messages",
+          description:
+            "Free tier daily message limit increased 5x from 200 to 1,000 messages daily for relaxed all-day chatting.",
+          tag: "Quota",
+        },
+        {
+          title: "Mobile Browser Light Theme Guard",
+          description:
+            "Prevents mobile default browsers from force-darkening web contents when user chooses Light Mode.",
+          tag: "UI",
+        },
+      ],
+    },
+  },
+  {
     id: "2026.10.08-persona-expansion-and-onboarding-fixes",
     version: "v1.5.1",
     date: "8 Oktober 2026",
-    badge: "Terbaru",
+    badge: "Peningkatan",
     bannerGradient: "from-amber-500 via-orange-500 to-amber-700",
     bannerImage: "/waguri-pfp.jpg",
     title: {
@@ -168,76 +238,6 @@ export const APP_UPDATES: AppUpdateInfo[] = [
           description:
             "Better back button handling for Android and web browser history without exiting the app unexpectedly.",
           tag: "Navigation",
-        },
-      ],
-    },
-  },
-  {
-    id: "2026.10.08-custom-themes-nara",
-    version: "v1.4.0",
-    date: "8 Oktober 2026",
-    badge: "Fitur",
-    bannerGradient: "from-blue-600 via-indigo-600 to-violet-800",
-    bannerImage: "/waguri-pfp.jpg",
-    title: {
-      id: "Tema Bubble Kustom & Nara Router Default",
-      en: "Custom Bubble Themes & Nara Router Default",
-    },
-    subtitle: {
-      id: "Pilihan warna bubble chat personal dan integrasi mesin AI default yang responsif.",
-      en: "Personal chat bubble color choices and responsive default AI engine integration.",
-    },
-    highlights: {
-      id: [
-        {
-          title: "Kustomisasi Warna Bubble Chat",
-          description:
-            "Pilih warna bubble chat sesuai seleramu (Amber, Biru Samudra, Emerald, Pink, Lavender, Monokrom, dll) langsung di Pengaturan.",
-          tag: "Tampilan",
-        },
-        {
-          title: "Provider AI Nara Router Bawaan",
-          description:
-            "Nara Router kini menjadi mesin default yang cepat dan responsif untuk percakapan harian akun gratis.",
-          tag: "Mesin AI",
-        },
-        {
-          title: "Kuota Harian Diperluas ke 200 Pesan",
-          description:
-            "Batas pesan harian untuk pengguna gratis ditingkatkan hingga 200 pesan per hari.",
-          tag: "Kapasitas",
-        },
-        {
-          title: "Desain Profil Minimalis",
-          description:
-            "Tampilan header profil karakter vertikal yang bersih dengan transisi foto lembut tanpa ornamen berlebih.",
-          tag: "Desain",
-        },
-      ],
-      en: [
-        {
-          title: "Custom Chat Bubble Colors",
-          description:
-            "Choose your preferred user bubble color (Amber, Ocean Blue, Emerald, Pink, Lavender, Monochrome, etc.) in Settings.",
-          tag: "UI",
-        },
-        {
-          title: "Nara Router AI Engine Default",
-          description:
-            "Nara Router is now the responsive default provider for smooth and fast daily conversations.",
-          tag: "AI Engine",
-        },
-        {
-          title: "Daily Limit Expanded to 200 Messages",
-          description:
-            "Free tier quota raised to 200 messages daily for relaxed all-day chatting.",
-          tag: "Capacity",
-        },
-        {
-          title: "Minimalist Character Profile",
-          description:
-            "Clean vertical fading album header on character profiles for a distraction-free experience.",
-          tag: "Design",
         },
       ],
     },

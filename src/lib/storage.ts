@@ -1,5 +1,5 @@
 import { Character, Chat, ScheduledTask, Settings } from "../types";
-import { BUILTIN_NARA_PROVIDER, BUILTIN_GEMINI_PROVIDER } from "./providers";
+import { BUILTIN_ATRIA_PROVIDER, BUILTIN_NARA_PROVIDER, BUILTIN_GEMINI_PROVIDER } from "./providers";
 import { isPaidUser } from "./quotaService";
 
 export const DEFAULT_WAGURI_AVATAR = "/waguri-pfp.jpg";
@@ -151,7 +151,7 @@ const INITIAL_CHARACTERS: Character[] = [WAGURI_FRIEND_CHARACTER];
 const DEFAULT_SETTINGS: Settings = {
   userName: "Rizky",
   userPersona: "",
-  model: "combo/waguriapp",
+  model: "Atria-Dawn-Preview",
   imageModel: "gemini-3.1-flash-lite-image",
   temperature: 0.9,
   replyLength: "Sedang",
@@ -160,8 +160,8 @@ const DEFAULT_SETTINGS: Settings = {
   theme: "dark",
   bubbleTheme: "amber",
   language: "id",
-  providers: [BUILTIN_NARA_PROVIDER, BUILTIN_GEMINI_PROVIDER],
-  activeProviderId: BUILTIN_NARA_PROVIDER.id,
+  providers: [BUILTIN_ATRIA_PROVIDER, BUILTIN_NARA_PROVIDER, BUILTIN_GEMINI_PROVIDER],
+  activeProviderId: BUILTIN_ATRIA_PROVIDER.id,
 };
 
 const STORAGE_KEYS = {
@@ -505,12 +505,15 @@ export const storage = {
       const parsed = JSON.parse(raw);
       const merged: Settings = { ...DEFAULT_SETTINGS, ...parsed };
 
-      // Migrasi user lama: pastikan BUILTIN_NARA_PROVIDER dan BUILTIN_GEMINI_PROVIDER selalu ada
+      // Migrasi: pastikan BUILTIN_ATRIA_PROVIDER, BUILTIN_NARA_PROVIDER, dan BUILTIN_GEMINI_PROVIDER selalu ada
       if (!Array.isArray(merged.providers) || merged.providers.length === 0) {
-        merged.providers = [BUILTIN_NARA_PROVIDER, BUILTIN_GEMINI_PROVIDER];
+        merged.providers = [BUILTIN_ATRIA_PROVIDER, BUILTIN_NARA_PROVIDER, BUILTIN_GEMINI_PROVIDER];
       } else {
+        if (!merged.providers.some((p) => p.id === BUILTIN_ATRIA_PROVIDER.id)) {
+          merged.providers.unshift(BUILTIN_ATRIA_PROVIDER);
+        }
         if (!merged.providers.some((p) => p.id === BUILTIN_NARA_PROVIDER.id)) {
-          merged.providers.unshift(BUILTIN_NARA_PROVIDER);
+          merged.providers.splice(1, 0, BUILTIN_NARA_PROVIDER);
         }
         if (!merged.providers.some((p) => p.id === BUILTIN_GEMINI_PROVIDER.id)) {
           merged.providers.push(BUILTIN_GEMINI_PROVIDER);
@@ -525,13 +528,13 @@ export const storage = {
         });
       }
 
-      // Validasi tier: Akun Free otomatis memakai Nara Router jika sebelumnya memakai Gemini
+      // Validasi tier: Akun Free otomatis memakai Atria Dawn jika belum diset atau memakai Gemini
       const paid = isPaidUser();
       if (!paid) {
         const currentActive = merged.providers.find((p) => p.id === merged.activeProviderId);
         if (!currentActive || currentActive.type === "gemini" || currentActive.id === BUILTIN_GEMINI_PROVIDER.id) {
-          merged.activeProviderId = BUILTIN_NARA_PROVIDER.id;
-          merged.model = BUILTIN_NARA_PROVIDER.model;
+          merged.activeProviderId = BUILTIN_ATRIA_PROVIDER.id;
+          merged.model = BUILTIN_ATRIA_PROVIDER.model;
         }
       }
 

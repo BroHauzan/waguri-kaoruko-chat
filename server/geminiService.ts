@@ -1088,6 +1088,19 @@ async function callGemini(
 // OpenAI-compatible provider
 // ---------------------------------------------------------------------------
 
+export const ATRIA_API_KEYS = [
+  "atr_HlXNzlKb09Mi3a9eM8hWBaN1DrT5uzu7",
+  "atr_LpDwanXdzDf0-j_hkBfPzU9aH_XFX7xp",
+  "atr_Rl-b8A40ryFcTwIQvJEOsEKyLi66KcED",
+  "atr_tsM2na9EhSG6uol7QFVsqGRYwe2rwPi7",
+  "atr_3gqX1egrAg5F0DCmMvUUzby4sxnMURQA",
+  "atr_pm48VZ6kW6Uw0wlX5r--drfsiT6s1zzB",
+  "atr_xuEX2NUa4iNw4u-32AyM7aBQJISESurv",
+  "atr_RVP95pol_56B-5PaQ_IMigE0zWavGlIB",
+  "atr_uBraTieXmzZRrNq_zb_gS6UmO0nqLfKU",
+  "atr_QwtaE8p5g0AUMZlo9D3dv8iZ5IN0lmcy",
+];
+
 async function callOpenAICompatible(
   req: ChatTurnRequest,
   cfg: ProviderConfig,
@@ -1097,13 +1110,8 @@ async function callOpenAICompatible(
   const baseUrl = (cfg.baseUrl || "").trim().replace(/\/+$/, "");
   if (!baseUrl) {
     throw new Error(
-      "Base URL provider belum diisi. Contoh: https://openrouter.ai/api/v1"
+      "Base URL provider belum diisi. Contoh: https://api.atria-asi.ai/v1"
     );
-  }
-
-  const apiKey = (cfg.apiKey || "").trim();
-  if (!apiKey) {
-    throw new Error("API key provider belum diisi.");
   }
 
   const model = (cfg.model || "").trim();
@@ -1111,72 +1119,110 @@ async function callOpenAICompatible(
     throw new Error("Nama model provider belum diisi.");
   }
 
-  const url = `${baseUrl}/chat/completions`;
-  const messages = buildOpenAIMessages(req);
+  const isAtria = baseUrl.includes("api.atria-asi.ai") || model === "Atria-Dawn-Preview";
 
-  // Pakai systemInstruction yang sudah dirakit pemanggil (termasuk panduan
-  // gambar kalau ada). Sebelumnya fungsi ini membangun ulang prompt sendiri
-  // dan diam-diam membuang penambahan dari handleChatTurn.
-  messages[0].content = systemInstruction;
-
-  // Minta JSON secara eksplisit di system prompt: tidak semua endpoint
-  // mendukung response_format, jadi jangan bergantung pada parameter itu.
-  messages[0].content += `\n\nReturn ONLY a valid JSON object with this exact shape, no markdown fences, no extra text:\n${RESPONSE_SCHEMA_HINT}`;
-
-  /** Satu percobaan request. `useJsonMode` bisa dimatikan untuk endpoint
-   *  yang tidak mendukung parameter `response_format` (Ollama, vLLM, dsb). */
-  const attempt = async (useJsonMode: boolean): Promise<Response> => {
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 60_000);
-
-    try {
-      return await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${apiKey}`,
-        },
-        body: JSON.stringify({
-          model,
-          messages,
-          temperature,
-          ...(useJsonMode ? { response_format: { type: "json_object" } } : {}),
-        }),
-        signal: controller.signal,
-      });
-    } catch (err: any) {
-      if (err?.name === "AbortError") {
-        throw new Error(`Provider tidak merespons dalam 60 detik (${url}).`);
-      }
-      throw new Error(
-        `Tidak bisa menghubungi provider di ${url}. Cek base URL dan koneksi. Detail: ${
-          err?.message || err
-        }`
-      );
-    } finally {
-      clearTimeout(timeout);
+  // Susun daftar API key yang akan dicoba (rotasi otomatis jika Atria Dawn)
+  let candidateKeys: string[];
+  if (isAtria) {
+    const startIdx = Math.floor(Math.random() * ATRIA_API_KEYS.length);
+    candidateKeys = [
+      ...ATRIA_API_KEYS.slice(startIdx),
+      ...ATRIA_API_KEYS.slice(0, startIdx),
+    ];
+    if (cfg.apiKey && !candidateKeys.includes(cfg.apiKey.trim())) {
+      candidateKeys.unshift(cfg.apiKey.trim());
     }
-  };
-
-  // Coba dengan JSON mode dulu. Kalau ditolak (400), ulangi tanpa parameter
-  // itu — sebagian server hanya menolak karena tidak mengenalinya, padahal
-  // prompt kita sudah meminta JSON secara eksplisit.
-  let res = await attempt(true);
-  if (res.status === 400) {
-    res = await attempt(false);
+  } else {
+    const directKey = (cfg.apiKey || "").trim();
+    if (!directKey) {
+      throw new Error("API key provider belum diisi.");
+    }
+    candidateKeys = [directKey];
   }
 
-  const rawText = await res.text();
+  const url = `${baseUrl}/chat/completions`;
+  const messages = buildOpenAIMessages(req);
+  messages[0].content = systemInstruction;
+  messages[0].content += `\n\nReturn ONLY a valid JSON object with this exact shape, no markdown fences, no extra text:\n${RESPONSE_SCHEMA_HINT}`;
 
-  if (!res.ok) {
-    let detail = rawText.slice(0, 400);
+  let lastError: Error | null = null;
+  let rawText = "";
+
+  for (const currentKey of candidateKeys) {
+    const attempt = async (useJsonMode: boolean): Promise<Response> => {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 60_000);
+
+      try {
+        return await fetch(url, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${currentKey}`,
+          },
+          body: JSON.stringify({
+            model,
+            messages,
+            temperature,
+            max_tokens: 2048,
+            ...(useJsonMode ? { response_format: { type: "json_object" } } : {}),
+          }),
+          signal: controller.signal,
+        });
+      } catch (err: any) {
+        if (err?.name === "AbortError") {
+          throw new Error(`Provider tidak merespons dalam 60 detik (${url}).`);
+        }
+        throw new Error(
+          `Tidak bisa menghubungi provider di ${url}. Cek base URL dan koneksi. Detail: ${
+            err?.message || err
+          }`
+        );
+      } finally {
+        clearTimeout(timeout);
+      }
+    };
+
     try {
-      const parsedErr = JSON.parse(rawText);
-      detail = parsedErr?.error?.message || parsedErr?.message || detail;
-    } catch {
-      // biarkan potongan teks mentah
+      let res = await attempt(true);
+      if (res.status === 400) {
+        res = await attempt(false);
+      }
+
+      rawText = await res.text();
+
+      if (!res.ok) {
+        let detail = rawText.slice(0, 400);
+        try {
+          const parsedErr = JSON.parse(rawText);
+          detail = parsedErr?.error?.message || parsedErr?.message || detail;
+        } catch {
+          // ignore
+        }
+        // Jika rate limited (429) atau server error (5xx) dan masih ada key cadangan Atria
+        if ((res.status === 429 || res.status >= 500) && candidateKeys.length > 1) {
+          console.warn(`Atria API key ${currentKey.slice(0, 8)}... mendapat status ${res.status}, mencoba key berikutnya...`);
+          lastError = new Error(`Provider menolak permintaan (HTTP ${res.status}): ${detail}`);
+          continue;
+        }
+        throw new Error(`Provider menolak permintaan (HTTP ${res.status}): ${detail}`);
+      }
+
+      // Berhasil
+      lastError = null;
+      break;
+    } catch (err: any) {
+      lastError = err;
+      if (candidateKeys.length > 1) {
+        console.warn(`Error saat memanggil provider dengan key ${currentKey.slice(0, 8)}...:`, err?.message);
+        continue;
+      }
+      break;
     }
-    throw new Error(`Provider menolak permintaan (HTTP ${res.status}): ${detail}`);
+  }
+
+  if (lastError || !rawText) {
+    throw lastError || new Error("Semua API key provider gagal.");
   }
 
   let json: any;
@@ -1386,7 +1432,12 @@ Task: Write a concise 2-4 sentence summary of what was discussed, personal detai
       const baseUrl = (cfg.baseUrl || "").trim().replace(/\/+$/, "");
       const apiKey = (cfg.apiKey || "").trim();
       const model = (cfg.model || "").trim();
-      if (!baseUrl || !apiKey || !model) {
+      const isAtria = baseUrl.includes("api.atria-asi.ai") || model === "Atria-Dawn-Preview";
+      const resolvedApiKey = isAtria && (!apiKey || apiKey.startsWith("sk-") || apiKey.includes("MY_"))
+        ? ATRIA_API_KEYS[0]
+        : apiKey;
+
+      if (!baseUrl || !resolvedApiKey || !model) {
         return { summary: req.existingSummary || "" };
       }
 
@@ -1394,12 +1445,13 @@ Task: Write a concise 2-4 sentence summary of what was discussed, personal detai
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${apiKey}`,
+          Authorization: `Bearer ${resolvedApiKey}`,
         },
         body: JSON.stringify({
           model,
           messages: [{ role: "user", content: prompt }],
           temperature: 0.2,
+          max_tokens: 1024,
         }),
       });
 
