@@ -30,68 +30,68 @@ const STORAGE_KEY = "waguri_last_seen_update_id";
  * Pop-up changelog akan otomatis tampil SEKALI untuk setiap pengguna.
  */
 export const LATEST_APP_UPDATE: AppUpdateInfo = {
-  id: "2026.10.08-custom-themes-nara",
-  version: "v1.4.0",
+  id: "2026.10.08-main-skill-dynamic-adaptation",
+  version: "v1.5.0",
   date: "8 Oktober 2026",
   title: {
     id: "Yang Baru di Pembaruan Ini",
     en: "What's New in This Update",
   },
   subtitle: {
-    id: "Pembaruan fitur, tampilan minimalis, dan peningkatan performa.",
-    en: "Feature updates, minimalist UI, and performance improvements.",
+    id: "Pedoman gaya bahasa Main Skill, auto-adaptasi gaya dari chat, dan onboarding pengguna baru.",
+    en: "Main Skill speaking guidelines, in-chat dynamic style adaptation, and user onboarding.",
   },
   highlights: {
     id: [
       {
-        title: "Kustomisasi Warna Bubble Chat",
+        title: "Adaptasi Gaya Bicara Otomatis Lewat Chat",
         description:
-          "Pilih warna bubble chat sesuai selera Anda (Amber, Biru, Hijau, Pink, Lavender, Monokrom, dll) di menu Pengaturan tanpa terikat mood karakter.",
+          "Cukup minta karakter di chat (misal: 'bisa ga kamu panggil aku rin aja' atau 'gaya bicaramu lebih cuek'), maka karakter langsung mematuhi sebutan tersebut dan data gaya bicara karakter otomatis diperbarui.",
         tag: "Baru",
       },
       {
-        title: "Provider AI Nara Router",
+        title: "Pedoman Gaya Bicara Main Skill",
         description:
-          "AI Nara Router kini menjadi mesin default yang lebih gesit dan responsif untuk percakapan sehari-hari.",
-        tag: "Peningkatan",
+          "Gaya bahasa anti-slop natural dari Main Skill kini menjadi pedoman standar saat membuat atau mengisi lore karakter secara otomatis, dengan kebebasan penuh bagi Anda untuk mengeditnya secara manual.",
+        tag: "Karakter",
       },
       {
-        title: "Kuota Harian Lebih Luas",
+        title: "Onboarding Pengguna Baru",
         description:
-          "Batas percakapan untuk akun gratis kini diperlonggar hingga 200 pesan setiap hari.",
-        tag: "Kapasitas",
+          "Pengguna baru dapat langsung mengatur nama panggilan dan persona awal sebelum memulai percakapan.",
+        tag: "Pengguna",
       },
       {
-        title: "Desain Profil Minimalis",
+        title: "Perbaikan Navigasi Obrolan",
         description:
-          "Transisi foto profil vertikal yang bersih dan penghapusan ornamen visual berlebih demi pengalaman membaca yang nyaman.",
-        tag: "Tampilan",
+          "Aplikasi tidak lagi langsung mengarahkan ke obrolan tertentu di awal, dan tombol kembali (back) pada chat arsip kini bekerja dengan benar tanpa keluar dari aplikasi.",
+        tag: "Navigasi",
       },
     ],
     en: [
       {
-        title: "Custom Chat Bubble Colors",
+        title: "In-Chat Dynamic Speaking Style Adaptation",
         description:
-          "Choose your preferred user bubble color (Amber, Ocean Blue, Emerald, Pink, Lavender, Monochrome, etc.) in Settings without depending on character mood.",
+          "Simply ask the character in chat (e.g. 'can you call me rin instead' or 'talk more casually'), and the character will immediately adopt it and auto-update their speaking style data.",
         tag: "New",
       },
       {
-        title: "Nara Router AI Engine",
+        title: "Main Skill Conversation Guidelines",
         description:
-          "Nara Router is now the default intelligent provider, offering faster and more responsive daily conversations.",
-        tag: "Improved",
+          "Natural anti-slop texting guidelines from Main Skill are now built into character creation and auto-fetch lore, while keeping full manual editing freedom for you.",
+        tag: "Character",
       },
       {
-        title: "Expanded Daily Free Quota",
+        title: "New User Onboarding",
         description:
-          "Daily message limit for free accounts has been expanded up to 200 messages per day.",
-        tag: "Capacity",
+          "First-time visitors can set their display name and optional persona right away before chatting.",
+        tag: "User",
       },
       {
-        title: "Minimalist Character Profile",
+        title: "Smooth Navigation & Back Button Fix",
         description:
-          "Smooth vertical fade album-style profile header and cleaned-up minimalist UI for distraction-free chats.",
-        tag: "UI",
+          "New sessions land cleanly on the chat list, and pressing back in archived chats now smoothly returns to the previous screen without exiting the app.",
+        tag: "Navigation",
       },
     ],
   },
