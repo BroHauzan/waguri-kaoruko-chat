@@ -420,7 +420,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
       return;
     }
 
-    // Cek batas kuota pesan harian untuk user Free (50 pesan/hari)
+    // Cek batas kuota pesan harian untuk user Free (200 pesan/hari)
     if (!canSendMessage()) {
       setQuotaModalReason("exceeded");
       setShowQuotaModal(true);
@@ -1376,7 +1376,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                 <Crown size={15} className="text-amber-500" />
                 <span>
                   {quotaInfo.isPaid
-                    ? "Status Akun (VIP Unlimited ✨)"
+                    ? "Status Akun (VIP Unlimited)"
                     : `Kuota Chat (${quotaInfo.remaining}/${quotaInfo.limit})`}
                 </span>
               </button>
@@ -1906,7 +1906,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
           <div className="px-3.5 py-1.5 bg-red-500/10 dark:bg-red-500/15 border-t border-red-500/20 flex items-center justify-between text-xs text-red-600 dark:text-red-400">
             <div className="flex items-center gap-1.5 min-w-0">
               <Crown size={14} className="shrink-0 text-amber-500" />
-              <span className="truncate font-medium">Kuota chat harian habis (50/50 pesan).</span>
+              <span className="truncate font-medium">Kuota chat harian habis ({quotaInfo.limit}/{quotaInfo.limit} pesan).</span>
             </div>
             <button
               type="button"
@@ -1921,7 +1921,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
           </div>
         )}
 
-        {!quotaInfo.isPaid && quotaInfo.remaining > 0 && quotaInfo.remaining <= 10 && (
+        {!quotaInfo.isPaid && quotaInfo.remaining > 0 && quotaInfo.remaining <= 20 && (
           <div className="px-3.5 py-1 bg-amber-500/10 dark:bg-amber-500/15 border-t border-amber-500/20 flex items-center justify-between text-[11px] text-amber-700 dark:text-amber-300">
             <span>Sisa kuota gratis hari ini: {quotaInfo.remaining} pesan</span>
             <button

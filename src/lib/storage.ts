@@ -1,5 +1,6 @@
 import { Character, Chat, ScheduledTask, Settings } from "../types";
-import { BUILTIN_GEMINI_PROVIDER } from "./providers";
+import { BUILTIN_NARA_PROVIDER, BUILTIN_GEMINI_PROVIDER } from "./providers";
+import { isPaidUser } from "./quotaService";
 
 export const DEFAULT_WAGURI_AVATAR = "/waguri-pfp.jpg";
 export const DEFAULT_USER_AVATAR = "/rintaro-pfp.jpg";
@@ -149,7 +150,7 @@ const INITIAL_CHARACTERS: Character[] = [WAGURI_FRIEND_CHARACTER];
 
 const DEFAULT_SETTINGS: Settings = {
   userName: "Rizky",
-  model: "gemini-3.1-flash-lite",
+  model: "combo/waguriapp",
   imageModel: "gemini-3.1-flash-lite-image",
   temperature: 0.9,
   replyLength: "Sedang",
@@ -157,8 +158,8 @@ const DEFAULT_SETTINGS: Settings = {
   moodColorPreset: "dynamic",
   theme: "dark",
   language: "id",
-  providers: [BUILTIN_GEMINI_PROVIDER],
-  activeProviderId: BUILTIN_GEMINI_PROVIDER.id,
+  providers: [BUILTIN_NARA_PROVIDER, BUILTIN_GEMINI_PROVIDER],
+  activeProviderId: BUILTIN_NARA_PROVIDER.id,
 };
 
 const STORAGE_KEYS = {
@@ -501,12 +502,17 @@ export const storage = {
       const parsed = JSON.parse(raw);
       const merged: Settings = { ...DEFAULT_SETTINGS, ...parsed };
 
-      // Migrasi user lama: sebelum fitur provider ada, settings tersimpan
-      // tanpa `providers`. Tanpa backfill ini, daftar provider jadi kosong
-      // dan user tidak punya cara memilih sumber model sama sekali.
+      // Migrasi user lama: pastikan BUILTIN_NARA_PROVIDER dan BUILTIN_GEMINI_PROVIDER selalu ada
       if (!Array.isArray(merged.providers) || merged.providers.length === 0) {
-        merged.providers = [BUILTIN_GEMINI_PROVIDER];
+        merged.providers = [BUILTIN_NARA_PROVIDER, BUILTIN_GEMINI_PROVIDER];
       } else {
+        if (!merged.providers.some((p) => p.id === BUILTIN_NARA_PROVIDER.id)) {
+          merged.providers.unshift(BUILTIN_NARA_PROVIDER);
+        }
+        if (!merged.providers.some((p) => p.id === BUILTIN_GEMINI_PROVIDER.id)) {
+          merged.providers.push(BUILTIN_GEMINI_PROVIDER);
+        }
+
         // Backfill imageModel untuk provider builtin atau yang belum punya imageModel
         merged.providers = merged.providers.map((p) => {
           if (!p.imageModel && p.type === "gemini") {
@@ -514,6 +520,16 @@ export const storage = {
           }
           return p;
         });
+      }
+
+      // Validasi tier: Akun Free otomatis memakai Nara Router jika sebelumnya memakai Gemini
+      const paid = isPaidUser();
+      if (!paid) {
+        const currentActive = merged.providers.find((p) => p.id === merged.activeProviderId);
+        if (!currentActive || currentActive.type === "gemini" || currentActive.id === BUILTIN_GEMINI_PROVIDER.id) {
+          merged.activeProviderId = BUILTIN_NARA_PROVIDER.id;
+          merged.model = BUILTIN_NARA_PROVIDER.model;
+        }
       }
 
       if (!merged.imageModel) {

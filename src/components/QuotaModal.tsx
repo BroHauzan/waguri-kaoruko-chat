@@ -158,8 +158,8 @@ export const QuotaModal: React.FC<QuotaModalProps> = ({
                     ? "You have permanent unlimited access to chat with all characters."
                     : "Kamu memiliki akses chat tanpa batas (Unlimited) selamanya.")
                 : (language === "en"
-                    ? "Free account limit: 50 messages/day. Quota resets daily."
-                    : "Akun Free dibatasi 50 pesan/hari (reset otomatis setiap hari).")}
+                    ? `Free account limit: ${FREE_DAILY_MESSAGE_LIMIT} messages/day. Quota resets daily.`
+                    : `Akun Free dibatasi ${FREE_DAILY_MESSAGE_LIMIT} pesan/hari (reset otomatis setiap hari).`)}
             </p>
           </div>
 
@@ -228,8 +228,8 @@ export const QuotaModal: React.FC<QuotaModalProps> = ({
                     <AlertCircle size={16} className="shrink-0 mt-0.5" />
                     <p className="leading-snug">
                       {language === "en"
-                        ? "You have reached the 50 message daily limit. Quota resets at 00:00 midnight or activate Paid Mode below."
-                        : "Kuota 50 chat gratis hari ini telah habis. Kuota direset jam 00:00 tengah malam atau masukkan kode VIP di bawah."}
+                        ? `You have reached the ${FREE_DAILY_MESSAGE_LIMIT} message daily limit. Quota resets at 00:00 midnight or activate Paid Mode below.`
+                        : `Kuota ${FREE_DAILY_MESSAGE_LIMIT} chat gratis hari ini telah habis. Kuota direset jam 00:00 tengah malam atau masukkan kode VIP di bawah.`}
                     </p>
                   </div>
                 )}

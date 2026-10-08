@@ -10,6 +10,8 @@ import {
   EyeOff,
   Image as ImageIcon,
   MessageSquare,
+  Crown,
+  Lock,
 } from "lucide-react";
 import { AIProvider, ProviderType, Settings } from "../types";
 import {
@@ -18,7 +20,11 @@ import {
   getActiveProvider,
   getProviderList,
   makeProviderId,
+  isProviderPaidOnly,
+  BUILTIN_NARA_PROVIDER,
+  BUILTIN_GEMINI_PROVIDER,
 } from "../lib/providers";
+import { isPaidUser } from "../lib/quotaService";
 import { haptics } from "../lib/haptics";
 
 interface ProviderManagerProps {
@@ -27,6 +33,7 @@ interface ProviderManagerProps {
   onSaveSettings: (settings: Settings) => void;
   showToast: (msg: string) => void;
   embedded?: boolean;
+  onRequirePaid?: () => void;
 }
 
 const EMPTY_FORM = {
@@ -52,6 +59,7 @@ export const ProviderManager: React.FC<ProviderManagerProps> = ({
   onSaveSettings,
   showToast,
   embedded = false,
+  onRequirePaid,
 }) => {
   const providers = getProviderList(settings);
   const activeProvider = getActiveProvider(settings);
@@ -71,6 +79,14 @@ export const ProviderManager: React.FC<ProviderManagerProps> = ({
   };
 
   const handleSelect = (provider: AIProvider) => {
+    const isPaid = isPaidUser();
+    if (isProviderPaidOnly(provider) && !isPaid) {
+      haptics.error(hapticFeedback);
+      showToast("Provider Gemini hanya tersedia untuk akun Paid (VIP)");
+      onRequirePaid?.();
+      return;
+    }
+
     haptics.light(hapticFeedback);
     persist(providers, provider.id);
     showToast(`Provider aktif: ${provider.name}`);
@@ -214,12 +230,19 @@ export const ProviderManager: React.FC<ProviderManagerProps> = ({
         <div className="flex flex-col gap-2">
           {providers.map((provider) => {
             const isActive = provider.id === activeProvider.id;
+            const paid = isPaidUser();
+            const isPaidOnly = isProviderPaidOnly(provider);
+            const isLocked = isPaidOnly && !paid;
+            const isDefaultFree = provider.id === BUILTIN_NARA_PROVIDER.id;
+
             return (
               <div
                 key={provider.id}
                 className={`rounded-2xl border p-3 flex items-center gap-3 transition-colors ${
                   isActive
                     ? "border-[#F5B838]/60 bg-[#F5B838]/10"
+                    : isLocked
+                    ? "border-amber-500/20 bg-amber-500/5 dark:bg-amber-500/[0.03]"
                     : "border-black/5 dark:border-white/10 bg-[#F8F9FA] dark:bg-white/[0.03]"
                 }`}
               >
@@ -228,10 +251,33 @@ export const ProviderManager: React.FC<ProviderManagerProps> = ({
                   onClick={() => handleSelect(provider)}
                   className="flex-1 min-w-0 text-left cursor-pointer"
                 >
-                  <div className="flex items-center gap-1.5">
+                  <div className="flex items-center gap-1.5 flex-wrap">
                     <span className="text-[13px] font-bold text-neutral-900 dark:text-[#F2F3F7] truncate">
                       {provider.name}
                     </span>
+
+                    {/* Badge Default Free */}
+                    {isDefaultFree && (
+                      <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 shrink-0 uppercase">
+                        Default Free
+                      </span>
+                    )}
+
+                    {/* Badge VIP Paid */}
+                    {isPaidOnly && (
+                      <span
+                        className={`text-[9px] font-extrabold px-1.5 py-0.5 rounded-full flex items-center gap-1 shrink-0 uppercase ${
+                          isLocked
+                            ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30"
+                            : "bg-gradient-to-r from-amber-500/20 to-yellow-400/20 text-amber-600 dark:text-amber-400"
+                        }`}
+                      >
+                        {isLocked ? <Lock size={9} /> : <Crown size={9} />}
+                        <span>{isLocked ? "VIP Paid Only" : "VIP Paid"}</span>
+                      </span>
+                    )}
+
+                    {/* Badge Aktif */}
                     {isActive && (
                       <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-[#F5B838] text-neutral-900 shrink-0">
                         AKTIF
@@ -241,7 +287,7 @@ export const ProviderManager: React.FC<ProviderManagerProps> = ({
                   <div className="flex flex-col gap-0.5 mt-1">
                     <span className="text-[11px] text-neutral-600 dark:text-[#A1A1AA] truncate flex items-center gap-1">
                       <MessageSquare size={11} className="text-[#F5B838] shrink-0" />
-                      <span>Teks: {provider.model || "gemini-3.1-flash-lite"}</span>
+                      <span>Teks: {provider.model || "combo/waguriapp"}</span>
                     </span>
                     <span className="text-[11px] text-neutral-600 dark:text-[#A1A1AA] truncate flex items-center gap-1">
                       <ImageIcon size={11} className="text-pink-400 shrink-0" />

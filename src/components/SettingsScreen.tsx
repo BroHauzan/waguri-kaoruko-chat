@@ -102,9 +102,9 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     { id: "auto", label: dict.themeAuto, icon: Monitor },
   ];
 
-  const languageOptions: { id: AppLanguage; label: string; flag: string }[] = [
-    { id: "id", label: "Bahasa Indonesia", flag: "🇮🇩" },
-    { id: "en", label: "English", flag: "🇬🇧" },
+  const languageOptions: { id: AppLanguage; label: string; code: string }[] = [
+    { id: "id", label: "Bahasa Indonesia", code: "ID" },
+    { id: "en", label: "English", code: "EN" },
   ];
 
   const conversationPresets = [
@@ -269,7 +269,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
 
   const getAccountTierSubtitle = () => {
     if (quotaInfo.isPaid) {
-      return language === "en" ? "VIP Paid • Unlimited Chat ✨" : "Akun VIP • Chat Tanpa Batas ✨";
+      return language === "en" ? "VIP Paid • Unlimited Chat" : "Akun VIP • Chat Tanpa Batas";
     }
     return language === "en"
       ? `Free Tier • ${quotaInfo.remaining}/${quotaInfo.limit} messages left today`
@@ -721,6 +721,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 onSaveSettings={onSaveSettings}
                 showToast={showToast}
                 embedded={true}
+                onRequirePaid={() => setActiveModal("accountTier")}
               />
             </motion.div>
           </div>
@@ -967,7 +968,9 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                       }`}
                     >
                       <div className="flex items-center gap-3">
-                        <span className="text-2xl">{opt.flag}</span>
+                        <span className="text-xs font-mono font-bold px-2 py-1 rounded-lg bg-neutral-200/70 dark:bg-white/[0.08] text-neutral-600 dark:text-[#9B9BA3] tracking-wide">
+                          {opt.code}
+                        </span>
                         <span className="text-sm font-semibold">{opt.label}</span>
                       </div>
                       {isActive && (
@@ -1144,6 +1147,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 onSaveSettings={onSaveSettings}
                 showToast={showToast}
                 embedded={true}
+                onRequirePaid={() => setActiveModal("accountTier")}
               />
             </motion.div>
           </div>

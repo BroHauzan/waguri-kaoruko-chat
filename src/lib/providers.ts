@@ -1,13 +1,29 @@
 import { AIProvider, Settings } from "../types";
+import { isPaidUser } from "./quotaService";
 
 /**
- * Provider bawaan yang selalu ada. API key-nya sengaja dikosongkan supaya
- * server memakai `GEMINI_API_KEY` dari .env. Kalau user mengisi key di sini,
- * key itu yang menang.
+ * Provider bawaan Nara Router (OpenAI-compatible).
+ * Default untuk semua pengguna Akun Free.
+ */
+export const BUILTIN_NARA_PROVIDER: AIProvider = {
+  id: "builtin-nara",
+  name: "Nara Router",
+  type: "openai-compatible",
+  baseUrl: "https://router.bynara.id/v1",
+  apiKey: "sk-nry-sgXTu4Sl3NdCFsL7V3c4t4Og7bjlXvEgXk1Tq39Vs4I",
+  model: "combo/waguriapp",
+  imageModel: "gemini-3.1-flash-lite-image",
+  isBuiltin: true,
+  createdAt: 0,
+};
+
+/**
+ * Provider bawaan Gemini.
+ * Eksklusif hanya tersedia untuk pengguna Akun Paid (VIP).
  */
 export const BUILTIN_GEMINI_PROVIDER: AIProvider = {
   id: "builtin-gemini",
-  name: "Gemini (bawaan)",
+  name: "Gemini",
   type: "gemini",
   baseUrl: "",
   apiKey: "",
@@ -32,19 +48,66 @@ export const GEMINI_IMAGE_MODEL_PRESETS = [
   "imagen-3.0-generate-002",
 ];
 
-/** Selalu mengembalikan minimal satu provider supaya UI tidak pernah kosong. */
+/** Cek apakah suatu provider memerlukan akun Paid */
+export function isProviderPaidOnly(provider: AIProvider): boolean {
+  return provider.type === "gemini" || provider.id === BUILTIN_GEMINI_PROVIDER.id;
+}
+
+/** Cek apakah user saat ini diizinkan menggunakan provider tersebut */
+export function isProviderAllowedForCurrentTier(provider: AIProvider): boolean {
+  if (isProviderPaidOnly(provider)) {
+    return isPaidUser();
+  }
+  return true;
+}
+
+/**
+ * Mengembalikan daftar provider yang tersedia.
+ * Menjamin BUILTIN_NARA_PROVIDER dan BUILTIN_GEMINI_PROVIDER selalu ada.
+ */
 export function getProviderList(settings: Settings): AIProvider[] {
   const list = settings.providers;
   if (!Array.isArray(list) || list.length === 0) {
-    return [BUILTIN_GEMINI_PROVIDER];
+    return [BUILTIN_NARA_PROVIDER, BUILTIN_GEMINI_PROVIDER];
   }
-  return list;
+
+  const result = [...list];
+  // Pastikan Nara Router ada
+  if (!result.some((p) => p.id === BUILTIN_NARA_PROVIDER.id)) {
+    result.unshift(BUILTIN_NARA_PROVIDER);
+  }
+  // Pastikan Gemini ada
+  if (!result.some((p) => p.id === BUILTIN_GEMINI_PROVIDER.id)) {
+    result.push(BUILTIN_GEMINI_PROVIDER);
+  }
+
+  return result;
 }
 
-/** Provider aktif, dengan fallback aman ke entri pertama. */
+/**
+ * Provider aktif dengan validasi tier akun:
+ * - Jika akun Free, Gemini dilarang dan otomatis fallback ke Nara Router.
+ * - Jika akun Paid, bebas menggunakan provider apa pun.
+ */
 export function getActiveProvider(settings: Settings): AIProvider {
   const list = getProviderList(settings);
-  return list.find((p) => p.id === settings.activeProviderId) || list[0];
+  const paid = isPaidUser();
+
+  const chosen = list.find((p) => p.id === settings.activeProviderId);
+
+  // Jika akun Free mencoba memakai Gemini, arahkan ke Nara Router
+  if (!paid && chosen && isProviderPaidOnly(chosen)) {
+    const nara = list.find((p) => p.id === BUILTIN_NARA_PROVIDER.id);
+    return nara || BUILTIN_NARA_PROVIDER;
+  }
+
+  if (chosen) {
+    return chosen;
+  }
+
+  // Fallback default: Nara Router jika Free, atau entri pertama
+  const nara = list.find((p) => p.id === BUILTIN_NARA_PROVIDER.id);
+  return !paid && nara ? nara : list[0] || BUILTIN_NARA_PROVIDER;
 }
 
 export function makeProviderId(): string {

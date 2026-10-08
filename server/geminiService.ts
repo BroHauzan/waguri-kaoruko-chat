@@ -1128,6 +1128,41 @@ async function callOpenAICompatible(
       )}`
     );
   }
+
+  // Jika model mengindikasikan pengiriman foto / selfie (send_photo)
+  if (parsed.send_photo?.sceneDescription) {
+    try {
+      const photoApiKey = resolveGeminiKey(req.apiKey);
+      if (photoApiKey) {
+        const photoDataUrl = await generatePhotoHelper(
+          req.charName,
+          req.visualProfile,
+          parsed.send_photo.sceneDescription,
+          photoApiKey,
+          req.avatarUrl,
+          cfg.imageModel
+        );
+        payload.photo = {
+          dataUrl: photoDataUrl,
+          caption: parsed.send_photo.caption || payload.messages[0] || "",
+        };
+        if (parsed.send_photo.caption) {
+          payload.messages = [parsed.send_photo.caption];
+        }
+      }
+    } catch (photoErr: any) {
+      console.warn("Generating character photo in OpenAI-compatible failed gracefully:", photoErr?.message || photoErr);
+      const fallbackMsg = req.language === "en"
+        ? "oops my signal was a bit slow right now trying to send that photo hehe i'll send it again later okayyy"
+        : "aduh sinyalku barusan agak lemot nih pas mau kirim foto hehe nanti aku fotoin lagi yaa";
+      if (!payload.messages.length) {
+        payload.messages = [parsed.send_photo?.caption || fallbackMsg];
+      } else {
+        payload.messages.push(fallbackMsg);
+      }
+    }
+  }
+
   return payload;
 }
 

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { motion } from "motion/react";
 import {
   ChevronLeft,
   MoreHorizontal,
@@ -10,10 +11,12 @@ import {
   Activity,
   BookOpen,
   Clock,
+  Sparkles,
 } from "lucide-react";
 import { Character, Chat } from "../types";
 import { getMoodTheme } from "../lib/moodConfig";
 import { ScheduledTasksModal } from "./ScheduledTasksModal";
+import { haptics } from "../lib/haptics";
 
 interface CharacterDetailSheetProps {
   character: Character;
@@ -40,143 +43,198 @@ export const CharacterDetailSheet: React.FC<CharacterDetailSheetProps> = ({
   const charMessages = (chat?.messages || []).filter((m) => m.role === "char");
   const lastCharMessage = charMessages.length > 0 ? charMessages[charMessages.length - 1] : null;
 
+  const handleShare = () => {
+    haptics.light(true);
+    if (navigator.share) {
+      navigator
+        .share({
+          title: character.name,
+          text: character.tagline || `Obrolan bersama ${character.name}`,
+        })
+        .catch(() => {});
+    }
+  };
+
   return (
     <>
-      <div className="fixed inset-0 z-50 bg-black/60 dark:bg-black/70 backdrop-blur-xs flex justify-center lg:justify-end animate-fade-in overflow-y-auto">
-        <div className="relative w-full max-w-md min-h-screen bg-neutral-100 dark:bg-[#0B0C0F] flex flex-col pb-10">
-          {/* Top Portrait Character Photo Banner */}
-          <div className="relative w-full h-[320px] bg-neutral-900 shrink-0">
+      <div className="fixed inset-0 z-50 bg-black/60 dark:bg-black/75 backdrop-blur-xs flex justify-center lg:justify-end animate-fade-in overflow-y-auto">
+        {/* Main Profile Panel */}
+        <motion.div
+          initial={{ opacity: 0, x: 16 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: 16 }}
+          transition={{ duration: 0.2, ease: "easeOut" }}
+          className="relative w-full max-w-md min-h-screen bg-[#F4F5F7] dark:bg-[#0B0C0F] text-neutral-900 dark:text-[#F2F3F7] flex flex-col pb-12 shadow-2xl overflow-x-hidden"
+        >
+          {/* ========================================================
+              1. HEADER IMAGE WITH SMOOTH FADE (Minimalist Album Artwork)
+              ======================================================== */}
+          <div className="relative w-full h-[360px] sm:h-[390px] shrink-0 overflow-hidden bg-neutral-950">
+            {/* Foto Profil Full-Bleed memudar halus ke arah bawah */}
             <img
               src={character.avatarUrl}
               alt={character.name}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover object-top select-none"
+              style={{
+                maskImage: "linear-gradient(to bottom, rgba(0,0,0,1) 40%, rgba(0,0,0,0) 100%)",
+                WebkitMaskImage: "linear-gradient(to bottom, rgba(0,0,0,1) 40%, rgba(0,0,0,0) 100%)",
+              }}
             />
-            <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-transparent to-black/30" />
 
-            {/* Back Button */}
-            <button
-              type="button"
-              onClick={onClose}
-              className="absolute top-5 left-5 w-9 h-9 rounded-lg bg-neutral-900/60 backdrop-blur-md border border-white/10 flex items-center justify-center text-white hover:bg-neutral-900/80 active:scale-95 transition-all cursor-pointer"
-              aria-label="Kembali"
-            >
-              <ChevronLeft size={20} />
-            </button>
+            {/* Gradient Overlay Lembut untuk Kontras Navigasi Atas */}
+            <div className="absolute inset-x-0 top-0 h-24 bg-gradient-to-b from-black/60 to-transparent pointer-events-none" />
 
-            {/* Options / Edit Button */}
-            <button
-              type="button"
-              onClick={onEditCharacter}
-              className="absolute top-5 right-5 w-9 h-9 rounded-lg bg-neutral-900/60 backdrop-blur-md border border-white/10 flex items-center justify-center text-white hover:bg-neutral-900/80 active:scale-95 transition-all cursor-pointer"
-              aria-label="Edit Karakter"
-              title="Edit Karakter"
-            >
-              <MoreHorizontal size={18} />
-            </button>
-          </div>
+            {/* Gradient Overlay Lembut Bawah menyatu ke Background */}
+            <div className="absolute inset-x-0 bottom-0 h-40 bg-gradient-to-b from-transparent via-[#F4F5F7]/80 to-[#F4F5F7] dark:via-[#0B0C0F]/80 dark:to-[#0B0C0F] pointer-events-none" />
 
-          {/* Overlapping Content Sheet */}
-          <div className="relative -mt-6 flex-1 bg-white dark:bg-[#141518] rounded-t-2xl px-5 pt-5 shadow-xl flex flex-col gap-3.5 border-t border-black/5 dark:border-white/10">
-            {/* Header Card */}
-            <div className="bg-neutral-50 dark:bg-[#1B1C22] rounded-xl p-4 border border-black/5 dark:border-white/10 flex flex-col gap-2">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <h2 className="text-lg font-bold text-neutral-900 dark:text-neutral-100 tracking-tight">
-                    {character.name}
-                  </h2>
-                  <p className="text-xs text-neutral-500 dark:text-neutral-400 mt-0.5">
-                    {character.tagline}
-                  </p>
-                </div>
-                <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-md text-xs font-semibold shrink-0">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
-                  Aktif
-                </span>
-              </div>
-
-              {/* Metadata */}
-              <div className="flex items-center gap-2 pt-2 border-t border-black/5 dark:border-white/10 text-xs text-neutral-600 dark:text-neutral-400">
-                <span className="font-medium px-2 py-0.5 rounded bg-neutral-200/60 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300">
-                  {character.category}
-                </span>
-                <span>•</span>
-                <span className="truncate">{character.relationship || "Teman Bicara"}</span>
-              </div>
-            </div>
-
-            {/* Quick Action Buttons Grid */}
-            <div className="grid grid-cols-3 gap-2">
+            {/* Top Navigation Bar Minimalis */}
+            <div className="absolute top-4 inset-x-4 flex items-center justify-between z-20">
               <button
                 type="button"
-                onClick={onStartChat}
-                className="flex flex-col items-center justify-center py-2.5 px-3 rounded-xl bg-amber-500 hover:bg-amber-600 text-neutral-950 font-semibold text-xs gap-1.5 transition-colors cursor-pointer"
+                onClick={() => {
+                  haptics.light(true);
+                  onClose();
+                }}
+                className="w-9 h-9 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-md text-white flex items-center justify-center active:scale-95 transition-all cursor-pointer"
+                aria-label="Kembali"
               >
-                <MessageCircle size={18} />
-                <span>Obrolan</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={onEditCharacter}
-                className="flex flex-col items-center justify-center py-2.5 px-3 rounded-xl bg-neutral-100 dark:bg-neutral-800/80 hover:bg-neutral-200 dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-300 font-semibold text-xs gap-1.5 border border-black/5 dark:border-white/10 transition-colors cursor-pointer"
-              >
-                <Edit3 size={18} />
-                <span>Edit</span>
+                <ChevronLeft size={20} />
               </button>
 
               <button
                 type="button"
                 onClick={() => {
-                  if (navigator.share) {
-                    navigator.share({
-                      title: character.name,
-                      text: character.tagline,
-                    }).catch(() => {});
-                  }
+                  haptics.light(true);
+                  onEditCharacter?.();
                 }}
-                className="flex flex-col items-center justify-center py-2.5 px-3 rounded-xl bg-neutral-100 dark:bg-neutral-800/80 hover:bg-neutral-200 dark:hover:bg-neutral-800 text-neutral-700 dark:text-neutral-300 font-semibold text-xs gap-1.5 border border-black/5 dark:border-white/10 transition-colors cursor-pointer"
+                className="w-9 h-9 rounded-full bg-black/40 hover:bg-black/60 backdrop-blur-md text-white flex items-center justify-center active:scale-95 transition-all cursor-pointer"
+                aria-label="Edit Karakter"
+                title="Edit Karakter"
               >
-                <Share2 size={18} />
+                <MoreHorizontal size={18} />
+              </button>
+            </div>
+          </div>
+
+          {/* ========================================================
+              2. TYPOGRAPHY & DETAIL INFO (Clean, No-Pill Minimalist)
+              ======================================================== */}
+          <div className="px-5 -mt-10 relative z-10 flex flex-col gap-4">
+            {/* Header Text Block (Murni Tipografi Bersih) */}
+            <div className="flex flex-col gap-1">
+              {/* Status Online & Metadata (Teks Inline Elegan, Tanpa Kapsul Shape) */}
+              <div className="flex items-center gap-2 text-xs font-medium text-neutral-500 dark:text-[#8A8A93]">
+                <span className="flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+                  Online
+                </span>
+                {character.category && (
+                  <>
+                    <span className="text-neutral-300 dark:text-neutral-700">•</span>
+                    <span>{character.category}</span>
+                  </>
+                )}
+                {character.relationship && (
+                  <>
+                    <span className="text-neutral-300 dark:text-neutral-700">•</span>
+                    <span className="truncate max-w-[220px]">{character.relationship}</span>
+                  </>
+                )}
+              </div>
+
+              {/* Nama Karakter */}
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-neutral-900 dark:text-[#F2F3F7] tracking-tight leading-tight">
+                {character.name}
+              </h1>
+
+              {/* Tagline / Deskripsi Singkat */}
+              {character.tagline && (
+                <p className="text-xs sm:text-sm text-neutral-600 dark:text-[#A1A2AA] leading-relaxed mt-0.5">
+                  {character.tagline}
+                </p>
+              )}
+            </div>
+
+            {/* Quick Action Buttons Minimalis */}
+            <div className="grid grid-cols-3 gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => {
+                  haptics.light(true);
+                  onStartChat();
+                }}
+                className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-[#F5B838] hover:bg-[#E5A929] text-neutral-950 font-bold text-xs transition-colors cursor-pointer active:scale-95"
+              >
+                <MessageCircle size={16} />
+                <span>Obrolan</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  haptics.light(true);
+                  onEditCharacter?.();
+                }}
+                className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-neutral-200/70 dark:bg-white/[0.06] hover:bg-neutral-300/70 dark:hover:bg-white/[0.1] text-neutral-800 dark:text-[#E4E5EA] font-semibold text-xs transition-colors cursor-pointer active:scale-95"
+              >
+                <Edit3 size={15} />
+                <span>Edit</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={handleShare}
+                className="flex items-center justify-center gap-1.5 py-2.5 px-3 rounded-xl bg-neutral-200/70 dark:bg-white/[0.06] hover:bg-neutral-300/70 dark:hover:bg-white/[0.1] text-neutral-800 dark:text-[#E4E5EA] font-semibold text-xs transition-colors cursor-pointer active:scale-95"
+              >
+                <Share2 size={15} />
                 <span>Bagikan</span>
               </button>
             </div>
 
-            {/* Scheduled Tasks Entry Button */}
+            {/* Jadwal Rutin Otomatis */}
             <button
               type="button"
-              onClick={() => setShowScheduledTasks(true)}
-              className="w-full py-3 px-3.5 rounded-xl bg-neutral-50 dark:bg-[#1B1C22] hover:bg-neutral-100 dark:hover:bg-[#22242B] border border-black/5 dark:border-white/10 flex items-center justify-between text-xs font-semibold text-neutral-800 dark:text-neutral-200 transition-colors cursor-pointer"
+              onClick={() => {
+                haptics.light(true);
+                setShowScheduledTasks(true);
+              }}
+              className="w-full p-3.5 rounded-2xl bg-white dark:bg-[#16171B] hover:bg-neutral-50 dark:hover:bg-white/[0.02] border border-black/5 dark:border-white/5 flex items-center justify-between text-xs transition-colors cursor-pointer"
             >
-              <div className="flex items-center gap-2.5">
-                <Clock size={16} className="text-amber-500" />
-                <span>Instruksi & Jadwal Rutin Otomatis</span>
+              <div className="flex items-center gap-3">
+                <Clock size={16} className="text-[#F5B838] shrink-0" />
+                <div className="flex flex-col text-left">
+                  <span className="font-semibold text-sm text-neutral-900 dark:text-[#F2F3F7] leading-tight">
+                    Jadwal Rutin Otomatis
+                  </span>
+                  <span className="text-[11px] text-neutral-500 dark:text-[#8A8A93] mt-0.5">
+                    Sapaan pagi, malam, atau waktu tertentu
+                  </span>
+                </div>
               </div>
-              <ChevronRight size={16} className="text-neutral-400 dark:text-neutral-500" />
+              <ChevronRight size={16} className="text-neutral-400 dark:text-neutral-600 shrink-0" />
             </button>
 
-            {/* Section: Status Perasaan */}
-            <div className="bg-neutral-50 dark:bg-[#1B1C22] rounded-xl p-4 border border-black/5 dark:border-white/10 flex flex-col gap-3">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Activity size={16} className="text-amber-500" />
-                  <h3 className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
-                    Kondisi Perasaan Saat Ini
-                  </h3>
+            {/* Kondisi Perasaan Saat Ini */}
+            <div className="bg-white dark:bg-[#16171B] rounded-2xl p-4 border border-black/5 dark:border-white/5 flex flex-col gap-3">
+              <div className="flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2 font-bold text-neutral-800 dark:text-[#E4E5EA]">
+                  <Activity size={15} className="text-[#F5B838]" />
+                  <span>Kondisi Perasaan</span>
                 </div>
-                <span className="text-xs font-medium text-neutral-600 dark:text-neutral-300">
+                <span className="text-neutral-600 dark:text-[#A1A2AA] font-medium">
                   {moodTheme.label}
                 </span>
               </div>
 
-              {/* Emotion Intensity Meter */}
+              {/* Intensity Meter Minimalis */}
               <div className="flex flex-col gap-1.5">
-                <div className="flex items-center justify-between text-xs text-neutral-500 dark:text-neutral-400">
-                  <span>Intensitas Emosi</span>
-                  <span className="font-semibold text-neutral-800 dark:text-neutral-200">
+                <div className="flex items-center justify-between text-[11px] text-neutral-500 dark:text-[#8A8A93]">
+                  <span>Intensitas</span>
+                  <span className="font-semibold text-neutral-800 dark:text-neutral-200 tabular-nums">
                     {intensity} / 10
                   </span>
                 </div>
-                <div className="w-full h-1.5 rounded-full bg-neutral-200 dark:bg-neutral-700 overflow-hidden">
+                <div className="w-full h-1.5 rounded-full bg-neutral-100 dark:bg-white/[0.08] overflow-hidden">
                   <div
                     className="h-full rounded-full transition-all duration-300"
                     style={{
@@ -188,84 +246,89 @@ export const CharacterDetailSheet: React.FC<CharacterDetailSheetProps> = ({
               </div>
 
               {/* Recent Expression Quote */}
-              <div className="pt-2 border-t border-black/5 dark:border-white/10">
-                <span className="text-[11px] font-semibold text-neutral-400 dark:text-neutral-500 uppercase tracking-wider block mb-1">
+              <div className="pt-2 border-t border-black/5 dark:border-white/5">
+                <span className="text-[10px] font-semibold text-neutral-400 dark:text-[#8A8A93] uppercase tracking-wider block mb-1">
                   Ekspresi Terakhir
                 </span>
-                <p className="text-xs italic text-neutral-700 dark:text-neutral-300 leading-relaxed break-words whitespace-pre-wrap">
+                <p className="text-xs italic text-neutral-700 dark:text-[#D1D2D9] leading-relaxed break-words whitespace-pre-wrap">
                   "{lastCharMessage ? lastCharMessage.text : character.greeting}"
                 </p>
               </div>
             </div>
 
-            {/* Section: Ringkasan Memori Obrolan */}
-            <div className="bg-neutral-50 dark:bg-[#1B1C22] rounded-xl p-4 border border-black/5 dark:border-white/10 flex flex-col gap-2">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <BookOpen size={16} className="text-amber-500" />
-                  <h3 className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
-                    Memori & Topik Obrolan
-                  </h3>
+            {/* Memori Obrolan */}
+            <div className="bg-white dark:bg-[#16171B] rounded-2xl p-4 border border-black/5 dark:border-white/5 flex flex-col gap-2">
+              <div className="flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2 font-bold text-neutral-800 dark:text-[#E4E5EA]">
+                  <BookOpen size={15} className="text-[#F5B838]" />
+                  <span>Memori Obrolan</span>
                 </div>
                 {chat?.lastSummarizedDate && (
-                  <span className="text-[11px] font-medium px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                  <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
                     Tersimpan
                   </span>
                 )}
               </div>
-              <p className="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed">
+              <p className="text-xs text-neutral-600 dark:text-[#A1A2AA] leading-relaxed">
                 {chat?.summary
                   ? chat.summary
                   : totalMessages > 1
-                  ? `Telah bertukar ${totalMessages} pesan. Percakapan dari hari kemarin akan dirangkum otomatis menjadi ingatan abadi karakter saat ganti hari.`
-                  : "Belum ada riwayat percakapan panjang. Obrolan akan diingat secara otomatis untuk menjaga kesinambungan topik."}
+                  ? `Telah bertukar ${totalMessages} pesan. Percakapan akan dirangkum otomatis saat ganti hari.`
+                  : "Belum ada riwayat percakapan panjang."}
               </p>
             </div>
 
-            {/* Section: Kepribadian */}
-            <div className="bg-neutral-50 dark:bg-[#1B1C22] rounded-xl p-4 border border-black/5 dark:border-white/10 flex flex-col gap-2">
-              <h3 className="text-xs font-bold text-neutral-900 dark:text-neutral-100">
-                Kepribadian & Gaya Bicara
-              </h3>
-              <p className="text-xs text-neutral-600 dark:text-neutral-400 leading-relaxed">
+            {/* Kepribadian & Gaya Bicara */}
+            <div className="bg-white dark:bg-[#16171B] rounded-2xl p-4 border border-black/5 dark:border-white/5 flex flex-col gap-2">
+              <div className="flex items-center gap-2 text-xs font-bold text-neutral-800 dark:text-[#E4E5EA]">
+                <Sparkles size={15} className="text-[#F5B838]" />
+                <span>Kepribadian</span>
+              </div>
+              <p className="text-xs text-neutral-600 dark:text-[#A1A2AA] leading-relaxed">
                 {character.personality || character.tagline}
               </p>
               {character.speakingStyle && (
-                <div className="pt-2 border-t border-black/5 dark:border-white/10 text-xs text-neutral-500 dark:text-neutral-400">
+                <div className="pt-2 border-t border-black/5 dark:border-white/5 text-xs text-neutral-500 dark:text-[#8A8A93]">
                   <span className="font-semibold text-neutral-700 dark:text-neutral-300">Gaya Bicara: </span>
                   {character.speakingStyle}
                 </div>
               )}
             </div>
 
-            {/* Link to Mood Statistics */}
+            {/* Statistik Emosi */}
             {onOpenMoodStats && (
               <button
                 type="button"
-                onClick={onOpenMoodStats}
-                className="w-full py-3 px-3.5 rounded-xl bg-neutral-50 dark:bg-[#1B1C22] hover:bg-neutral-100 dark:hover:bg-[#22242B] border border-black/5 dark:border-white/10 flex items-center justify-between text-xs font-semibold text-neutral-700 dark:text-neutral-300 transition-colors cursor-pointer"
+                onClick={() => {
+                  haptics.light(true);
+                  onOpenMoodStats();
+                }}
+                className="w-full p-3.5 rounded-2xl bg-white dark:bg-[#16171B] hover:bg-neutral-50 dark:hover:bg-white/[0.02] border border-black/5 dark:border-white/5 flex items-center justify-between text-xs text-neutral-700 dark:text-[#C9CAD1] font-semibold transition-colors cursor-pointer"
               >
-                <div className="flex items-center gap-2">
-                  <TrendingUp size={16} className="text-amber-500" />
-                  <span>Grafik tren & dinamika emosi</span>
+                <div className="flex items-center gap-2.5">
+                  <TrendingUp size={16} className="text-[#F5B838]" />
+                  <span>Grafik tren & statistik emosi</span>
                 </div>
-                <ChevronRight size={16} className="text-neutral-400 dark:text-neutral-500" />
+                <ChevronRight size={16} className="text-neutral-400 dark:text-neutral-600" />
               </button>
             )}
 
-            {/* Bottom Primary Action Button */}
+            {/* Bottom Sticky Action Button */}
             <div className="pt-2">
               <button
                 type="button"
-                onClick={onStartChat}
-                className="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-98 text-neutral-950 text-sm font-semibold transition-all cursor-pointer flex items-center justify-center gap-2"
+                onClick={() => {
+                  haptics.light(true);
+                  onStartChat();
+                }}
+                className="w-full py-3 rounded-xl bg-[#F5B838] hover:bg-[#E5A929] active:scale-98 text-neutral-950 text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2 uppercase tracking-wider"
               >
-                <MessageCircle size={18} />
-                <span>Mulai Obrolan</span>
+                <MessageCircle size={16} />
+                <span>Mulai Percakapan</span>
               </button>
             </div>
           </div>
-        </div>
+        </motion.div>
       </div>
 
       {/* Scheduled Tasks Modal */}
