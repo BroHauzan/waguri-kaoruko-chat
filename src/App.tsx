@@ -416,6 +416,7 @@ export default function App() {
         storage.getChatByCharacterId(activeCharacter.id, activeCharacter)
       }
       settings={settings}
+      isCharacterTyping={Boolean(typingCharacterIds[activeCharacter.id])}
       onBack={handleCloseChat}
       onUpdateChat={handleUpdateChat}
       onClearChat={handleClearChat}

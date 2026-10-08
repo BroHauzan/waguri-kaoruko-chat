@@ -100,7 +100,9 @@ export const QuotaModal: React.FC<QuotaModalProps> = ({
 
   const usedPercentage = Math.min(
     100,
-    Math.round((quotaInfo.used / FREE_DAILY_MESSAGE_LIMIT) * 100)
+    quotaInfo.limit > 0 && isFinite(quotaInfo.limit)
+      ? Math.round((quotaInfo.used / quotaInfo.limit) * 100)
+      : 0
   );
 
   return (
@@ -158,8 +160,8 @@ export const QuotaModal: React.FC<QuotaModalProps> = ({
                     ? "You have permanent unlimited access to chat with all characters."
                     : "Kamu memiliki akses chat tanpa batas (Unlimited) selamanya.")
                 : (language === "en"
-                    ? `Free account limit: ${FREE_DAILY_MESSAGE_LIMIT} messages/day. Quota resets daily.`
-                    : `Akun Free dibatasi ${FREE_DAILY_MESSAGE_LIMIT} pesan/hari (reset otomatis setiap hari).`)}
+                    ? `Free account limit: ${quotaInfo.limit} messages/day. Quota resets daily.`
+                    : `Akun Free dibatasi ${quotaInfo.limit} pesan/hari (reset otomatis setiap hari).`)}
             </p>
           </div>
 
@@ -201,7 +203,7 @@ export const QuotaModal: React.FC<QuotaModalProps> = ({
                         : "text-neutral-900 dark:text-white"
                     }`}
                   >
-                    {quotaInfo.used} / {FREE_DAILY_MESSAGE_LIMIT}{" "}
+                    {quotaInfo.used} / {quotaInfo.limit}{" "}
                     <span className="text-neutral-400 font-normal">
                       ({language === "en" ? `${quotaInfo.remaining} left` : `sisa ${quotaInfo.remaining}`})
                     </span>
@@ -222,14 +224,21 @@ export const QuotaModal: React.FC<QuotaModalProps> = ({
                   />
                 </div>
 
+                {/* Info Quota Provider */}
+                <div className="mt-2.5 pt-2 border-t border-black/5 dark:border-white/5 flex items-center justify-between text-[11px] text-neutral-500 dark:text-[#8E8F96]">
+                  <span>⚡ Nara Router: 200 chat/hari</span>
+                  <span>•</span>
+                  <span>🌱 Atria Dawn: 500 chat/hari</span>
+                </div>
+
                 {/* Warning if Exceeded */}
                 {quotaInfo.remaining <= 0 && (
                   <div className="mt-3 flex items-start gap-2 p-2.5 rounded-xl bg-red-500/10 border border-red-500/20 text-red-600 dark:text-red-400 text-xs">
                     <AlertCircle size={16} className="shrink-0 mt-0.5" />
                     <p className="leading-snug">
                       {language === "en"
-                        ? `You have reached the ${FREE_DAILY_MESSAGE_LIMIT} message daily limit. Quota resets at 00:00 midnight or activate Paid Mode below.`
-                        : `Kuota ${FREE_DAILY_MESSAGE_LIMIT} chat gratis hari ini telah habis. Kuota direset jam 00:00 tengah malam atau masukkan kode VIP di bawah.`}
+                        ? `You have reached the ${quotaInfo.limit} message daily limit. Quota resets at 00:00 midnight, switch to Atria Dawn for 500 messages, or activate Paid Mode below.`
+                        : `Kuota ${quotaInfo.limit} chat gratis hari ini telah habis. Kuota direset jam 00:00 tengah malam, ganti ke Atria Dawn untuk kuota 500 chat, atau masukkan kode VIP di bawah.`}
                     </p>
                   </div>
                 )}

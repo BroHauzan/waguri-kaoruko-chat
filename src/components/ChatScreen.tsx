@@ -140,6 +140,7 @@ interface ChatScreenProps {
   onBackgroundReply?: (character: Character, lastReplyText: string) => void;
   onTypingChange?: (characterId: string, isTyping: boolean) => void;
   onSaveSettings?: (settings: Settings) => void;
+  isCharacterTyping?: boolean;
 }
 
 export const ChatScreen: React.FC<ChatScreenProps> = ({
@@ -155,9 +156,15 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
   onBackgroundReply,
   onTypingChange,
   onSaveSettings,
+  isCharacterTyping,
 }) => {
   const [inputText, setInputText] = useState("");
-  const [isTyping, setIsTyping] = useState(false);
+  const [localIsTyping, setLocalIsTyping] = useState(false);
+  const isTyping = localIsTyping || Boolean(isCharacterTyping);
+  const setIsTyping = (val: boolean) => {
+    setLocalIsTyping(val);
+    onTypingChange?.(character.id, val);
+  };
   const dict = getDictionary(settings.language || "id");
   const moodTheme = getMoodTheme(
     chat.currentMood?.emotion || character.defaultMood || "neutral",
@@ -1369,7 +1376,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                 </span>
                 <div className="flex items-center gap-1.5 leading-tight mt-0.5">
                   <span className="text-[12px] font-medium text-emerald-600 dark:text-emerald-400">
-                    {dict.online}
+                    {isTyping ? (settings.language === "en" ? "typing..." : "sedang mengetik...") : dict.online}
                   </span>
                   <span className="text-neutral-300 dark:text-neutral-700 text-[10px]">•</span>
                   <span
@@ -1630,7 +1637,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                       }`}
                     >
                       {/* Proses Berpikir AI (Collapsible Accordion) */}
-                      {!isUser && message.thinkingProcess && (
+                      {!isUser && Boolean(settings.showThinkingProcess) && message.thinkingProcess && (
                         <ThinkingAccordion
                           thinkingText={message.thinkingProcess}
                           accentColor={moodTheme.accentColor}
@@ -2185,7 +2192,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                 <X size={15} />
               </button>
             </div>
-            <MoodTrendsChart chat={chat} />
+            <MoodTrendsChart chat={chat} character={character} />
             <button
               type="button"
               onClick={() => setShowMoodStatsModal(false)}

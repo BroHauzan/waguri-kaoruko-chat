@@ -1,9 +1,13 @@
-export const FREE_DAILY_MESSAGE_LIMIT = 1000;
+export const NARA_DAILY_MESSAGE_LIMIT = 200;
+export const ATRIA_DAILY_MESSAGE_LIMIT = 500;
+export const DEFAULT_FREE_DAILY_MESSAGE_LIMIT = 200;
+export const FREE_DAILY_MESSAGE_LIMIT = 200;
 export const PAID_ACTIVATION_CODE = "brohauzan";
 
 const STORAGE_KEYS = {
   ACCOUNT_TIER: "waguri_account_tier_v1",
   DAILY_USAGE: "waguri_daily_chat_usage_v1",
+  SETTINGS: "waguri_v5_official_settings",
 };
 
 export interface DailyUsageInfo {
@@ -33,6 +37,33 @@ export function isPaidUser(): boolean {
   }
 }
 
+/** Hitung batas kuota harian berdasarkan provider yang aktif atau dipilih */
+export function getProviderQuotaLimit(providerId?: string): number {
+  if (isPaidUser()) return Infinity;
+
+  let targetId = providerId;
+  if (!targetId) {
+    try {
+      const rawSettings = localStorage.getItem(STORAGE_KEYS.SETTINGS);
+      if (rawSettings) {
+        const parsed = JSON.parse(rawSettings);
+        targetId = parsed.activeProviderId;
+      }
+    } catch {
+      // fallback
+    }
+  }
+
+  const clean = (targetId || "").toLowerCase();
+  // Provider Atria Dawn mendapatkan kuota 500 pesan/hari
+  if (clean === "builtin-atria" || clean.includes("atria")) {
+    return ATRIA_DAILY_MESSAGE_LIMIT;
+  }
+
+  // Default & Nara Router mendapatkan kuota 200 pesan/hari (karena respons super cepat)
+  return NARA_DAILY_MESSAGE_LIMIT;
+}
+
 /** Aktivasi Paid Mode menggunakan kode rahasia */
 export function activatePaidMode(code: string): { success: boolean; message?: string } {
   const cleanCode = (code || "").trim().toLowerCase();
@@ -50,7 +81,7 @@ export function activatePaidMode(code: string): { success: boolean; message?: st
 }
 
 /** Mengambil info penggunaan kuota harian */
-export function getDailyUsage(): DailyUsageInfo {
+export function getDailyUsage(providerId?: string): DailyUsageInfo {
   const today = getTodayDateString();
   const paid = isPaidUser();
 
@@ -64,13 +95,15 @@ export function getDailyUsage(): DailyUsageInfo {
     };
   }
 
+  const limit = getProviderQuotaLimit(providerId);
+
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.DAILY_USAGE);
     if (!raw) {
       return {
         used: 0,
-        limit: FREE_DAILY_MESSAGE_LIMIT,
-        remaining: FREE_DAILY_MESSAGE_LIMIT,
+        limit,
+        remaining: limit,
         isPaid: false,
         date: today,
       };
@@ -81,18 +114,18 @@ export function getDailyUsage(): DailyUsageInfo {
       // Tanggal baru (hari baru), reset penggunaan
       return {
         used: 0,
-        limit: FREE_DAILY_MESSAGE_LIMIT,
-        remaining: FREE_DAILY_MESSAGE_LIMIT,
+        limit,
+        remaining: limit,
         isPaid: false,
         date: today,
       };
     }
 
     const used = typeof data.count === "number" ? data.count : 0;
-    const remaining = Math.max(0, FREE_DAILY_MESSAGE_LIMIT - used);
+    const remaining = Math.max(0, limit - used);
     return {
       used,
-      limit: FREE_DAILY_MESSAGE_LIMIT,
+      limit,
       remaining,
       isPaid: false,
       date: today,
@@ -100,8 +133,8 @@ export function getDailyUsage(): DailyUsageInfo {
   } catch {
     return {
       used: 0,
-      limit: FREE_DAILY_MESSAGE_LIMIT,
-      remaining: FREE_DAILY_MESSAGE_LIMIT,
+      limit,
+      remaining: limit,
       isPaid: false,
       date: today,
     };
@@ -109,20 +142,20 @@ export function getDailyUsage(): DailyUsageInfo {
 }
 
 /** Cek apakah user diizinkan mengirim pesan saat ini */
-export function canSendMessage(): boolean {
+export function canSendMessage(providerId?: string): boolean {
   if (isPaidUser()) return true;
-  const usage = getDailyUsage();
+  const usage = getDailyUsage(providerId);
   return usage.remaining > 0;
 }
 
 /** Catat 1 pesan keluar pengguna (user message) */
-export function recordUserMessageSent(): { success: boolean; remaining: number } {
+export function recordUserMessageSent(providerId?: string): { success: boolean; remaining: number } {
   if (isPaidUser()) {
     return { success: true, remaining: Infinity };
   }
 
   const today = getTodayDateString();
-  const usage = getDailyUsage();
+  const usage = getDailyUsage(providerId);
 
   if (usage.remaining <= 0) {
     return { success: false, remaining: 0 };
@@ -141,7 +174,7 @@ export function recordUserMessageSent(): { success: boolean; remaining: number }
 
   return {
     success: true,
-    remaining: Math.max(0, FREE_DAILY_MESSAGE_LIMIT - nextCount),
+    remaining: Math.max(0, usage.limit - nextCount),
   };
 }
 

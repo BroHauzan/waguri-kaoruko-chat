@@ -77,6 +77,9 @@ export const ProviderManager: React.FC<ProviderManagerProps> = ({
       providers: nextProviders,
       activeProviderId: nextActiveId ?? settings.activeProviderId,
     });
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("waguri_quota_updated"));
+    }
   };
 
   const handleSelect = (provider: AIProvider) => {
@@ -234,7 +237,8 @@ export const ProviderManager: React.FC<ProviderManagerProps> = ({
             const paid = isPaidUser();
             const isPaidOnly = isProviderPaidOnly(provider);
             const isLocked = isPaidOnly && !paid;
-            const isDefault = provider.id === BUILTIN_ATRIA_PROVIDER.id;
+            const isDefault = provider.id === BUILTIN_NARA_PROVIDER.id;
+            const isAtria = provider.id === BUILTIN_ATRIA_PROVIDER.id || provider.name.toLowerCase().includes("atria");
 
             return (
               <div
@@ -263,6 +267,15 @@ export const ProviderManager: React.FC<ProviderManagerProps> = ({
                         Default
                       </span>
                     )}
+
+                    {/* Badge Kuota */}
+                    <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-neutral-200 dark:bg-white/10 text-neutral-700 dark:text-neutral-300 shrink-0">
+                      {isPaidOnly
+                        ? "Unlimited (VIP)"
+                        : isAtria
+                        ? "500 chat / hari"
+                        : "200 chat / hari"}
+                    </span>
 
                     {/* Badge VIP Paid */}
                     {isPaidOnly && (

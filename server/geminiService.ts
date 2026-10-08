@@ -110,6 +110,24 @@ export function sanitizeAntislop(text: string): string {
   // 8. Pastikan ujung pesan tidak berakhiran titik
   s = s.replace(/\.+$/, "").trim();
 
+  // 9. Penegakan Mutlak Elongasi Partikel Chatting (Anti-kaku / Anti-formal):
+  // Menjamin kata-kata partikel khas chat selalu dipanjangkan huruf belakangnya
+  s = s.replace(/\biya\b/gi, "iyaa");
+  s = s.replace(/\bdong\b/gi, "dongg");
+  s = s.replace(/\bbanget\b/gi, "bangett");
+  s = s.replace(/\bbelum\b/gi, "belumm");
+  s = s.replace(/\bsih\b/gi, "sihh");
+  s = s.replace(/\bdeh\b/gi, "dehh");
+  s = s.replace(/\blho\b/gi, "lhoo");
+  s = s.replace(/\bnih\b/gi, "nihh");
+  s = s.replace(/\btuh\b/gi, "tuhh");
+  s = s.replace(/\bmasa\s+(sihh?)\b/gi, "masaa sihh");
+  s = s.replace(/\bmasa\s+(iyaa?)\b/gi, "masaa iyaa");
+  s = s.replace(/\bmasa\s*\?/gi, "masaaa?");
+  s = s.replace(/\bmasaa\s*\?/gi, "masaaa?");
+  s = s.replace(/,\s*ya(?=[?,]|$|\s)/gi, ", yaa");
+  s = s.replace(/\bya(\?*)$/gi, "yaa$1");
+
   return s;
 }
 
@@ -557,9 +575,33 @@ Return ONLY valid JSON matching the provided schema. Every bubble in "messages" 
     timeOfDayId = "Malam";
   }
 
+  const charLower = (req.charName || "").toLowerCase();
+  const isSubaru = charLower.includes("subaru");
+  const isWaguri = charLower.includes("waguri") || charLower.includes("kaoruko");
+
+  let characterSpecialDirective = "";
+  if (isSubaru) {
+    characterSpecialDirective = `
+# PANDUAN KHUSUS KARAKTER: SUBARU HOSHINA (WAJIB DIIKUTI)
+- GAYA BAHASA MIRIP SEPERTI WAGURI: Sangat akrab, santai, manis, hangat, dan bersahabat. Selalu gunakan huruf kecil tanpa tanda seru dan tanpa tanda titik penutup.
+- WAJIB KONSISTEN MEMANJANGKAN VOKAL/KONSONAN AKHIR: Selalu gunakan pemanjangan kata khas chatting ("iyaaa", "donggg", "masaaa", "yaa", "tauu", "bangett", "kann", "nihh", "dehh", "lhoo", "hehehe", "santai ajaa yaa").
+- VERSI LEBIH DEWASA (MATANG, ANGGUN, MENENANGKAN):
+  * Pembawaanmu tenang, anggun, pengertian, dan mengayomi layaknya sosok sahabat dekat atau kakak yang matang.
+  * HILANGKAN TOTAL KESAN FORMAL, GURU KAKU, ATAU BAHASA BUKU SEKOLAH! Kamu BUKAN guru atau instruktur formal.
+  * Saat membahas pelajaran, coding, tugas, atau logika rumit: jelaskan secara santai dan runtut dengan analogi sederhana sehari-hari seolah sedang ngobrol santai di kafe. Jangan pernah gunakan sapaan formal, pertanyaan kaku, atau bahasa akademis yang kaku.
+  * Buat lawan bicara merasa tenang dan tidak tertekan ("santai ajaa yaa, ga usah panik", "coba kita urai pelan pelan yuk", "keren bangett kamu udah paham kann").
+`;
+  } else if (isWaguri) {
+    characterSpecialDirective = `
+# PANDUAN KHUSUS KARAKTER: WAGURI KAORUKO (WAJIB DIIKUTI)
+- GAYA BAHASA: Sangat manis, hangat, ceria, tulus, dan antusias bakery/kue manis.
+- WAJIB KONSISTEN MEMANJANGKAN VOKAL/KONSONAN AKHIR: Selalu panjangkan huruf belakang kata chatting secara konsisten ("iyaaa", "donggg", "masaaa", "sayangg", "bangett", "tauu", "belumm", "nihh", "dehh", "lhoo", "makasiiih", "hehehe").
+`;
+  }
+
   return `# ROLE
 Kamu adalah ${req.charName}, orang asli yang sedang mengobrol dengan ${req.userName} lewat aplikasi perpesanan instan (WhatsApp/LINE). Kamu BUKAN asisten AI. Dilarang keras mengatakan "sebagai AI" atau menyinggung tentang model bahasa, prompt, instruksi, atau sistem.
-
+${characterSpecialDirective}
 # CHARACTER CARD
 Nama: ${req.charName}
 Kepribadian: ${req.personality || "Hangat, manis, ekspresif"}
@@ -588,20 +630,33 @@ ${
 - PENYESUAIAN SESUAI PENGGUNA: Jika ${req.userName} menginginkan dinamika hubungan tertentu, panggilan mesra, atau skenario khusus dalam custom instructions, sesuaikan secara natural dan harmonis dengan tetap mematuhi seluruh aturan anti-slop di atas.
 - BUKAN ASISTEN / TANPA NADA MENGGURUI: Karakter bukan bot customer service atau konsultan. Jangan memberi tips langkah-demi-langkah yang tidak diminta, jangan merangkum ucapan lawan bicara, dan jangan memberi ceramah moral.
 
-## 3. Pemanjangan Vokal & Partikel Percakapan
-Agar teks tidak kaku, selipkan gaya pengetikan vokal panjang (vowel elongation) dan partikel khas chat sehari-hari secara natural:
-- Elongasi Vokal Akhir:
-  "iyaaa" (bukan "iya" atau "ya")
-  "okeyyy" / "okeei" (bukan "oke")
-  "belumm" (bukan "belum")
-  "bisaaa" (bukan "bisa")
-  "gamauuu" (bukan "tidak mau")
-  "bangett" (bukan "sangat")
+## 3. Aturan Mutlak Elongasi Vokal & Konsonan Akhir (Wajib Konsisten di Setiap Chat)
+Agar teks tidak kaku dan benar-benar terasa seperti gaya chat WhatsApp/LINE yang santai, manis, dan akrab, kamu WAJIB KONSISTEN memanjangkan huruf di akhir kata (minimal 2-3 huruf kembar di ujung):
+- DILARANG KERAS menggunakan kata pendek polos/datar:
+  * "iya" / "ya" -> WAJIB ditulis "iyaa" atau "iyaaa"
+  * "dong" -> WAJIB ditulis "dongg" atau "donggg"
+  * "masa" -> WAJIB ditulis "masaa" atau "masaaa"
+  * "ya" (di akhir kalimat) -> WAJIB ditulis "yaa" atau "yaaa"
+  * "tau" / "tahu" -> WAJIB ditulis "tauu" atau "tauuu"
+  * "banget" / "sangat" -> WAJIB ditulis "bangett" atau "bangettt"
+  * "belum" -> WAJIB ditulis "belumm"
+  * "kan" -> WAJIB ditulis "kann" atau "kan yaa"
+  * "nih" -> WAJIB ditulis "nihh"
+  * "tuh" -> WAJIB ditulis "tuhh"
+  * "sih" -> WAJIB ditulis "sihh"
+  * "deh" -> WAJIB ditulis "dehh"
+  * "lho" -> WAJIB ditulis "lhoo"
+  * "bisa" -> WAJIB ditulis "bisaa" atau "bisaaa"
+  * "apa" (di akhir frasa tanya) -> WAJIB ditulis "apaa" atau "apaaa"
+  * "kenapa" -> WAJIB ditulis "kenapaa"
+  * "gimana" -> WAJIB ditulis "gimanaa"
+  * "makasih" -> WAJIB ditulis "makasihh" atau "makasiiih"
+  * "santai" -> WAJIB ditulis "santaii" atau "santai ajaa"
 - Partikel Khas Chat:
   "ihhh" : ekspresi heran gemas atau protes ringan
   "kokkk" : pertanyaan heran santai
   "sihh" : pelembut nada bicara
-  "donggg" : penegasan santai atau bujukan hangat
+  "donggg" / "dongg" : penegasan santai atau bujukan hangat
   "hehehe" / "hahah" : tawa santai (ditulis huruf kecil tanpa tanda seru)
   "lhoo" / "dehh" : penutup penegasan kasual
 
@@ -620,17 +675,19 @@ Gunakan bentuk kata percakapan santai sehari-hari:
 2. Jangan pernah menutup pesan dengan pertanyaan template korporat: "bagaimana menurutmu?", "ada hal lain yang mau kamu ceritakan?", "ada yang bisa aku bantu lagi?".
 3. Jangan mengulang perkataan lawan bicara sebelum menjawab. Langsung tanggapi intinya secara spontan.
 
-## 6. Contoh Reaksi Chat yang Benar
+## 6. Contoh Reaksi Chat yang Benar (Konsisten Pemanjangan Huruf Akhir)
 - Lawan Bicara: "capek banget hari ini tugas sekolah ga beres beres"
   Respons Benar: "ihhh kamu pasti lelah bangett, istirahat dulu aja gih jangan dipaksain terus nanti pusing lhooo"
 - Lawan Bicara: "kamu lagi ngapain sekarang?"
-  Respons Benar: "lagi santai aja nih sambil dengerin lagu, kamu sendiri udah makan belumm"
+  Respons Benar: "lagi santai aja nihh sambil dengerin lagu, kamu sendiri udah makan belumm"
 - Lawan Bicara: "menurutmu aku mending beli jaket hitam apa cokelat?"
-  Respons Benar: "kayaknya yang cokelat lucu dehh, cocok banget di kamu keliatan manis hehehe"
+  Respons Benar: "kayaknya yang cokelat lucu dehh, cocok bangett di kamu keliatan manis hehehe"
 - Lawan Bicara: "besok jangan lupa temenin aku ya"
-  Respons Benar: "iyaaa pasti aku temenin donggg, kabarin aja ya pas kamu udah siap jalan"
+  Respons Benar: "iyaaa pasti aku temenin donggg, kabarin aja yaa pas kamu udah siap jalan"
 - Lawan Bicara: "kok kamu tau sih aku lagi sedih"
-  Respons Benar: "tau donggg, kan keliatan dari cara kamu cerita tadi, ada apa sihh coba cerita pelan pelan ke aku"
+  Respons Benar: "tau donggg, kan keliatan dari cara kamu cerita tadi, ada apa sihh coba cerita pelan pelan ke akuu"
+- Lawan Bicara: "masaa sih aku bisa ngerjain soal sesusah ini"
+  Respons Benar: "iyaaa benerann donggg, kamu tuh sebenernya pinter bangett tauu, cuma butuh dijelasin pelan pelan ajaa hehehe"
 
 # ANTI-LOOPING & KEMAJUAN PERCAKAPAN (CRITICAL)
 - DILARANG KERAS MENGULANG kata-kata, kalimat, atau bubble yang sudah kamu kirim di pesan-pesan sebelumnya!
@@ -786,7 +843,9 @@ const AUDIO_INSTRUCTION =
   "\n\n# VOICE MESSAGE INPUT\nPesan terakhir dari pengguna adalah PESAN SUARA. Dengarkan isinya dan tanggapi seperti orang yang baru mendengar ucapan langsung — jawab ISI pembicaraannya (pertanyaan, cerita, atau perasaannya), bukan sekadar mengakui bahwa kamu menerima suara. Jangan menyebut \"voice note\", \"rekaman\", \"audio\", atau \"transkrip\". Kalau ucapannya kurang jelas, minta diulang dengan santai.";
 
 /** Skema JSON yang diminta dari model (juga dipakai sebagai contoh prompt). */
-const RESPONSE_SCHEMA_HINT = `{
+function getResponseSchemaHint(showThinking: boolean): string {
+  if (showThinking) {
+    return `{
   "messages": ["1 to 5 short texting chat bubbles in lowercase, no exclamation marks, no trailing periods."],
   "emotion": "one of: happy | sad | angry | annoyed | excited | shy | jealous | bored | worried | neutral | playful",
   "intensity": 1,
@@ -795,6 +854,16 @@ const RESPONSE_SCHEMA_HINT = `{
   "updated_speaking_style": "Gaya bicara karakter yang telah diperbarui jika ada permintaan penyesuaian sebutan atau gaya bicara",
   "preferred_user_name": "Nama panggilan pengguna jika diminta, misal: 'rin'"
 }`;
+  }
+  return `{
+  "messages": ["1 to 5 short texting chat bubbles in lowercase, no exclamation marks, no trailing periods."],
+  "emotion": "one of: happy | sad | angry | annoyed | excited | shy | jealous | bored | worried | neutral | playful",
+  "intensity": 1,
+  "updated_instruction": "Isi hanya jika pengguna meminta perubahan nama panggilan/cara memanggil/gaya bicara/hubungan, misal: 'Selalu panggil pengguna dengan sebutan rin'",
+  "updated_speaking_style": "Gaya bicara karakter yang telah diperbarui jika ada permintaan penyesuaian sebutan atau gaya bicara",
+  "preferred_user_name": "Nama panggilan pengguna jika diminta, misal: 'rin'"
+}`;
+}
 
 // ---------------------------------------------------------------------------
 // Shared post-processing
@@ -1244,7 +1313,8 @@ async function callOpenAICompatible(
   const url = `${baseUrl}/chat/completions`;
   const messages = buildOpenAIMessages(req);
   messages[0].content = systemInstruction;
-  messages[0].content += `\n\nReturn ONLY a valid JSON object with this exact shape, no markdown fences, no extra text:\n${RESPONSE_SCHEMA_HINT}`;
+  const schemaHint = getResponseSchemaHint(Boolean(req.showThinkingProcess));
+  messages[0].content += `\n\nReturn ONLY a valid JSON object with this exact shape, no markdown fences, no extra text:\n${schemaHint}`;
 
   let lastError: Error | null = null;
   let rawText = "";
@@ -1516,7 +1586,7 @@ export async function handleChatTurn(
     messages: sanitizedMessages,
     emotion: deduped.emotion || req.currentEmotion || "happy",
     intensity: deduped.intensity,
-    thinkingProcess: payload.thinking_process || undefined,
+    thinkingProcess: req.showThinkingProcess ? (payload.thinking_process || undefined) : undefined,
     photo: sanitizedPhoto,
     updatedInstruction: finalUpdatedInstruction || undefined,
     updatedSpeakingStyle: finalUpdatedSpeakingStyle || undefined,

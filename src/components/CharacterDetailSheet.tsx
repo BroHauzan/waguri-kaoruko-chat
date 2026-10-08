@@ -7,6 +7,8 @@ import {
   Edit3,
   Share2,
   ChevronRight,
+  ChevronDown,
+  ChevronUp,
   TrendingUp,
   Activity,
   BookOpen,
@@ -36,12 +38,16 @@ export const CharacterDetailSheet: React.FC<CharacterDetailSheetProps> = ({
   onEditCharacter,
 }) => {
   const [showScheduledTasks, setShowScheduledTasks] = useState(false);
+  const [isExpandedProfileText, setIsExpandedProfileText] = useState(false);
   const currentEmotion = chat?.currentMood?.emotion || character.defaultMood || "neutral";
   const moodTheme = getMoodTheme(currentEmotion);
   const intensity = chat?.currentMood?.intensity ?? 7;
   const totalMessages = chat?.messages?.length || 0;
   const charMessages = (chat?.messages || []).filter((m) => m.role === "char");
   const lastCharMessage = charMessages.length > 0 ? charMessages[charMessages.length - 1] : null;
+
+  const profileTextContent = (character.personality || character.tagline || "") + (character.speakingStyle || "");
+  const isLongText = profileTextContent.length > 120;
 
   const handleShare = () => {
     haptics.light(true);
@@ -282,16 +288,53 @@ export const CharacterDetailSheet: React.FC<CharacterDetailSheetProps> = ({
             <div className="bg-white dark:bg-[#16171B] rounded-2xl p-4 border border-black/5 dark:border-white/5 flex flex-col gap-2">
               <div className="flex items-center gap-2 text-xs font-bold text-neutral-800 dark:text-[#E4E5EA]">
                 <Sparkles size={15} className="text-[#F5B838]" />
-                <span>Kepribadian</span>
+                <span>Kepribadian & Gaya Bicara</span>
               </div>
-              <p className="text-xs text-neutral-600 dark:text-[#A1A2AA] leading-relaxed">
-                {character.personality || character.tagline}
-              </p>
-              {character.speakingStyle && (
-                <div className="pt-2 border-t border-black/5 dark:border-white/5 text-xs text-neutral-500 dark:text-[#8A8A93]">
-                  <span className="font-semibold text-neutral-700 dark:text-neutral-300">Gaya Bicara: </span>
-                  {character.speakingStyle}
-                </div>
+
+              <div
+                className={`relative transition-all duration-300 ${
+                  !isExpandedProfileText && isLongText
+                    ? "max-h-24 overflow-hidden"
+                    : ""
+                }`}
+              >
+                <p className="text-xs text-neutral-600 dark:text-[#A1A2AA] leading-relaxed whitespace-pre-line">
+                  {character.personality || character.tagline}
+                </p>
+                {character.speakingStyle && (
+                  <div className="pt-2 mt-2 border-t border-black/5 dark:border-white/5 text-xs text-neutral-500 dark:text-[#8A8A93]">
+                    <span className="font-semibold text-neutral-700 dark:text-neutral-300">
+                      Gaya Bicara:{" "}
+                    </span>
+                    {character.speakingStyle}
+                  </div>
+                )}
+
+                {/* Fade out mask ke bawah jika teks panjang dan belum diekspansi */}
+                {!isExpandedProfileText && isLongText && (
+                  <div className="absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-white dark:from-[#16171B] to-transparent pointer-events-none" />
+                )}
+              </div>
+
+              {/* Tombol Baca Lebih Banyak / Sembunyikan */}
+              {isLongText && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    haptics.light(true);
+                    setIsExpandedProfileText((prev) => !prev);
+                  }}
+                  className="mt-0.5 text-[11px] font-semibold text-[#F5B838] hover:text-[#E5A929] flex items-center gap-1 cursor-pointer transition-colors self-start select-none"
+                >
+                  <span>
+                    {isExpandedProfileText ? "Sembunyikan" : "Baca lebih banyak"}
+                  </span>
+                  {isExpandedProfileText ? (
+                    <ChevronUp size={13} />
+                  ) : (
+                    <ChevronDown size={13} />
+                  )}
+                </button>
               )}
             </div>
 

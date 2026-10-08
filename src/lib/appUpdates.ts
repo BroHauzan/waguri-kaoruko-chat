@@ -33,10 +33,162 @@ const STORAGE_KEY = "waguri_last_seen_update_id";
  */
 export const APP_UPDATES: AppUpdateInfo[] = [
   {
+    id: "2026.10.08-dynamic-theme-typing-fix-and-clean-mood-stats",
+    version: "v1.9.0",
+    date: "8 Oktober 2026",
+    badge: "Terbaru",
+    bannerGradient: "from-amber-500 via-rose-500 to-amber-600",
+    bannerImage: "/waguri-pfp.jpg",
+    title: {
+      id: "Tema Dinamis Bawaan, Perbaikan Typing & Statistik Emosi Minimalis",
+      en: "Default Dynamic Theme, Typing Indicator Fix & Clean Mood Stats",
+    },
+    subtitle: {
+      id: "Warna tampilan bubble kini otomatis dinamis mengikuti mood, perbaikan indikator mengetik & alur berpikir, grafik emosi minimalis bebas AI-slop, dan teks expandable di profil karakter.",
+      en: "Default dynamic mood bubble theme, typing & reasoning indicator fixes, clean minimalist mood trends chart, and expandable character profile text.",
+    },
+    highlights: {
+      id: [
+        {
+          title: "Tema Bubble Dinamis Bawaan",
+          description:
+            "Warna bubble chat sekarang secara default mengikuti dinamika mood dan ekspresi karakter yang sedang diajak mengobrol.",
+          tag: "Tampilan",
+        },
+        {
+          title: "Perbaikan Visual Indikator Mengetik",
+          description:
+            "Indikator sedang mengetik tidak akan hilang lagi jika kamu menekan back lalu membuka kembali chat saat AI sedang memproses jawaban.",
+          tag: "Perbaikan",
+        },
+        {
+          title: "Kontrol Alur Berpikir (Reasoning) Lebih Ketat",
+          description:
+            "Alur berpikir kini dijamin tidak akan pernah muncul sama sekali di bubble pesan jika dinonaktifkan pada menu pengaturan.",
+          tag: "Pengaturan",
+        },
+        {
+          title: "Grafik Tren Emosi Lebih Minimalis & Bersih",
+          description:
+            "Desain statistik mood diperbarui menjadi sangat bersih, ringkas, mudah dipahami, tanpa lingkaran bertumpuk atau warna berlebih (bebas AI-slop).",
+          tag: "Statistik",
+        },
+        {
+          title: "Teks Profil Karakter Fade-Out & Expandable",
+          description:
+            "Deskripsi kepribadian dan gaya bicara yang panjang kini dilengkapi efek fade-out ke bawah dan tombol 'Baca lebih banyak' untuk kenyamanan membaca.",
+          tag: "Profil",
+        },
+      ],
+      en: [
+        {
+          title: "Default Dynamic Bubble Theme",
+          description:
+            "Chat bubble theme now defaults to dynamically reflecting the character's active mood and emotions.",
+          tag: "Theme",
+        },
+        {
+          title: "Typing Indicator Persistence Fix",
+          description:
+            "Typing indicator stays active without disappearing when you navigate back and reopen the chat while AI generates a reply.",
+          tag: "Fix",
+        },
+        {
+          title: "Strict Thinking Process Guard",
+          description:
+            "Thinking reasoning is guaranteed never to appear in chat bubbles when disabled in settings.",
+          tag: "Settings",
+        },
+        {
+          title: "Minimalist & Clean Mood Trends",
+          description:
+            "Redesigned mood analytics into a clean, legible, and uncluttered layout without excessive circles or rainbow AI-slop.",
+          tag: "Analytics",
+        },
+        {
+          title: "Fade-Out & Expandable Profile Text",
+          description:
+            "Long personality and speaking style texts now display an elegant downward fade with a 'Read more' button.",
+          tag: "Profile",
+        },
+      ],
+    },
+  },
+  {
+    id: "2026.10.08-nara-default-dynamic-quota-and-character-style",
+    version: "v1.8.0",
+    date: "8 Oktober 2026",
+    badge: "Peningkatan",
+    bannerGradient: "from-amber-500 via-orange-500 to-amber-700",
+    bannerImage: "/subaru-pfp.jpg",
+    title: {
+      id: "Default Provider Nara Router & Gaya Bahasa Baru Subaru & Waguri",
+      en: "Default Nara Router Provider & Refined Subaru & Waguri Voice",
+    },
+    subtitle: {
+      id: "Default provider kembali ke Nara Router (200 chat/hari), kuota 500 chat/hari untuk Atria Dawn, serta gaya bahasa Subaru versi dewasa mirip Waguri.",
+      en: "Nara Router returned as default provider (200 chats/day), 500 chats/day on Atria Dawn, and mature Waguri-like voice for Subaru.",
+    },
+    highlights: {
+      id: [
+        {
+          title: "Default Provider Nara Router",
+          description:
+            "Nara Router kembali menjadi provider bawaan utama yang memberikan respons instan dan super cepat untuk seluruh obrolan.",
+          tag: "Provider",
+        },
+        {
+          title: "Kuota Chat Dinamis Sesuai Provider",
+          description:
+            "Kuota harian akun gratis kini dinamis: 200 pesan/hari saat menggunakan Nara Router (cepat), dan naik menjadi 500 pesan/hari saat menggunakan Atria Dawn. Akun VIP tetap Unlimited.",
+          tag: "Kuota",
+        },
+        {
+          title: "Gaya Bahasa Subaru Lebih Dewasa Mirip Waguri",
+          description:
+            "Subaru kini berbicara jauh lebih santai, hangat, dan akrab tanpa kesan guru formal, memadukan gaya bahasa mirip Waguri dengan persona yang lebih dewasa dan menenangkan.",
+          tag: "Karakter",
+        },
+        {
+          title: "Konsistensi Pemanjangan Huruf Vokal Akhir",
+          description:
+            "Memperkuat elongasi huruf akhir khas chatting (iyaaa, donggg, masaaa, yaa, bangett, dll) agar selalu konsisten dan tidak kaku.",
+          tag: "Anti-Slop",
+        },
+      ],
+      en: [
+        {
+          title: "Default Provider Nara Router",
+          description:
+            "Nara Router is reinstated as the default primary provider, delivering ultra-fast and instant chat responses.",
+          tag: "Provider",
+        },
+        {
+          title: "Dynamic Quota by Active Provider",
+          description:
+            "Free tier daily quota is now dynamic: 200 messages/day with Nara Router (speed focus), expanding to 500 messages/day when switching to Atria Dawn. VIP accounts remain Unlimited.",
+          tag: "Quota",
+        },
+        {
+          title: "Mature Waguri-like Voice for Subaru",
+          description:
+            "Subaru now speaks casually and warmly without stiff academic formality, mirroring Waguri's affectionate tone with a calm, mature presence.",
+          tag: "Character",
+        },
+        {
+          title: "Consistent Trailing Vowel Elongation",
+          description:
+            "Reinforced consistent trailing letter extensions (iyaaa, donggg, masaaa, yaa, etc.) for authentic casual smartphone chatting.",
+          tag: "Anti-Slop",
+        },
+      ],
+    },
+  },
+  {
     id: "2026.10.08-thinking-reasoning-tutor-and-gps-search",
     version: "v1.7.0",
     date: "8 Oktober 2026",
-    badge: "Terbaru",
+    badge: "Peningkatan",
     bannerGradient: "from-amber-500 via-purple-600 to-indigo-700",
     bannerImage: "/subaru-pfp.jpg",
     title: {
@@ -98,146 +250,6 @@ export const APP_UPDATES: AppUpdateInfo[] = [
           description:
             "Direct internet search integration to provide real-time facts, encyclopedic knowledge, and live information seamlessly.",
           tag: "Smart Feature",
-        },
-      ],
-    },
-  },
-  {
-    id: "2026.10.08-atria-dawn-and-1000-quota",
-    version: "v1.6.0",
-    date: "8 Oktober 2026",
-    badge: "Peningkatan",
-    bannerGradient: "from-amber-500 via-orange-500 to-rose-600",
-    bannerImage: "/waguri-pfp.jpg",
-    title: {
-      id: "Model Atria Dawn Default & Kuota 1.000 Pesan",
-      en: "Default Atria Dawn Model & 1,000 Messages Quota",
-    },
-    subtitle: {
-      id: "Integrasi model AI Atria Dawn Preview dengan rotasi 10 API key, serta lonjakan kuota harian akun gratis menjadi 1.000 pesan per hari.",
-      en: "Integrated Atria Dawn Preview model with 10-key rotation pool and expanded free daily message limit to 1,000 messages.",
-    },
-    highlights: {
-      id: [
-        {
-          title: "Model Atria Dawn Preview Bawaan",
-          description:
-            "Atria Dawn kini menjadi model AI default utama yang super cepat dan cerdas dengan reasoning yang tajam untuk semua percakapan.",
-          tag: "Model AI",
-        },
-        {
-          title: "Rotasi Cerdas 10 API Keys",
-          description:
-            "Didukung kolam 10 API key berkecepatan tinggi dengan auto-failover dan load balancing otomatis untuk menjamin ketersediaan tanpa gangguan.",
-          tag: "Infrastruktur",
-        },
-        {
-          title: "Kuota Harian Melonjak ke 1.000 Pesan",
-          description:
-            "Batas pesan harian pengguna gratis dinaikkan 5x lipat dari 200 menjadi 1.000 pesan per hari agar kamu bisa bebas mengobrol seharian penuh.",
-          tag: "Kuota",
-        },
-        {
-          title: "Perbaikan Tema Browser Bawaan",
-          description:
-            "Mencegah pemaksaan mode gelap (force dark mode) di browser bawaan HP saat pengguna memilih mode terang (light mode).",
-          tag: "Tampilan",
-        },
-      ],
-      en: [
-        {
-          title: "Default Atria Dawn Preview Model",
-          description:
-            "Atria Dawn is now the primary default AI model, delivering ultra-fast responses and sharp reasoning for all character conversations.",
-          tag: "AI Model",
-        },
-        {
-          title: "Smart 10-Key Rotation Pool",
-          description:
-            "Powered by 10 high-speed API keys with automatic failover and load balancing to ensure continuous uninterrupted availability.",
-          tag: "Infrastructure",
-        },
-        {
-          title: "Daily Quota Expanded to 1,000 Messages",
-          description:
-            "Free tier daily message limit increased 5x from 200 to 1,000 messages daily for relaxed all-day chatting.",
-          tag: "Quota",
-        },
-        {
-          title: "Mobile Browser Light Theme Guard",
-          description:
-            "Prevents mobile default browsers from force-darkening web contents when user chooses Light Mode.",
-          tag: "UI",
-        },
-      ],
-    },
-  },
-  {
-    id: "2026.10.08-persona-expansion-and-onboarding-fixes",
-    version: "v1.5.1",
-    date: "8 Oktober 2026",
-    badge: "Peningkatan",
-    bannerGradient: "from-amber-500 via-orange-500 to-amber-700",
-    bannerImage: "/waguri-pfp.jpg",
-    title: {
-      id: "Persona Bebas & Backstory Karakter",
-      en: "Expanded Persona & Character Backstory",
-    },
-    subtitle: {
-      id: "Batas persona hingga 5.000 karakter, field cerita latar belakang (backstory), dan perbaikan onboarding.",
-      en: "Persona limit up to 5,000 characters, new character backstory field, and onboarding bug fixes.",
-    },
-    highlights: {
-      id: [
-        {
-          title: "Batas Persona Lebih Luas (5.000 Karakter)",
-          description:
-            "Deskripsi profil dan persona pengguna kini dapat menampung hingga 5.000 karakter tanpa terpotong saat disalin (paste), baik di Pengaturan, Onboarding, maupun Instruksi Kustom.",
-          tag: "Fitur",
-        },
-        {
-          title: "Field Latar Belakang (Backstory) Karakter",
-          description:
-            "Kini tersedia kolom khusus untuk mengisi cerita latar belakang dan lore panjang karakter saat membuat atau mengedit karakter impianmu.",
-          tag: "Karakter",
-        },
-        {
-          title: "Perbaikan Tuntas Isi Otomatis Karakter",
-          description:
-            "Sanitasi API key otomatis sehingga pengambilan lore karakter tidak lagi gagal atau memicu error 400 API key invalid saat menggunakan provider non-Gemini.",
-          tag: "Perbaikan",
-        },
-        {
-          title: "Perbaikan Alur Selamat Datang",
-          description:
-            "Memperbaiki kendala macet saat pengguna baru mengisi nama dan menekan tombol 'Mulai Mengobrol', kini langsung membuka obrolan dengan lancar.",
-          tag: "Pengguna",
-        },
-      ],
-      en: [
-        {
-          title: "Expanded Persona Limits (5,000 Characters)",
-          description:
-            "User persona and profile descriptions can now hold up to 5,000 characters without truncation when pasted in Settings, Onboarding, or Custom Instructions.",
-          tag: "Feature",
-        },
-        {
-          title: "Dedicated Character Backstory Field",
-          description:
-            "Added an explicit textarea for character lore and backstory so you can freely design rich backgrounds for your custom characters.",
-          tag: "Character",
-        },
-        {
-          title: "Auto-Fetch Character Lore Fix",
-          description:
-            "Smart API key routing prevents 400 API key invalid errors when auto-fetching character lore with non-Gemini active providers.",
-          tag: "Fix",
-        },
-        {
-          title: "Smooth Onboarding Experience",
-          description:
-            "Fixed a bug where first-time users got stuck on the welcome modal; clicking 'Start Chatting' now directly opens the conversation.",
-          tag: "User",
         },
       ],
     },
