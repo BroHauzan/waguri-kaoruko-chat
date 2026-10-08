@@ -186,7 +186,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       setActiveModal("accountTier");
       return;
     }
-    const nextVal = !(settings.showThinkingProcess ?? true);
+    const nextVal = !(settings.showThinkingProcess ?? false);
     haptics.light(hapticFeedback);
     onSaveSettings({
       ...settings,
@@ -1401,14 +1401,14 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                     type="button"
                     onClick={handleToggleThinking}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer shrink-0 ${
-                      (settings.showThinkingProcess ?? true) && isPaidUser()
+                      (settings.showThinkingProcess ?? false) && isPaidUser()
                         ? "bg-[#F5B838]"
                         : "bg-neutral-300 dark:bg-white/20"
                     }`}
                   >
                     <span
                       className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        (settings.showThinkingProcess ?? true) && isPaidUser()
+                        (settings.showThinkingProcess ?? false) && isPaidUser()
                           ? "translate-x-6"
                           : "translate-x-1"
                       }`}

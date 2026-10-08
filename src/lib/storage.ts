@@ -215,7 +215,7 @@ const DEFAULT_SETTINGS: Settings = {
   language: "id",
   providers: [BUILTIN_ATRIA_PROVIDER, BUILTIN_NARA_PROVIDER, BUILTIN_GEMINI_PROVIDER],
   activeProviderId: BUILTIN_ATRIA_PROVIDER.id,
-  showThinkingProcess: true,
+  showThinkingProcess: false,
   enableLocationSearch: true,
 };
 
