@@ -66,6 +66,10 @@ export interface ChatTurnRequest {
   language?: "id" | "en";
   /** Teks pesan yang sedang dibalas user, kalau memakai fitur reply. */
   replyToText?: string;
+  /** Konteks lokasi dan cuaca pengguna dari GPS / Geolocation */
+  userLocationContext?: string;
+  /** Apakah fitur thinking reasoning aktif */
+  showThinkingProcess?: boolean;
 }
 
 /**
@@ -121,6 +125,7 @@ export interface ChatTurnResponse {
   messages: string[];
   emotion: string;
   intensity: number;
+  thinkingProcess?: string;
   photo?: {
     dataUrl: string;
     caption?: string;
@@ -138,6 +143,7 @@ interface ModelPayload {
   messages: string[];
   emotion: string;
   intensity: number;
+  thinking_process?: string;
   photo?: {
     dataUrl: string;
     caption?: string;
@@ -243,6 +249,90 @@ export function detectUserPreferenceRequest(
 }
 
 const GEMINI_DEFAULT_MODEL = "gemini-3.1-flash-lite";
+
+/**
+ * Pencarian internet otomatis untuk fakta / cuaca / info real-time.
+ */
+export async function fetchRealtimeWebContext(
+  message: string,
+  userLocationContext?: string
+): Promise<string | null> {
+  if (!message) return null;
+  const m = message.toLowerCase();
+
+  const snippets: string[] = [];
+
+  // 1. Jika ada konteks lokasi & cuaca yang dikirim dari klien via GPS
+  if (userLocationContext && userLocationContext.trim()) {
+    snippets.push(`[KONTEKS LOKASI & CUACA GPS PENGGUNA]\n${userLocationContext.trim()}`);
+  }
+
+  // 2. Deteksi pertanyaan cuaca spesifik kota lain (misal: "cuaca di bandung", "cuaca di tokyo")
+  const weatherCityMatch = m.match(/(?:cuaca|suhu|hujan)\s+(?:di|kota|daerah)\s+([a-zA-Z\s]{2,20})/i);
+  if (weatherCityMatch && weatherCityMatch[1]) {
+    const targetCity = weatherCityMatch[1].replace(/(?:hari ini|sekarang|besok|lusa|gimana|ya|\?)/gi, "").trim();
+    if (targetCity && targetCity.length >= 3 && !targetCity.includes("sini") && !targetCity.includes("tempat") && !targetCity.includes("kota")) {
+      try {
+        const geoRes = await fetch(
+          `https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(targetCity)}&count=1&language=id&format=json`,
+          { signal: AbortSignal.timeout(4000) }
+        );
+        if (geoRes.ok) {
+          const geoData = await geoRes.json();
+          const first = geoData.results?.[0];
+          if (first) {
+            const wRes = await fetch(
+              `https://api.open-meteo.com/v1/forecast?latitude=${first.latitude}&longitude=${first.longitude}&current=temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m&timezone=auto`,
+              { signal: AbortSignal.timeout(4000) }
+            );
+            if (wRes.ok) {
+              const wData = await wRes.json();
+              const cur = wData.current;
+              if (cur) {
+                snippets.push(`[DATA CUACA REAL-TIME UNTUK ${first.name}, ${first.country}]\nSuhu: ${Math.round(cur.temperature_2m)}°C (terasa seperti ${Math.round(cur.apparent_temperature ?? cur.temperature_2m)}°C), Kelembapan: ${cur.relative_humidity_2m}%, Angin: ${Math.round(cur.wind_speed_10m)} km/jam.`);
+              }
+            }
+          }
+        }
+      } catch {
+        // graceful fallback
+      }
+    }
+  }
+
+  // 3. Deteksi kebutuhan pencarian web / ensiklopedia
+  const isSearchIntent =
+    /(?:cari|search|siapa\s+itu|apa\s+itu|jelaskan\s+tentang|informasi\s+tentang|berita|kapan|kenapa|sejarah|definisi)\b/i.test(m);
+  if (isSearchIntent) {
+    try {
+      const cleanQuery = m
+        .replace(/(?:tolong\s+|coba\s+)?(?:cariin|carikan|cari|search|googling|browsing|cek\s+internet|info\s+tentang|informasi\s+tentang|apa\s+itu|siapa\s+itu)\s*/gi, "")
+        .replace(/[?!.,]/g, "")
+        .trim();
+      if (cleanQuery.length >= 3) {
+        const wikiRes = await fetch(
+          `https://id.wikipedia.org/w/api.php?action=query&list=search&srsearch=${encodeURIComponent(cleanQuery)}&format=json&utf8=1&srlimit=2`,
+          { signal: AbortSignal.timeout(4000) }
+        );
+        if (wikiRes.ok) {
+          const wikiJson = await wikiRes.json();
+          const searchResults = wikiJson?.query?.search || [];
+          if (searchResults.length > 0) {
+            const wikiSnippets = searchResults
+              .map((r: any) => `• ${r.title}: ${r.snippet.replace(/<[^>]+>/g, "")}`)
+              .join("\n");
+            snippets.push(`[HASIL PENCARIAN REAL-TIME INTERNET / ENSIKLOPEDIA: "${cleanQuery}"]\n${wikiSnippets}`);
+          }
+        }
+      }
+    } catch {
+      // graceful fallback
+    }
+  }
+
+  if (snippets.length === 0) return null;
+  return `\n\n# REAL-TIME LIVE WEB & LOCATION GROUNDING DATA\nGunakan fakta dan informasi real-time berikut secara alami saat membalas:\n${snippets.join("\n\n")}\nTetap gunakan gaya bicara santai persona karakter (huruf kecil, tanpa tanda seru, tanpa titik akhir).`;
+}
 
 // ---------------------------------------------------------------------------
 // Prompt building (dipakai bersama oleh semua provider)
@@ -700,6 +790,7 @@ const RESPONSE_SCHEMA_HINT = `{
   "messages": ["1 to 5 short texting chat bubbles in lowercase, no exclamation marks, no trailing periods."],
   "emotion": "one of: happy | sad | angry | annoyed | excited | shy | jealous | bored | worried | neutral | playful",
   "intensity": 1,
+  "thinking_process": "Penalaran atau pemikiran internal karaktermu secara jujur dan mendalam sebelum membalas",
   "updated_instruction": "Isi hanya jika pengguna meminta perubahan nama panggilan/cara memanggil/gaya bicara/hubungan, misal: 'Selalu panggil pengguna dengan sebutan rin'",
   "updated_speaking_style": "Gaya bicara karakter yang telah diperbarui jika ada permintaan penyesuaian sebutan atau gaya bicara",
   "preferred_user_name": "Nama panggilan pengguna jika diminta, misal: 'rin'"
@@ -740,6 +831,7 @@ function normalizePayload(raw: any): ModelPayload | null {
   const updatedInstructionRaw = candidate.updated_instruction;
   const updatedSpeakingStyleRaw = candidate.updated_speaking_style;
   const preferredUserNameRaw = candidate.preferred_user_name;
+  const thinkingProcessRaw = candidate.thinking_process;
 
   return {
     messages,
@@ -747,6 +839,10 @@ function normalizePayload(raw: any): ModelPayload | null {
     intensity: Number.isFinite(intensityRaw)
       ? Math.min(10, Math.max(1, intensityRaw))
       : 6,
+    thinking_process:
+      typeof thinkingProcessRaw === "string" && thinkingProcessRaw.trim()
+        ? thinkingProcessRaw.trim()
+        : undefined,
     updated_instruction:
       typeof updatedInstructionRaw === "string" && updatedInstructionRaw.trim()
         ? updatedInstructionRaw.trim()
@@ -1000,6 +1096,11 @@ async function callGemini(
                 },
                 emotion: { type: Type.STRING },
                 intensity: { type: Type.INTEGER },
+                thinking_process: {
+                  type: Type.STRING,
+                  description:
+                    "Penalaran atau pemikiran internal karaktermu secara mendalam sebelum menyusun balasan pesan.",
+                },
                 updated_instruction: {
                   type: Type.STRING,
                   description:
@@ -1234,9 +1335,24 @@ async function callOpenAICompatible(
     );
   }
 
-  const content = json?.choices?.[0]?.message?.content;
+  const rawChoice = json?.choices?.[0];
+  const reasoningContent =
+    rawChoice?.message?.reasoning_content ||
+    rawChoice?.message?.reasoning ||
+    rawChoice?.reasoning ||
+    "";
+  let content = rawChoice?.message?.content;
   if (typeof content !== "string" || !content.trim()) {
     throw new Error("Respons provider tidak berisi teks balasan.");
+  }
+
+  let extractedThinking = reasoningContent ? String(reasoningContent).trim() : "";
+  const thinkMatch = content.match(/<think>([\s\S]*?)<\/think>/i);
+  if (thinkMatch) {
+    if (!extractedThinking) {
+      extractedThinking = thinkMatch[1].trim();
+    }
+    content = content.replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
   }
 
   const parsed = JSON.parse(extractJson(content));
@@ -1248,6 +1364,10 @@ async function callOpenAICompatible(
         200
       )}`
     );
+  }
+
+  if (extractedThinking && !payload.thinking_process) {
+    payload.thinking_process = extractedThinking;
   }
 
   // Jika model mengindikasikan pengiriman foto / selfie (send_photo)
@@ -1305,6 +1425,22 @@ export async function handleChatTurn(
   if (req.audio?.base64) {
     systemInstruction += AUDIO_INSTRUCTION;
   }
+
+  // Tambahkan instruksi thinking reasoning jika diminta
+  if (req.showThinkingProcess) {
+    systemInstruction += `\n\n# PROSES BERPIKIR / REASONING (VIP DEVELOPER MODE)\nSertakan alur penalaran dan proses berpikir internalmu sebelum membalas pesan pada field "thinking_process". Tuliskan pemikiranmu secara jujur, mendalam, dan kontekstual mengenai pesan pengguna, emosimu, dan rencana responmu.`;
+  }
+
+  // Tambahkan data pencarian internet real-time & lokasi GPS
+  try {
+    const realtimeWebContext = await fetchRealtimeWebContext(req.message, req.userLocationContext);
+    if (realtimeWebContext) {
+      systemInstruction += realtimeWebContext;
+    }
+  } catch (err) {
+    console.warn("fetchRealtimeWebContext error:", err);
+  }
+
   const temperature =
     typeof req.temperature === "number" ? req.temperature : 0.95;
 
@@ -1380,6 +1516,7 @@ export async function handleChatTurn(
     messages: sanitizedMessages,
     emotion: deduped.emotion || req.currentEmotion || "happy",
     intensity: deduped.intensity,
+    thinkingProcess: payload.thinking_process || undefined,
     photo: sanitizedPhoto,
     updatedInstruction: finalUpdatedInstruction || undefined,
     updatedSpeakingStyle: finalUpdatedSpeakingStyle || undefined,

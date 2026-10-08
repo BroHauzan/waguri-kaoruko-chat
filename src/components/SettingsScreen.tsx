@@ -26,6 +26,9 @@ import {
   Monitor,
   Crown,
   History,
+  Brain,
+  MapPin,
+  Loader2,
 } from "lucide-react";
 import { Character, Chat, Settings, ThemeMode, AppLanguage } from "../types";
 import { haptics } from "../lib/haptics";
@@ -39,7 +42,12 @@ import {
   sendPushLikeNotification,
 } from "../lib/pushNotification";
 import { QuotaModal } from "./QuotaModal";
-import { getDailyUsage, DailyUsageInfo } from "../lib/quotaService";
+import { getDailyUsage, DailyUsageInfo, isPaidUser } from "../lib/quotaService";
+import {
+  getCachedUserLocation,
+  requestAndRefreshLocation,
+  UserLocationData,
+} from "../lib/locationService";
 import {
   BubbleThemeId,
   BUBBLE_THEMES,
@@ -155,6 +163,9 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     },
   ];
 
+  const [userLoc, setUserLoc] = useState<UserLocationData | null>(() => getCachedUserLocation());
+  const [isLocating, setIsLocating] = useState(false);
+
   const activeProvider = getActiveProvider(settings);
 
   const showToast = (msg: string) => {
@@ -162,6 +173,71 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     setTimeout(() => {
       setToastMsg(null);
     }, 2400);
+  };
+
+  const handleToggleThinking = () => {
+    if (!isPaidUser()) {
+      haptics.error(hapticFeedback);
+      showToast(
+        language === "en"
+          ? "AI Thinking & Reasoning is exclusive to VIP / Paid accounts."
+          : "Fitur Thinking / Reasoning AI eksklusif untuk akun VIP / Berbayar."
+      );
+      setActiveModal("accountTier");
+      return;
+    }
+    const nextVal = !(settings.showThinkingProcess ?? true);
+    haptics.light(hapticFeedback);
+    onSaveSettings({
+      ...settings,
+      showThinkingProcess: nextVal,
+    });
+    showToast(
+      nextVal
+        ? (language === "en" ? "Thinking process enabled" : "Proses berpikir AI diaktifkan")
+        : (language === "en" ? "Thinking process disabled" : "Proses berpikir AI dinonaktifkan")
+    );
+  };
+
+  const handleToggleLocationSearch = () => {
+    const nextVal = !(settings.enableLocationSearch ?? true);
+    haptics.light(hapticFeedback);
+    onSaveSettings({
+      ...settings,
+      enableLocationSearch: nextVal,
+    });
+    showToast(
+      nextVal
+        ? (language === "en" ? "GPS & Real-time search enabled" : "Akses lokasi & pencarian real-time diaktifkan")
+        : (language === "en" ? "GPS & Real-time search disabled" : "Akses lokasi & pencarian real-time dinonaktifkan")
+    );
+  };
+
+  const handleRefreshGPS = async () => {
+    setIsLocating(true);
+    haptics.light(hapticFeedback);
+    try {
+      const loc = await requestAndRefreshLocation();
+      setUserLoc(loc);
+      onSaveSettings({
+        ...settings,
+        enableLocationSearch: true,
+        userLocation: {
+          city: loc.city,
+          locality: loc.locality,
+          country: loc.country,
+          lat: loc.lat,
+          lon: loc.lon,
+          weatherText: loc.weatherText,
+          lastUpdated: loc.lastUpdated,
+        },
+      });
+      showToast(`📍 Lokasi terdeteksi: ${loc.city}${loc.locality ? ` (${loc.locality})` : ""}`);
+    } catch (err: any) {
+      showToast(err?.message || "Gagal mengakses GPS perangkat.");
+    } finally {
+      setIsLocating(false);
+    }
   };
 
   const handleTempChange = (newVal: number) => {
@@ -1296,6 +1372,122 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                     ? "0.0 is deterministic and strict, 0.8 is balanced for roleplay, 1.5+ is very creative and random."
                     : "Nilai 0.0 deterministik & kaku, 0.8 seimbang untuk roleplay, 1.5+ sangat acak."}
                 </span>
+              </div>
+
+              {/* Fitur Thinking / Reasoning AI (VIP Exclusive) */}
+              <div className="bg-[#F0F1F5]/60 dark:bg-white/[0.04] p-3.5 rounded-2xl border border-black/5 dark:border-white/5 flex flex-col gap-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+                      <Brain size={16} />
+                    </div>
+                    <div className="flex flex-col">
+                      <div className="flex items-center gap-1.5">
+                        <span className="text-xs font-bold text-neutral-800 dark:text-[#E4E5EA]">
+                          {language === "en" ? "AI Thinking & Reasoning" : "Proses Berpikir AI (Reasoning)"}
+                        </span>
+                        <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded-md bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/30">
+                          VIP
+                        </span>
+                      </div>
+                      <span className="text-[10px] text-neutral-500 dark:text-[#8A8A93]">
+                        {language === "en"
+                          ? "View the AI's internal reasoning process (auto-collapsed)"
+                          : "Lihat alur penalaran internal AI (otomatis di-collapse)"}
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleToggleThinking}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer shrink-0 ${
+                      (settings.showThinkingProcess ?? true) && isPaidUser()
+                        ? "bg-[#F5B838]"
+                        : "bg-neutral-300 dark:bg-white/20"
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        (settings.showThinkingProcess ?? true) && isPaidUser()
+                          ? "translate-x-6"
+                          : "translate-x-1"
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+
+              {/* Akses Lokasi GPS & Pencarian Internet Real-Time */}
+              <div className="bg-[#F0F1F5]/60 dark:bg-white/[0.04] p-3.5 rounded-2xl border border-black/5 dark:border-white/5 flex flex-col gap-2.5">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <div className="w-7 h-7 rounded-lg bg-blue-500/10 text-blue-600 dark:text-blue-400 flex items-center justify-center">
+                      <MapPin size={16} />
+                    </div>
+                    <div className="flex flex-col">
+                      <span className="text-xs font-bold text-neutral-800 dark:text-[#E4E5EA]">
+                        {language === "en" ? "GPS & Real-Time Search" : "Akses GPS & Pencarian Real-Time"}
+                      </span>
+                      <span className="text-[10px] text-neutral-500 dark:text-[#8A8A93]">
+                        {language === "en"
+                          ? "Enable real-time weather & internet info"
+                          : "Informasi cuaca kotamu & pencarian internet terkini"}
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleToggleLocationSearch}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors cursor-pointer shrink-0 ${
+                      settings.enableLocationSearch !== false
+                        ? "bg-[#F5B838]"
+                        : "bg-neutral-300 dark:bg-white/20"
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                        settings.enableLocationSearch !== false
+                          ? "translate-x-6"
+                          : "translate-x-1"
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {userLoc && (
+                  <div className="px-2.5 py-1.5 rounded-lg bg-black/[0.03] dark:bg-white/[0.04] border border-black/5 dark:border-white/5 flex items-center justify-between gap-2 text-[11px]">
+                    <div className="flex items-center gap-1.5 text-neutral-700 dark:text-[#C9CAD1] truncate">
+                      <span className="text-amber-500">📍</span>
+                      <span className="font-medium truncate">
+                        {userLoc.city}{userLoc.locality ? `, ${userLoc.locality}` : ""}
+                      </span>
+                      {userLoc.temperature !== undefined && (
+                        <span className="text-neutral-500 dark:text-[#8A8A93] shrink-0">
+                          • {userLoc.temperature}°C ({userLoc.condition || "cerah"})
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  disabled={isLocating}
+                  onClick={handleRefreshGPS}
+                  className="w-full py-2 px-3 rounded-xl bg-neutral-200/70 hover:bg-neutral-200 dark:bg-white/[0.08] dark:hover:bg-white/[0.12] text-xs font-semibold text-neutral-800 dark:text-[#E4E5EA] transition-colors flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-50"
+                >
+                  {isLocating ? (
+                    <>
+                      <Loader2 size={13} className="animate-spin text-amber-500" />
+                      <span>{language === "en" ? "Detecting GPS..." : "Mendeteksi GPS..."}</span>
+                    </>
+                  ) : (
+                    <>
+                      <MapPin size={13} className="text-amber-500" />
+                      <span>{language === "en" ? "Update GPS Location" : "Deteksi / Perbarui Lokasi GPS"}</span>
+                    </>
+                  )}
+                </button>
               </div>
 
               {/* Provider Manager */}

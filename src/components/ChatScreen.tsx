@@ -27,6 +27,7 @@ import {
   ArrowLeft,
   Clock,
   Crown,
+  Brain,
 } from "lucide-react";
 import {
   Character,
@@ -76,6 +77,55 @@ import { formatDateSeparator, isSameDay } from "../lib/dateUtils";
 import { getMoodTheme } from "../lib/moodConfig";
 import { getDictionary } from "../lib/i18n";
 import { getEffectiveUserBubbleBg } from "../lib/bubbleThemes";
+
+interface ThinkingAccordionProps {
+  thinkingText: string;
+  accentColor?: string;
+}
+
+const ThinkingAccordion: React.FC<ThinkingAccordionProps> = ({
+  thinkingText,
+  accentColor,
+}) => {
+  // Selesai berpikir otomatis di-collapse sesuai permintaan user
+  const [isOpen, setIsOpen] = useState(false);
+
+  if (!thinkingText || !thinkingText.trim()) return null;
+
+  return (
+    <div className="mb-2 w-full max-w-full overflow-hidden rounded-xl border border-black/10 dark:border-white/10 bg-black/[0.03] dark:bg-white/[0.04] transition-all">
+      <button
+        type="button"
+        onClick={(e) => {
+          e.stopPropagation();
+          setIsOpen((prev) => !prev);
+        }}
+        className="w-full px-2.5 py-1.5 flex items-center justify-between gap-2 text-left cursor-pointer hover:bg-black/[0.04] dark:hover:bg-white/[0.06] transition-colors rounded-xl select-none"
+      >
+        <div className="flex items-center gap-1.5 min-w-0">
+          <Brain size={13} style={{ color: accentColor || "#F5B838" }} className="shrink-0" />
+          <span className="text-[11px] font-semibold text-neutral-600 dark:text-[#A1A1AA] truncate">
+            {isOpen ? "Sembunyikan alur berpikir" : "Lihat alur berpikir (reasoning)"}
+          </span>
+        </div>
+        <div className="flex items-center gap-1 shrink-0 text-neutral-400 dark:text-[#71717A]">
+          <span className="text-[9px] uppercase tracking-wider font-semibold px-1 py-0.2 rounded bg-black/5 dark:bg-white/10">
+            {isOpen ? "Buka" : "Selesai"}
+          </span>
+          {isOpen ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+        </div>
+      </button>
+
+      {isOpen && (
+        <div className="px-3 pb-2.5 pt-1 border-t border-black/5 dark:border-white/5">
+          <div className="text-[11px] leading-relaxed text-neutral-600 dark:text-[#B0B1BA] max-h-56 overflow-y-auto whitespace-pre-wrap font-sans select-text break-words">
+            {thinkingText.trim()}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
 
 interface ChatScreenProps {
   character: Character;
@@ -573,6 +623,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
           id: `msg_char_${Date.now()}_${idx}`,
           role: "char",
           text,
+          thinkingProcess: idx === 0 ? response.thinkingProcess : undefined,
           image:
             response.photo?.dataUrl && idx === 0
               ? {
@@ -627,6 +678,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
             id: `msg_char_${Date.now()}_${remIdx}`,
             role: "char",
             text: txt,
+            thinkingProcess: remIdx === 0 && i === 0 ? response.thinkingProcess : undefined,
             emotion: response.emotion || character.defaultMood,
             intensity: response.intensity || 6,
             timestamp: Date.now() + remIdx * 10,
@@ -678,6 +730,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
             id: `msg_char_${Date.now()}_${remIdx}`,
             role: "char",
             text: txt,
+            thinkingProcess: remIdx === 0 && i === 0 ? response.thinkingProcess : undefined,
             emotion: response.emotion || character.defaultMood,
             intensity: response.intensity || 6,
             timestamp: Date.now() + remIdx * 10,
@@ -728,6 +781,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
           id: `msg_char_${Date.now()}_${i}`,
           role: "char",
           text,
+          thinkingProcess: i === 0 ? response.thinkingProcess : undefined,
           image: photoAttachment,
           emotion: response.emotion || character.defaultMood,
           intensity: response.intensity || 6,
@@ -1575,6 +1629,14 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                           : "opacity-100"
                       }`}
                     >
+                      {/* Proses Berpikir AI (Collapsible Accordion) */}
+                      {!isUser && message.thinkingProcess && (
+                        <ThinkingAccordion
+                          thinkingText={message.thinkingProcess}
+                          accentColor={moodTheme.accentColor}
+                        />
+                      )}
+
                       {/* Kutipan pesan yang dibalas, seperti WhatsApp (bisa diklik untuk scroll ke pesan asli) */}
                       {message.replyTo && (
                         <div

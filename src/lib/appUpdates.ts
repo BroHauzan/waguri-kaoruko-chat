@@ -33,10 +33,80 @@ const STORAGE_KEY = "waguri_last_seen_update_id";
  */
 export const APP_UPDATES: AppUpdateInfo[] = [
   {
+    id: "2026.10.08-thinking-reasoning-tutor-and-gps-search",
+    version: "v1.7.0",
+    date: "8 Oktober 2026",
+    badge: "Terbaru",
+    bannerGradient: "from-amber-500 via-purple-600 to-indigo-700",
+    bannerImage: "https://lh3.googleusercontent.com/aida-public/AB6AXuDDsDcXHEv9qm3vekmRfQH6AABC3cd9E0_RjqxJ4K4xUJPH8wFbnZtiMw-tT0S8MUXlo-5tNANbjIKS-9XvRSp31EV-Iat-l3x7MBpLxOxGpJp-ZpREu9lDBSLYT95SFEnMkFJcX3wIiq0aaWL0Z8h9P9kmzH3fCCFsqJb2r6cbyyKO99onNHfUMUn803FXbieSFaUyU1xbbWnRA4MYJYz1n1mc7R2ul-cxHarS_oBw6f-Yb8DxkkI",
+    title: {
+      id: "Proses Berpikir AI, Karakter Tutor, & Pencarian GPS",
+      en: "AI Thinking Process, Study Tutor & GPS Search",
+    },
+    subtitle: {
+      id: "Fitur alur berpikir AI interaktif untuk akun VIP, tutor belajar baru Subaru Hoshina, serta integrasi GPS & pencarian web real-time.",
+      en: "Interactive AI reasoning for VIP accounts, new Subaru Hoshina study tutor character, and real-time GPS & web search integration.",
+    },
+    highlights: {
+      id: [
+        {
+          title: "Tampilkan Alur Berpikir AI (Reasoning)",
+          description:
+            "Lihat proses penalaran dan pemikiran internal AI sebelum membalas pesan di Opsi Lanjutan Developer. Kotak pemikiran otomatis di-collapse setelah selesai.",
+          tag: "VIP Eksklusif",
+        },
+        {
+          title: "Karakter Baru: Subaru Hoshina (Tutor Belajar)",
+          description:
+            "Tutor belajar cerdas dan sabar dari SMA Kikyo yang siap membimbing materi rumit dari dasarnya dengan analogi sederhana dan gaya santai antislop.",
+          tag: "Karakter",
+        },
+        {
+          title: "Akses GPS & Informasi Cuaca Real-Time",
+          description:
+            "Seluruh karakter kini mampu mencari informasi internet dan memeriksa kondisi cuaca real-time di kotamu menggunakan koordinat GPS perangkat.",
+          tag: "Pencarian Web",
+        },
+        {
+          title: "Pencarian Fakta & Ensiklopedia Terkini",
+          description:
+            "Dukungan pencarian pengetahuan langsung ke internet untuk menjawab pertanyaan fakta atau berita secara instan dan akurat.",
+          tag: "Fitur Cerdas",
+        },
+      ],
+      en: [
+        {
+          title: "AI Thinking & Reasoning Process",
+          description:
+            "View the AI's internal reasoning process before answering in Developer Advanced Options. Automatically collapses once thinking completes.",
+          tag: "VIP Exclusive",
+        },
+        {
+          title: "New Character: Subaru Hoshina (Study Tutor)",
+          description:
+            "Intelligent, patient Kikyo High School tutor dedicated to explaining tricky topics from scratch using clear analogies and anti-slop style.",
+          tag: "Character",
+        },
+        {
+          title: "GPS Access & Real-Time Weather",
+          description:
+            "All characters can now search the web and check current real-time weather in your city using your device's GPS coordinates.",
+          tag: "Web Search",
+        },
+        {
+          title: "Live Encyclopedia & Fact Search",
+          description:
+            "Direct internet search integration to provide real-time facts, encyclopedic knowledge, and live information seamlessly.",
+          tag: "Smart Feature",
+        },
+      ],
+    },
+  },
+  {
     id: "2026.10.08-atria-dawn-and-1000-quota",
     version: "v1.6.0",
     date: "8 Oktober 2026",
-    badge: "Terbaru",
+    badge: "Peningkatan",
     bannerGradient: "from-amber-500 via-orange-500 to-rose-600",
     bannerImage: "/waguri-pfp.jpg",
     title: {
@@ -168,76 +238,6 @@ export const APP_UPDATES: AppUpdateInfo[] = [
           description:
             "Fixed a bug where first-time users got stuck on the welcome modal; clicking 'Start Chatting' now directly opens the conversation.",
           tag: "User",
-        },
-      ],
-    },
-  },
-  {
-    id: "2026.10.08-main-skill-dynamic-adaptation",
-    version: "v1.5.0",
-    date: "8 Oktober 2026",
-    badge: "Mayor",
-    bannerGradient: "from-rose-500 via-pink-600 to-purple-700",
-    bannerImage: "/rintaro-pfp.jpg",
-    title: {
-      id: "Pedoman Main Skill & Adaptasi Chat Dinamis",
-      en: "Main Skill Guidelines & In-Chat Dynamic Adaptation",
-    },
-    subtitle: {
-      id: "Gaya bahasa anti-slop natural dan adaptasi nama panggilan otomatis langsung dari chat.",
-      en: "Natural anti-slop speaking style and automatic nickname adaptation directly from chat.",
-    },
-    highlights: {
-      id: [
-        {
-          title: "Adaptasi Gaya Bicara Otomatis Lewat Chat",
-          description:
-            "Cukup minta karakter di chat (misal: 'panggil aku rin aja'), karakter langsung mematuhi panggilan tersebut dan memperbarui profilnya secara cerdas.",
-          tag: "Baru",
-        },
-        {
-          title: "Pedoman Gaya Bicara Main Skill",
-          description:
-            "Gaya bahasa anti-slop natural dari Main Skill (tanpa kapital awal, tanpa titik akhir, tanpa tanda seru) kini menjadi pedoman standar bawaan.",
-          tag: "Karakter",
-        },
-        {
-          title: "Onboarding Pengguna Baru",
-          description:
-            "Modal sambutan interaktif untuk menetapkan nama panggilan serta persona diri sebelum memulai percakapan pertama.",
-          tag: "Pengguna",
-        },
-        {
-          title: "Navigasi & Tombol Kembali Lebih Mulus",
-          description:
-            "Dukungan tombol back Android dan browser history yang lebih rapi tanpa keluar dari aplikasi saat di chat arsip.",
-          tag: "Navigasi",
-        },
-      ],
-      en: [
-        {
-          title: "In-Chat Dynamic Style Adaptation",
-          description:
-            "Ask the character directly in chat to change nicknames or speaking styles, and they will immediately adapt and remember it.",
-          tag: "New",
-        },
-        {
-          title: "Main Skill Anti-Slop Guidelines",
-          description:
-            "Natural texting guidelines from Main Skill (all lowercase, no trailing periods, no exclamation marks) are now integrated.",
-          tag: "Character",
-        },
-        {
-          title: "New User Onboarding",
-          description:
-            "Interactive welcome modal for setting nickname and personal persona before entering your first chat.",
-          tag: "User",
-        },
-        {
-          title: "Smooth Navigation & Hardware Back Button",
-          description:
-            "Better back button handling for Android and web browser history without exiting the app unexpectedly.",
-          tag: "Navigation",
         },
       ],
     },

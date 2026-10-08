@@ -1,5 +1,7 @@
 import { Character, Chat, Settings } from "../types";
 import { getActiveProvider } from "./providers";
+import { getLiveLocationContextString } from "./locationService";
+import { isPaidUser } from "./quotaService";
 
 /** Bentuk minimal gambar yang dibutuhkan pengiriman. Sengaja tidak memakai
  *  `ImageAttachment` penuh: antrean latar belakang hanya menyimpan base64,
@@ -26,6 +28,7 @@ export interface SendMessageResult {
   messages: string[];
   emotion: string;
   intensity: number;
+  thinkingProcess?: string;
   photo?: {
     dataUrl: string;
     caption?: string;
@@ -134,6 +137,13 @@ export async function sendMessageToGemini({
     }
   }
 
+  const userLocationContext = await getLiveLocationContextString(
+    settings.enableLocationSearch !== false
+  ).catch(() => null);
+
+  const shouldShowThinking =
+    isPaidUser() && (settings.showThinkingProcess ?? false);
+
   const payload = {
     charName: character.name,
     userName: settings.userName || (isEn ? "You" : "Kamu"),
@@ -163,6 +173,8 @@ export async function sendMessageToGemini({
     lastMessageTimestamp,
     lastMessageLocalTimeString,
     timeElapsedText,
+    userLocationContext: userLocationContext || undefined,
+    showThinkingProcess: shouldShowThinking,
     // Hanya kirim data mentahnya — dataUrl penuh terlalu besar untuk payload.
     image: image
       ? { base64: image.base64, mimeType: image.mimeType }

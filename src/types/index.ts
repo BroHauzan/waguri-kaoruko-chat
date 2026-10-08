@@ -1,4 +1,4 @@
-export type CharacterCategory = 'Semua' | 'Santai' | 'Roleplay' | 'Curhat' | 'Lucu' | 'Romantis';
+export type CharacterCategory = 'Semua' | 'Santai' | 'Roleplay' | 'Curhat' | 'Lucu' | 'Romantis' | 'Belajar';
 
 export interface ExampleDialogue {
   user: string;
@@ -85,6 +85,8 @@ export interface Message {
   /** Untuk pesan user: apakah karakter sudah membalasnya. Dipakai untuk
    *  menampilkan centang dua sebagai penanda "sudah dibaca". */
   readByCharacter?: boolean;
+  /** Proses berpikir AI (reasoning / thinking) jika model mendukung dan fitur diaktifkan. */
+  thinkingProcess?: string;
 }
 
 export interface Chat {
@@ -163,6 +165,20 @@ export interface Settings {
   providers?: AIProvider[];
   /** ID provider yang sedang dipakai. */
   activeProviderId?: string;
+  /** Developer mode: Tampilkan proses berpikir (reasoning) AI di chat (hanya untuk VIP/Paid). */
+  showThinkingProcess?: boolean;
+  /** Akses lokasi GPS untuk pencarian internet & cuaca real-time. */
+  enableLocationSearch?: boolean;
+  /** Cache data lokasi pengguna dari GPS. */
+  userLocation?: {
+    city?: string;
+    locality?: string;
+    country?: string;
+    lat?: number;
+    lon?: number;
+    weatherText?: string;
+    lastUpdated?: number;
+  };
 }
 
 export type EmotionType =
