@@ -26,6 +26,7 @@ import {
   Reply,
   ArrowLeft,
   Clock,
+  Crown,
 } from "lucide-react";
 import {
   Character,
@@ -35,6 +36,14 @@ import {
   ImageAttachment,
   AudioAttachment,
 } from "../types";
+import { QuotaModal } from "./QuotaModal";
+import {
+  canSendMessage,
+  recordUserMessageSent,
+  getDailyUsage,
+  DailyUsageInfo,
+  FREE_DAILY_MESSAGE_LIMIT,
+} from "../lib/quotaService";
 import {
   sendMessageToGemini,
   checkAndAutoSummarizeDayTransition,
@@ -79,6 +88,7 @@ interface ChatScreenProps {
   onDeleteCharacter: (characterId: string) => void;
   onBackgroundReply?: (character: Character, lastReplyText: string) => void;
   onTypingChange?: (characterId: string, isTyping: boolean) => void;
+  onSaveSettings?: (settings: Settings) => void;
 }
 
 export const ChatScreen: React.FC<ChatScreenProps> = ({
@@ -93,6 +103,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
   onDeleteCharacter,
   onBackgroundReply,
   onTypingChange,
+  onSaveSettings,
 }) => {
   const [inputText, setInputText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
@@ -141,6 +152,17 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
   const [currentMatchIndex, setCurrentMatchIndex] = useState(0);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [highlightedMessageId, setHighlightedMessageId] = useState<string | null>(null);
+
+  // Quota & Account Tier state
+  const [quotaInfo, setQuotaInfo] = useState<DailyUsageInfo>(getDailyUsage());
+  const [showQuotaModal, setShowQuotaModal] = useState(false);
+  const [quotaModalReason, setQuotaModalReason] = useState<"exceeded" | "manual">("manual");
+
+  useEffect(() => {
+    const handleQuotaChange = () => setQuotaInfo(getDailyUsage());
+    window.addEventListener("waguri_quota_updated", handleQuotaChange);
+    return () => window.removeEventListener("waguri_quota_updated", handleQuotaChange);
+  }, []);
 
   // Swipe threshold tracking ref
   const swipedThresholdReached = useRef<Record<string, boolean>>({});
@@ -398,6 +420,13 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
       return;
     }
 
+    // Cek batas kuota pesan harian untuk user Free (50 pesan/hari)
+    if (!canSendMessage()) {
+      setQuotaModalReason("exceeded");
+      setShowQuotaModal(true);
+      return;
+    }
+
     const userMessage: Message = {
       id: `msg_user_${Date.now()}`,
       role: "user",
@@ -433,6 +462,9 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
     };
 
     const isHapticEnabled = settings.hapticFeedback !== false;
+
+    // Catat penggunaan 1 pesan keluar
+    recordUserMessageSent();
 
     // `onUpdateChat` sudah menyimpan ke localStorage di dalamnya. Memanggil
     // storage.saveChat() di sini juga berarti menulis seluruh chat dua kali —
@@ -715,6 +747,43 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
           setIsTyping(false);
           await new Promise((r) => setTimeout(r, 400 + Math.floor(Math.random() * 150)));
         }
+      }
+
+      // Update karakter & preferensi secara otomatis jika ada permintaan perubahan panggilan / gaya bicara
+      if (response.updatedInstruction || response.preferredUserName) {
+        let currentInstructions = character.customInstructions || "";
+        const instructionToAdd = response.updatedInstruction;
+
+        if (instructionToAdd && !currentInstructions.toLowerCase().includes(instructionToAdd.toLowerCase())) {
+          currentInstructions = currentInstructions.trim()
+            ? `${currentInstructions.trim()}\n- ${instructionToAdd}`
+            : `- ${instructionToAdd}`;
+        }
+
+        const updatedChar: Character = {
+          ...character,
+          customInstructions: currentInstructions,
+        };
+
+        onUpdateCharacter(updatedChar);
+
+        // Jika ada pembaruan nama panggilan user
+        if (response.preferredUserName && response.preferredUserName !== settings.userName) {
+          const nextSettings: Settings = {
+            ...settings,
+            userName: response.preferredUserName,
+          };
+          onSaveSettings?.(nextSettings);
+          storage.saveSettings(nextSettings);
+        }
+
+        // Tampilkan feedback visual bahwa karakter mengingat preferensi pengguna
+        const toastMsg =
+          settings.language === "en"
+            ? `Memory adapted: ${response.preferredUserName ? `called as "${response.preferredUserName}"` : "style updated"}`
+            : `Preferensi disimpan: ${response.preferredUserName ? `kamu dipanggil "${response.preferredUserName}"` : "gaya bicara disesuaikan"}`;
+        setSuccessNotice(toastMsg);
+        setTimeout(() => setSuccessNotice(null), 3500);
       }
 
       removeTask(taskId).catch(() => {});
@@ -1296,6 +1365,21 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                 <Calendar size={15} className="text-neutral-500 dark:text-[#8A8A93]" />
                 <span>Cari Berdasarkan Tanggal</span>
               </button>
+              <button
+                onClick={() => {
+                  setShowActionMenu(false);
+                  setQuotaModalReason("manual");
+                  setShowQuotaModal(true);
+                }}
+                className="w-full px-3 py-2 text-left text-xs font-semibold text-neutral-800 dark:text-[#E4E5EA] hover:bg-neutral-100 dark:hover:bg-white/[0.08] rounded-xl flex items-center gap-2.5 cursor-pointer"
+              >
+                <Crown size={15} className="text-amber-500" />
+                <span>
+                  {quotaInfo.isPaid
+                    ? "Status Akun (VIP Unlimited ✨)"
+                    : `Kuota Chat (${quotaInfo.remaining}/${quotaInfo.limit})`}
+                </span>
+              </button>
             </div>
             <div className="py-1">
               <button
@@ -1817,6 +1901,42 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
           </div>
         )}
 
+        {/* Quota Notice Banner untuk Pengguna Free */}
+        {!quotaInfo.isPaid && quotaInfo.remaining <= 0 && (
+          <div className="px-3.5 py-1.5 bg-red-500/10 dark:bg-red-500/15 border-t border-red-500/20 flex items-center justify-between text-xs text-red-600 dark:text-red-400">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <Crown size={14} className="shrink-0 text-amber-500" />
+              <span className="truncate font-medium">Kuota chat harian habis (50/50 pesan).</span>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setQuotaModalReason("exceeded");
+                setShowQuotaModal(true);
+              }}
+              className="font-bold underline ml-2 shrink-0 cursor-pointer hover:opacity-80"
+            >
+              Aktivasi VIP Unlimited
+            </button>
+          </div>
+        )}
+
+        {!quotaInfo.isPaid && quotaInfo.remaining > 0 && quotaInfo.remaining <= 10 && (
+          <div className="px-3.5 py-1 bg-amber-500/10 dark:bg-amber-500/15 border-t border-amber-500/20 flex items-center justify-between text-[11px] text-amber-700 dark:text-amber-300">
+            <span>Sisa kuota gratis hari ini: {quotaInfo.remaining} pesan</span>
+            <button
+              type="button"
+              onClick={() => {
+                setQuotaModalReason("manual");
+                setShowQuotaModal(true);
+              }}
+              className="font-semibold underline ml-2 cursor-pointer"
+            >
+              Upgrade VIP
+            </button>
+          </div>
+        )}
+
         <div className="min-h-[58px] px-3 py-2 flex items-end gap-2">
           {/* Smiley Emoji Button */}
           <button
@@ -1852,7 +1972,13 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                   }
                 }
               }}
-              placeholder={cooldownTime > 0 ? `Tunggu ${cooldownTime}s...` : (dict.messagePlaceholder || "Message")}
+              placeholder={
+                cooldownTime > 0
+                  ? `Tunggu ${cooldownTime}s...`
+                  : !quotaInfo.isPaid && quotaInfo.remaining <= 0
+                  ? "Kuota habis. Masukkan kode VIP..."
+                  : (dict.messagePlaceholder || "Message")
+              }
               className="w-full bg-transparent text-[14px] text-neutral-900 dark:text-[#F2F3F7] placeholder:text-neutral-400 dark:placeholder:text-white/35 resize-none outline-none leading-relaxed py-1 max-h-[130px] scrollbar-thin disabled:opacity-50"
             />
 
@@ -2069,6 +2195,14 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
           </div>
         </div>
       )}
+
+      {/* Quota & Account Tier Activation Modal */}
+      <QuotaModal
+        isOpen={showQuotaModal}
+        onClose={() => setShowQuotaModal(false)}
+        language={settings.language || "id"}
+        reason={quotaModalReason}
+      />
     </div>
   );
 };

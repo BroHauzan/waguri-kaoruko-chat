@@ -183,6 +183,36 @@ class BackgroundQueueProcessor {
           // Save to permanent storage
           storage.saveChat(updatedChat);
 
+          // Update preferensi karakter jika ada instruksi panggilan / gaya baru
+          if (response.updatedInstruction || response.preferredUserName) {
+            const allChars = storage.getCharacters();
+            const targetChar = allChars.find((c) => c.id === currentTask.characterId);
+            if (targetChar) {
+              let instructions = targetChar.customInstructions || "";
+              if (
+                response.updatedInstruction &&
+                !instructions.toLowerCase().includes(response.updatedInstruction.toLowerCase())
+              ) {
+                instructions = instructions.trim()
+                  ? `${instructions.trim()}\n- ${response.updatedInstruction}`
+                  : `- ${response.updatedInstruction}`;
+              }
+              storage.saveCharacter({
+                ...targetChar,
+                customInstructions: instructions,
+              });
+            }
+            if (response.preferredUserName) {
+              const currentSettings = storage.getSettings();
+              if (currentSettings.userName !== response.preferredUserName) {
+                storage.saveSettings({
+                  ...currentSettings,
+                  userName: response.preferredUserName,
+                });
+              }
+            }
+          }
+
           const lastReplyText =
             charMessages[charMessages.length - 1]?.text || "Membalas pesanmu";
 

@@ -24,6 +24,7 @@ import {
   Sun,
   Moon,
   Monitor,
+  Crown,
 } from "lucide-react";
 import { Character, Chat, Settings, ThemeMode, AppLanguage } from "../types";
 import { haptics } from "../lib/haptics";
@@ -36,6 +37,8 @@ import {
   requestNotificationPermission,
   sendPushLikeNotification,
 } from "../lib/pushNotification";
+import { QuotaModal } from "./QuotaModal";
+import { getDailyUsage, DailyUsageInfo } from "../lib/quotaService";
 
 interface SettingsScreenProps {
   settings: Settings;
@@ -61,14 +64,22 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const [language, setLanguage] = useState<AppLanguage>(settings.language || "id");
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [notifPermission, setNotifPermission] = useState<string>(getNotificationPermission());
+  const [quotaInfo, setQuotaInfo] = useState<DailyUsageInfo>(getDailyUsage());
 
   // Modal & Sheet States
   const [activeModal, setActiveModal] = useState<
-    "none" | "profile" | "model" | "chatStyle" | "theme" | "language" | "notifications" | "advanced" | "qr"
+    "none" | "profile" | "model" | "chatStyle" | "theme" | "language" | "notifications" | "advanced" | "qr" | "accountTier"
   >("none");
   const [showSearchInput, setShowSearchInput] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [showResetConfirmModal, setShowResetConfirmModal] = useState(false);
+
+  // Sync quota info via window event
+  useEffect(() => {
+    const onQuotaUpdate = () => setQuotaInfo(getDailyUsage());
+    window.addEventListener("waguri_quota_updated", onQuotaUpdate);
+    return () => window.removeEventListener("waguri_quota_updated", onQuotaUpdate);
+  }, []);
 
   // Sinkronkan state lokal saat prop settings dari parent berubah
   useEffect(() => {
@@ -256,8 +267,24 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       : language === "en" ? "Notifications disabled" : "Notifikasi belum diaktifkan";
   };
 
+  const getAccountTierSubtitle = () => {
+    if (quotaInfo.isPaid) {
+      return language === "en" ? "VIP Paid • Unlimited Chat ✨" : "Akun VIP • Chat Tanpa Batas ✨";
+    }
+    return language === "en"
+      ? `Free Tier • ${quotaInfo.remaining}/${quotaInfo.limit} messages left today`
+      : `Akun Free • Sisa ${quotaInfo.remaining}/${quotaInfo.limit} pesan hari ini`;
+  };
+
   // Menu item definitions
   const menuItems = [
+    {
+      id: "accountTier" as const,
+      icon: Crown,
+      title: dict.accountTierTitle || (language === "en" ? "Account Tier & Quota" : "Status Akun & Kuota"),
+      subtitle: getAccountTierSubtitle(),
+      onClick: () => setActiveModal("accountTier"),
+    },
     {
       id: "model" as const,
       icon: Sparkles,
@@ -1176,6 +1203,14 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
           </div>
         )}
       </AnimatePresence>
+
+      {/* 9. Modal Status Akun & Kuota */}
+      <QuotaModal
+        isOpen={activeModal === "accountTier"}
+        onClose={() => setActiveModal("none")}
+        language={language}
+        reason="manual"
+      />
           </>,
           document.body
         )}

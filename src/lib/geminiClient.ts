@@ -30,6 +30,8 @@ export interface SendMessageResult {
     dataUrl: string;
     caption?: string;
   };
+  updatedInstruction?: string;
+  preferredUserName?: string;
 }
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL || "";
@@ -70,13 +72,16 @@ export async function sendMessageToGemini({
 
   const provider = providerPayload(settings);
 
+  const isEn = settings.language === "en";
+  const locale = isEn ? "en-US" : "id-ID";
+
   // Perhitungan waktu saat ini & jeda dari pesan terakhir
   const now = Date.now();
   const lastMsg = chat.messages.length > 0 ? chat.messages[chat.messages.length - 1] : null;
   const lastMessageTimestamp = lastMsg ? lastMsg.timestamp : null;
 
   const userTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone || "Asia/Jakarta";
-  const userLocalTimeString = new Date(now).toLocaleString("id-ID", {
+  const userLocalTimeString = new Date(now).toLocaleString(locale, {
     timeZone: userTimezone,
     weekday: "long",
     year: "numeric",
@@ -90,7 +95,7 @@ export async function sendMessageToGemini({
   let timeElapsedText: string | undefined = undefined;
 
   if (lastMessageTimestamp) {
-    lastMessageLocalTimeString = new Date(lastMessageTimestamp).toLocaleString("id-ID", {
+    lastMessageLocalTimeString = new Date(lastMessageTimestamp).toLocaleString(locale, {
       timeZone: userTimezone,
       weekday: "long",
       year: "numeric",
@@ -105,20 +110,32 @@ export async function sendMessageToGemini({
     const elapsedHours = Math.floor(elapsedMs / (60 * 60 * 1000));
     const elapsedDays = Math.floor(elapsedMs / (24 * 60 * 60 * 1000));
 
-    if (elapsedMinutes < 2) {
-      timeElapsedText = "Baru saja (kurang dari 2 menit yang lalu)";
-    } else if (elapsedMinutes < 60) {
-      timeElapsedText = `${elapsedMinutes} menit yang lalu`;
-    } else if (elapsedHours < 24) {
-      timeElapsedText = `${elapsedHours} jam yang lalu`;
+    if (isEn) {
+      if (elapsedMinutes < 2) {
+        timeElapsedText = "Just now (less than 2 minutes ago)";
+      } else if (elapsedMinutes < 60) {
+        timeElapsedText = `${elapsedMinutes} minutes ago`;
+      } else if (elapsedHours < 24) {
+        timeElapsedText = `${elapsedHours} hours ago`;
+      } else {
+        timeElapsedText = `${elapsedDays} days ago`;
+      }
     } else {
-      timeElapsedText = `${elapsedDays} hari yang lalu`;
+      if (elapsedMinutes < 2) {
+        timeElapsedText = "Baru saja (kurang dari 2 menit yang lalu)";
+      } else if (elapsedMinutes < 60) {
+        timeElapsedText = `${elapsedMinutes} menit yang lalu`;
+      } else if (elapsedHours < 24) {
+        timeElapsedText = `${elapsedHours} jam yang lalu`;
+      } else {
+        timeElapsedText = `${elapsedDays} hari yang lalu`;
+      }
     }
   }
 
   const payload = {
     charName: character.name,
-    userName: settings.userName || "Kamu",
+    userName: settings.userName || (isEn ? "You" : "Kamu"),
     personality: character.personality,
     speakingStyle: character.speakingStyle,
     backstory: character.backstory,
@@ -137,6 +154,7 @@ export async function sendMessageToGemini({
     replyLength: settings.replyLength,
     apiKey: provider.apiKey,
     provider,
+    language: settings.language || "id",
     currentTime: now,
     userLocalTimeString,
     userTimezone,
@@ -216,13 +234,14 @@ export async function triggerSummarizeMemory({
 
   const payload = {
     charName: character.name,
-    userName: settings.userName || "Kamu",
+    userName: settings.userName || (settings.language === "en" ? "You" : "Kamu"),
     existingSummary: chat.summary,
     messagesToSummarize: messagesToSummarize.map((m) => ({
       role: m.role,
       text: m.text,
     })),
     provider: providerPayload(settings),
+    language: settings.language || "id",
   };
 
   const res = await fetch(apiUrl("summarize"), {
@@ -288,13 +307,14 @@ export async function checkAndAutoSummarizeDayTransition({
   try {
     const payload = {
       charName: character.name,
-      userName: settings.userName || "Kamu",
+      userName: settings.userName || (settings.language === "en" ? "You" : "Kamu"),
       existingSummary: chat.summary || "",
       messagesToSummarize: pastDaysMessages.map((m) => ({
         role: m.role,
         text: m.text,
       })),
       provider: providerPayload(settings),
+      language: settings.language || "id",
     };
 
     const res = await fetch(apiUrl("summarize"), {

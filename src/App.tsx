@@ -62,14 +62,15 @@ export default function App() {
     setChats(loadedChats);
     setSettings(loadedSettings);
 
-    // When user first opens the app, directly open Waguri Kaoruko's chat where she greeted first
+    // Saat pengguna pertama kali membuka aplikasi, langsung buka obrolan Waguri Kaoruko yang menyapa duluan
     if (
       loadedCharacters.length === 1 &&
-      loadedCharacters[0].id === "waguri-kaoruko"
+      (loadedCharacters[0].id === "waguri-kaoruko-sahabat" || loadedCharacters[0].id === "waguri-kaoruko")
     ) {
+      const charId = loadedCharacters[0].id;
       const kaorukoChat =
-        loadedChats["waguri-kaoruko"] ||
-        storage.getChatByCharacterId("waguri-kaoruko", loadedCharacters[0]);
+        loadedChats[charId] ||
+        storage.getChatByCharacterId(charId, loadedCharacters[0]);
       if (kaorukoChat.messages.length <= 1) {
         setActiveCharacter(loadedCharacters[0]);
       }
@@ -367,6 +368,7 @@ export default function App() {
       onDeleteCharacter={handleDeleteCharacter}
       onBackgroundReply={handleBackgroundReply}
       onTypingChange={handleTypingChange}
+      onSaveSettings={handleSaveSettings}
     />
   ) : null;
 

@@ -88,10 +88,10 @@ export const translations = {
     themeToast: "Tema: {val}",
 
     // Settings: Language
-    languageTitle: "Bahasa Tampilan",
+    languageTitle: "Bahasa & Percakapan Karakter",
     langId: "Bahasa Indonesia",
     langEn: "English",
-    langDesc: "Pilih bahasa tampilan antarmuka aplikasi.",
+    langDesc: "Pilih bahasa tampilan aplikasi dan gaya percakapan seluruh karakter AI.",
     langToast: "Bahasa diubah ke {val}",
 
     // Settings: Chat Style
@@ -111,6 +111,14 @@ export const translations = {
     notifActive: "Aktif",
     notifRequest: "Minta Izin",
     notifBlocked: "Diblokir",
+
+    // Quota & Account Tier
+    accountTierTitle: "Status Akun & Kuota",
+    accountTierDesc: "Info kuota pesan harian dan aktivasi mode Paid (Unlimited).",
+    accountTierFree: "Akun Free",
+    accountTierPaid: "Akun Paid (VIP)",
+    activateSuccess: "Selamat! Akun kamu berhasil di-upgrade ke mode Paid (Unlimited) selamanya!",
+    activateFailed: "Kode aktivasi salah. Silakan coba lagi.",
 
     // Settings: Advanced & Danger Zone
     advancedTitle: "Opsi Lanjutan & Developer",
@@ -233,10 +241,10 @@ export const translations = {
     themeToast: "Theme: {val}",
 
     // Settings: Language
-    languageTitle: "Display Language",
+    languageTitle: "Language & Character Conversation",
     langId: "Bahasa Indonesia",
     langEn: "English",
-    langDesc: "Choose the application interface display language.",
+    langDesc: "Choose interface language and AI character conversation style.",
     langToast: "Language set to {val}",
 
     // Settings: Chat Style
@@ -256,6 +264,14 @@ export const translations = {
     notifActive: "Active",
     notifRequest: "Request",
     notifBlocked: "Blocked",
+
+    // Quota & Account Tier
+    accountTierTitle: "Account Tier & Quota",
+    accountTierDesc: "Daily message quota info and Paid mode (Unlimited) activation.",
+    accountTierFree: "Free Account",
+    accountTierPaid: "Paid Account (VIP)",
+    activateSuccess: "Congratulations! Your account is upgraded to Paid Mode (Unlimited) forever!",
+    activateFailed: "Invalid activation code. Please try again.",
 
     // Settings: Advanced & Danger Zone
     advancedTitle: "Advanced & Developer Options",
