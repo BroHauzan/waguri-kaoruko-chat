@@ -57,15 +57,21 @@
       })();
     </script>
     <script>
+      // Otomatis reload jika browser masih memuat chunk lama yang sudah 404 pasca update
+      window.addEventListener('error', function (e) {
+        if (e.message && (e.message.indexOf('Failed to fetch dynamically imported module') !== -1 || e.message.indexOf('Loading chunk') !== -1)) {
+          if (!sessionStorage.getItem('chunk_reload_lock')) {
+            sessionStorage.setItem('chunk_reload_lock', '1');
+            window.location.reload();
+          }
+        }
+      });
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', function () {
           navigator.serviceWorker
             .register('/sw.js')
-            .then(function (reg) {
-              console.log('ServiceWorker registered with scope:', reg.scope);
-            })
             .catch(function (err) {
-              console.error('ServiceWorker registration failed:', err);
+              console.warn('SW registration fallback:', err);
             });
         });
       }

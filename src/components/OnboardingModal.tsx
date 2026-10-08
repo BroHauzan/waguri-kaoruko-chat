@@ -22,6 +22,8 @@ export const OnboardingModal: React.FC<OnboardingModalProps> = ({
   const [name, setName] = useState(initialName === "Rizky" ? "" : initialName);
   const [persona, setPersona] = useState(initialPersona);
 
+  if (!isOpen) return null;
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const cleanName = name.trim();
