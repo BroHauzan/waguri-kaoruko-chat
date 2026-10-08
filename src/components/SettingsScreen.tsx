@@ -570,155 +570,677 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         </div>
       )}
 
-      {/* 2. CENTERED PROFILE HEADER (WhatsApp Android Hierarchy) */}
-      <section className="flex flex-col items-center pt-5 pb-6 px-4">
-        {/* Large Rounded Avatar */}
-        <div
-          onClick={() => setActiveModal("profile")}
-          className="relative w-24 h-24 rounded-full border-2 border-black/10 dark:border-white/15 overflow-hidden shadow-sm cursor-pointer group hover:border-[#F5B838] transition-all"
-        >
-          <img
-            src="/rintaro-pfp.jpg"
-            alt={userName}
-            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-          />
-          <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-            <Pencil size={18} className="text-white drop-shadow" />
-          </div>
-        </div>
+      {/* 2. STITCH OBSIDIAN LUSTER USER HERO PROFILE CARD */}
+      <section className="px-4 pt-4 pb-2">
+        <div className="w-full bg-white dark:bg-[#171920] border border-black/5 dark:border-white/[0.06] rounded-3xl p-4 flex items-center gap-4 shadow-sm dark:shadow-[0_8px_24px_rgba(0,0,0,0.35)] relative overflow-hidden group">
+          {/* Subtle ambient corner glow */}
+          <div className="absolute -right-8 -top-8 w-28 h-28 bg-[#F5B838]/10 rounded-full blur-2xl pointer-events-none" />
 
-        {/* Profile Name with Dropdown Chevron */}
-        <button
-          type="button"
-          onClick={() => setActiveModal("profile")}
-          className="mt-3 flex items-center gap-1.5 cursor-pointer group"
-        >
-          <span className="text-xl font-bold text-neutral-900 dark:text-[#F2F3F7] tracking-tight group-hover:text-[#F5B838] transition-colors">
-            {userName}
-          </span>
-          <ChevronDown
-            size={18}
-            className="text-neutral-500 dark:text-[#8A8A93] group-hover:text-[#F5B838] transition-colors"
-          />
-        </button>
-
-        {/* Username Handle */}
-        <span className="text-sm text-neutral-500 dark:text-[#8A8A93] mt-0.5 font-medium">
-          @{userName.toLowerCase().replace(/\s+/g, "") || "user"}
-        </span>
-      </section>
-
-      {/* Divider Separator */}
-      <div className="h-[1px] w-full bg-black/5 dark:bg-white/5 mb-1" />
-
-      {/* 3. FLAT LIST MENU ITEMS (Clean WhatsApp-style flat list) */}
-      <div className="flex-1 flex flex-col divide-y divide-black/5 dark:divide-white/5">
-        {filteredMenuItems.map((item) => {
-          const Icon = item.icon;
-          return (
-            <button
-              key={item.id}
-              type="button"
-              onClick={item.onClick}
-              className="py-3.5 px-4 flex items-center gap-4 text-left cursor-pointer active:bg-neutral-200/50 dark:active:bg-white/[0.06] hover:bg-black/[0.02] dark:hover:bg-white/[0.03] transition-colors"
-            >
-              {/* Ikon Kiri Netral */}
-              <div className="w-6 h-6 flex items-center justify-center text-neutral-500 dark:text-[#8A8A93] shrink-0">
-                <Icon size={22} strokeWidth={1.8} />
-              </div>
-
-              {/* Teks Judul & Subtitle */}
-              <div className="flex-1 min-w-0 flex flex-col gap-0.5">
-                <span className="font-medium text-base text-neutral-900 dark:text-[#F2F3F7] leading-tight">
-                  {item.title}
-                </span>
-                <span className="text-xs text-neutral-500 dark:text-[#8A8A93] truncate">
-                  {item.subtitle}
-                </span>
-              </div>
-
-              <ChevronRight size={18} className="text-neutral-400 dark:text-neutral-600 shrink-0" />
-            </button>
-          );
-        })}
-
-        {/* Haptic Toggle as Flat List Item */}
-        <div className="py-3.5 px-4 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-4 min-w-0">
-            <div className="w-6 h-6 flex items-center justify-center text-neutral-500 dark:text-[#8A8A93] shrink-0">
-              <Vibrate size={22} strokeWidth={1.8} />
+          {/* Left User Avatar */}
+          <div className="relative shrink-0">
+            <div className="w-16 h-16 rounded-full p-[2px] bg-gradient-to-b from-[#F5B838]/60 via-black/10 dark:via-white/10 to-transparent">
+              <img
+                src="/rintaro-pfp.jpg"
+                alt={userName}
+                className="w-full h-full rounded-full object-cover bg-neutral-200 dark:bg-neutral-800"
+              />
             </div>
-            <div className="flex flex-col gap-0.5">
-              <span className="font-medium text-base text-neutral-900 dark:text-[#F2F3F7] leading-tight">
-                {dict.hapticsTitle}
+            <div className="absolute -bottom-0.5 -right-0.5 w-5 h-5 rounded-full bg-[#F5B838] text-neutral-950 flex items-center justify-center shadow-md">
+              <Check size={12} strokeWidth={3} />
+            </div>
+          </div>
+
+          {/* Center Identity Information */}
+          <div className="flex-1 min-w-0 flex flex-col justify-center">
+            <div className="flex items-center gap-1.5">
+              <h2 className="text-[18px] font-bold text-neutral-900 dark:text-[#F2F3F7] tracking-tight truncate">
+                {userName}
+              </h2>
+            </div>
+
+            <div className="mt-1 flex items-center gap-2 flex-wrap">
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#F5B838]/15 text-[#B45309] dark:text-[#F5B838] text-[10px] font-semibold tracking-wider uppercase border border-[#F5B838]/20">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#F5B838] animate-pulse" />
+                {quotaInfo.isPaid ? "VIP Paid" : "Free Member"}
               </span>
-              <span className="text-xs text-neutral-500 dark:text-[#8A8A93]">
-                {dict.hapticsDesc}
+              <span className="text-[11px] text-neutral-500 dark:text-neutral-400">
+                {quotaInfo.isPaid ? "Unlimited" : `${quotaInfo.remaining}/${quotaInfo.limit} sisa`}
               </span>
             </div>
           </div>
+
+          {/* Edit Profile Action Button */}
           <button
             type="button"
-            onClick={toggleHaptics}
-            className={`w-12 h-7 rounded-full p-1 transition-colors cursor-pointer shrink-0 ${
-              hapticFeedback ? "bg-[#F5B838]" : "bg-neutral-200 dark:bg-white/[0.15]"
-            }`}
+            onClick={() => setActiveModal("profile")}
+            aria-label="Edit Profile"
+            className="w-9 h-9 rounded-full bg-neutral-100 dark:bg-white/[0.04] hover:bg-neutral-200 dark:hover:bg-white/[0.08] active:scale-95 border border-black/5 dark:border-white/[0.06] flex items-center justify-center text-neutral-600 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white transition-all shrink-0 cursor-pointer"
           >
-            <div
-              className={`w-5 h-5 rounded-full bg-white shadow-xs transition-transform ${
-                hapticFeedback ? "translate-x-5" : "translate-x-0"
-              }`}
-            />
+            <Pencil size={16} />
           </button>
         </div>
+      </section>
 
-        {/* Developer / Advanced AI Engine Section */}
-        <button
-          type="button"
-          onClick={() => setActiveModal("advanced")}
-          className="py-3.5 px-4 flex items-center gap-4 text-left cursor-pointer active:bg-neutral-200/50 dark:active:bg-white/[0.06] hover:bg-black/[0.02] dark:hover:bg-white/[0.03] transition-colors"
-        >
-          <div className="w-6 h-6 flex items-center justify-center text-neutral-500 dark:text-[#8A8A93] shrink-0">
-            <Sliders size={22} strokeWidth={1.8} />
+      {/* 3. GROUPED SECTION CARDS WITH INLINE ACCORDIONS */}
+      <div className="px-4 py-2 flex flex-col gap-5">
+        {/* ========================================================
+            SECTION 1: AKUN (ACCOUNT)
+            ======================================================== */}
+        <section className="flex flex-col gap-2">
+          <span className="px-2 font-semibold text-[13px] text-neutral-500 dark:text-neutral-400/80 tracking-wide uppercase">
+            Akun
+          </span>
+          <div className="bg-white dark:bg-[#171920] border border-black/5 dark:border-white/[0.06] rounded-3xl overflow-hidden shadow-xs flex flex-col divide-y divide-black/5 dark:divide-white/[0.05]">
+            {/* Kelola Profil */}
+            <button
+              type="button"
+              onClick={() => setActiveModal("profile")}
+              className="w-full flex items-center justify-between px-4 py-3.5 text-left hover:bg-neutral-50 dark:hover:bg-white/[0.02] active:bg-neutral-100 dark:active:bg-white/[0.04] transition-colors cursor-pointer"
+            >
+              <div className="flex items-center gap-3.5 min-w-0">
+                <span className="text-neutral-500 dark:text-[#8A8A93] shrink-0">
+                  <Pencil size={20} />
+                </span>
+                <span className="text-[15px] font-medium text-neutral-900 dark:text-[#F2F3F7] truncate">
+                  Kelola Profil
+                </span>
+              </div>
+              <ChevronRight size={18} className="text-neutral-400 dark:text-neutral-500 shrink-0 ml-2" />
+            </button>
+
+            {/* Password & Status Kuota (Inline Accordion) */}
+            <details className="group" open>
+              <summary className="w-full list-none cursor-pointer flex items-center justify-between px-4 py-3.5 text-left hover:bg-neutral-50 dark:hover:bg-white/[0.02] active:bg-neutral-100 dark:active:bg-white/[0.04] transition-colors">
+                <div className="flex items-center gap-3.5 min-w-0">
+                  <Crown size={20} className="text-neutral-500 dark:text-[#8A8A93] shrink-0" />
+                  <span className="text-[15px] font-medium text-neutral-900 dark:text-[#F2F3F7] truncate">
+                    Status Kuota &amp; Akun
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                  <span className="text-[12px] font-bold text-[#B45309] dark:text-[#F5B838] px-2 py-0.5 rounded-full bg-amber-500/10">
+                    {quotaInfo.isPaid ? "Unlimited" : `${quotaInfo.remaining} / ${quotaInfo.limit}`}
+                  </span>
+                  <ChevronRight size={18} className="text-neutral-400 dark:text-neutral-500 transition-transform duration-200 group-open:rotate-90" />
+                </div>
+              </summary>
+              <div className="px-4 pb-4 pt-1 flex flex-col gap-3.5 bg-neutral-50/60 dark:bg-black/20 border-t border-black/5 dark:border-white/[0.04]">
+                <div className="flex flex-col gap-1.5 pt-1">
+                  <div className="flex justify-between items-center text-[12px]">
+                    <span className="text-neutral-600 dark:text-neutral-400 font-medium">Penggunaan Hari Ini</span>
+                    <span className="text-[#B45309] dark:text-[#F5B838] font-bold">
+                      {quotaInfo.used} / {quotaInfo.limit}
+                      <span className="text-neutral-500 dark:text-neutral-400 font-normal ml-1">
+                        (sisa {quotaInfo.remaining})
+                      </span>
+                    </span>
+                  </div>
+                  <div className="w-full h-1.5 bg-neutral-200 dark:bg-white/10 rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-[#F5B838] rounded-full transition-all duration-300"
+                      style={{
+                        width: `${Math.min(100, Math.max(5, (quotaInfo.used / quotaInfo.limit) * 100))}%`,
+                      }}
+                    />
+                  </div>
+                  <span className="text-[11px] text-neutral-500 dark:text-neutral-400">
+                    Akun Free dibatasi kuota harian. Kuota direset otomatis tiap 00:00 WIB.
+                  </span>
+                </div>
+
+                <div className="flex flex-wrap gap-2">
+                  <div className="px-2.5 py-1 rounded-xl bg-white dark:bg-white/[0.04] border border-black/5 dark:border-white/[0.06] text-[11px] flex items-center gap-1.5">
+                    <span>Nara Router: <strong className="text-neutral-900 dark:text-white">200/hari</strong></span>
+                  </div>
+                  <div className="px-2.5 py-1 rounded-xl bg-white dark:bg-white/[0.04] border border-black/5 dark:border-white/[0.06] text-[11px] flex items-center gap-1.5">
+                    <span>Atria Dawn: <strong className="text-neutral-900 dark:text-white">500/hari</strong></span>
+                  </div>
+                </div>
+
+                {/* VIP Activation Section */}
+                <div className="p-3 rounded-2xl bg-white dark:bg-[#14161c] border border-amber-500/30 flex flex-col gap-2.5 mt-0.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[12px] font-bold text-[#B45309] dark:text-[#F5B838] flex items-center gap-1.5">
+                      <Crown size={15} /> Aktivasi Paid Mode (VIP)
+                    </span>
+                    <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-[#B45309] dark:text-[#F5B838] font-bold">
+                      Unlimited
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setActiveModal("accountTier")}
+                    className="w-full py-2 px-3 rounded-xl bg-[#F5B838] hover:bg-[#E5A929] text-neutral-950 font-bold text-[12px] active:scale-95 transition-all text-center cursor-pointer shadow-xs"
+                  >
+                    Buka Dialog Kuota &amp; Kode VIP
+                  </button>
+                </div>
+              </div>
+            </details>
+
+            {/* Notifikasi Balasan (Inline Accordion) */}
+            <details className="group">
+              <summary className="w-full list-none cursor-pointer flex items-center justify-between px-4 py-3.5 text-left hover:bg-neutral-50 dark:hover:bg-white/[0.02] active:bg-neutral-100 dark:active:bg-white/[0.04] transition-colors">
+                <div className="flex items-center gap-3.5 min-w-0">
+                  <Bell size={20} className="text-neutral-500 dark:text-[#8A8A93] shrink-0" />
+                  <span className="text-[15px] font-medium text-neutral-900 dark:text-[#F2F3F7] truncate">
+                    Notifikasi Balasan
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                  <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold flex items-center gap-1 ${
+                    notifPermission === "granted"
+                      ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                      : "bg-neutral-200 dark:bg-white/5 text-neutral-500"
+                  }`}>
+                    {notifPermission === "granted" ? "✓ Aktif" : "Nonaktif"}
+                  </span>
+                  <ChevronRight size={18} className="text-neutral-400 dark:text-neutral-500 transition-transform duration-200 group-open:rotate-90" />
+                </div>
+              </summary>
+              <div className="px-4 pb-4 pt-2.5 flex flex-col gap-3 bg-neutral-50/60 dark:bg-black/20 border-t border-black/5 dark:border-white/[0.04]">
+                <p className="text-[11px] text-neutral-500 dark:text-neutral-400 leading-relaxed">
+                  Aktifkan notifikasi untuk mendapatkan balasan karakter bahkan saat layar terkunci atau di latar belakang.
+                </p>
+                <div className="flex gap-2">
+                  {notifPermission !== "granted" ? (
+                    <button
+                      type="button"
+                      onClick={async () => {
+                        const granted = await requestNotificationPermission();
+                        setNotifPermission(granted ? "granted" : "denied");
+                        if (granted) showToast("Notifikasi aktif!");
+                      }}
+                      className="flex-1 py-2 rounded-xl bg-[#F5B838] text-neutral-950 font-bold text-xs active:scale-95 transition-all cursor-pointer"
+                    >
+                      Minta Izin Notifikasi
+                    </button>
+                  ) : null}
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      await sendPushLikeNotification("Waguri Kaoruko", {
+                        body: "Tes notifikasi berhasil! Balasan akan tetap masuk saat layar ditutup.",
+                        characterId: "waguri-kaoruko",
+                      });
+                      showToast("Notifikasi uji coba terkirim!");
+                    }}
+                    className="flex-1 py-2 px-3 rounded-xl bg-white dark:bg-white/[0.04] hover:bg-neutral-100 dark:hover:bg-white/[0.08] border border-black/5 dark:border-white/[0.06] text-[12px] font-semibold text-neutral-800 dark:text-white flex items-center justify-center gap-2 active:scale-95 transition-all cursor-pointer"
+                  >
+                    <Bell size={14} className="text-[#F5B838]" /> Kirim Tes
+                  </button>
+                </div>
+              </div>
+            </details>
+
+            {/* Bahasa (Inline Accordion) */}
+            <details className="group">
+              <summary className="w-full list-none cursor-pointer flex items-center justify-between px-4 py-3.5 text-left hover:bg-neutral-50 dark:hover:bg-white/[0.02] active:bg-neutral-100 dark:active:bg-white/[0.04] transition-colors">
+                <div className="flex items-center gap-3.5 min-w-0">
+                  <Globe size={20} className="text-neutral-500 dark:text-[#8A8A93] shrink-0" />
+                  <span className="text-[15px] font-medium text-neutral-900 dark:text-[#F2F3F7] truncate">
+                    Bahasa Tampilan
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                  <span className="text-[13px] text-neutral-500 dark:text-neutral-400">
+                    {language === "en" ? "English" : "Indonesia"}
+                  </span>
+                  <ChevronRight size={18} className="text-neutral-400 dark:text-neutral-500 transition-transform duration-200 group-open:rotate-90" />
+                </div>
+              </summary>
+              <div className="px-4 pb-4 pt-2.5 flex flex-col gap-2.5 bg-neutral-50/60 dark:bg-black/20 border-t border-black/5 dark:border-white/[0.04]">
+                <div className="grid grid-cols-2 gap-2 pt-1">
+                  <div
+                    onClick={() => handleSelectLanguage("id")}
+                    className={`p-3 rounded-2xl border flex items-center justify-between cursor-pointer transition-colors ${
+                      language === "id"
+                        ? "bg-amber-500/10 border-amber-500/40"
+                        : "bg-white dark:bg-white/[0.03] border-black/5 dark:border-white/[0.06]"
+                    }`}
+                  >
+                    <div className="flex flex-col min-w-0">
+                      <span className={`text-[13px] font-bold ${language === "id" ? "text-[#B45309] dark:text-[#F5B838]" : "text-neutral-800 dark:text-white"}`}>
+                        Indonesia
+                      </span>
+                      <span className="text-[10px] text-neutral-500 dark:text-neutral-400">Default lokal</span>
+                    </div>
+                    {language === "id" && <Check size={16} className="text-[#F5B838]" />}
+                  </div>
+
+                  <div
+                    onClick={() => handleSelectLanguage("en")}
+                    className={`p-3 rounded-2xl border flex items-center justify-between cursor-pointer transition-colors ${
+                      language === "en"
+                        ? "bg-amber-500/10 border-amber-500/40"
+                        : "bg-white dark:bg-white/[0.03] border-black/5 dark:border-white/[0.06]"
+                    }`}
+                  >
+                    <div className="flex flex-col min-w-0">
+                      <span className={`text-[13px] font-bold ${language === "en" ? "text-[#B45309] dark:text-[#F5B838]" : "text-neutral-800 dark:text-white"}`}>
+                        English
+                      </span>
+                      <span className="text-[10px] text-neutral-500 dark:text-neutral-400">Global dialect</span>
+                    </div>
+                    {language === "en" && <Check size={16} className="text-[#F5B838]" />}
+                  </div>
+                </div>
+              </div>
+            </details>
           </div>
-          <div className="flex-1 min-w-0 flex flex-col gap-0.5">
-            <div className="flex items-center gap-2">
-              <span className="font-medium text-base text-neutral-900 dark:text-[#F2F3F7] leading-tight">
-                {dict.advancedTitle}
-              </span>
-              <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-neutral-200/70 dark:bg-white/[0.08] text-neutral-600 dark:text-[#9B9BA3]">
-                {language === "en" ? "Developer" : "Lanjutan"}
-              </span>
+        </section>
+
+        {/* ========================================================
+            SECTION 2: PREFERENSI (PREFERENCES)
+            ======================================================== */}
+        <section className="flex flex-col gap-2">
+          <span className="px-2 font-semibold text-[13px] text-neutral-500 dark:text-neutral-400/80 tracking-wide uppercase">
+            Preferensi
+          </span>
+          <div className="bg-white dark:bg-[#171920] border border-black/5 dark:border-white/[0.06] rounded-3xl overflow-hidden shadow-xs flex flex-col divide-y divide-black/5 dark:divide-white/[0.05]">
+            {/* Model & Provider AI (Inline Trigger) */}
+            <button
+              type="button"
+              onClick={() => setActiveModal("model")}
+              className="w-full flex items-center justify-between px-4 py-3.5 text-left hover:bg-neutral-50 dark:hover:bg-white/[0.02] active:bg-neutral-100 dark:active:bg-white/[0.04] transition-colors cursor-pointer"
+            >
+              <div className="flex items-center gap-3.5 min-w-0">
+                <Sparkles size={20} className="text-neutral-500 dark:text-[#8A8A93] shrink-0" />
+                <span className="text-[15px] font-medium text-neutral-900 dark:text-[#F2F3F7] truncate">
+                  Model &amp; Provider AI
+                </span>
+              </div>
+              <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                <span className="text-[12px] font-semibold text-[#B45309] dark:text-[#F5B838] truncate max-w-[120px]">
+                  {activeProvider.name}
+                </span>
+                <ChevronRight size={18} className="text-neutral-400 dark:text-neutral-500 shrink-0" />
+              </div>
+            </button>
+
+            {/* Tema & Tampilan (Inline Accordion) */}
+            <details className="group">
+              <summary className="w-full list-none cursor-pointer flex items-center justify-between px-4 py-3.5 text-left hover:bg-neutral-50 dark:hover:bg-white/[0.02] active:bg-neutral-100 dark:active:bg-white/[0.04] transition-colors">
+                <div className="flex items-center gap-3.5 min-w-0">
+                  <Palette size={20} className="text-neutral-500 dark:text-[#8A8A93] shrink-0" />
+                  <span className="text-[15px] font-medium text-neutral-900 dark:text-[#F2F3F7] truncate">
+                    Tema &amp; Tampilan
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                  <span className="text-[13px] text-neutral-500 dark:text-neutral-400">
+                    {theme === "light" ? "Terang" : theme === "dark" ? "Gelap" : "Auto"}
+                  </span>
+                  <ChevronRight size={18} className="text-neutral-400 dark:text-neutral-500 transition-transform duration-200 group-open:rotate-90" />
+                </div>
+              </summary>
+              <div className="px-4 pb-4 pt-2.5 flex flex-col gap-3.5 bg-neutral-50/60 dark:bg-black/20 border-t border-black/5 dark:border-white/[0.04]">
+                {/* Mode Tampilan Switch */}
+                <div className="flex flex-col gap-2">
+                  <span className="text-[11px] text-neutral-500 dark:text-neutral-400 font-bold uppercase tracking-wider">
+                    Mode Tampilan
+                  </span>
+                  <div className="grid grid-cols-3 p-1 rounded-2xl bg-white dark:bg-white/[0.04] border border-black/5 dark:border-white/[0.06] gap-1 text-[12px]">
+                    <button
+                      type="button"
+                      onClick={() => handleSelectTheme("light")}
+                      className={`py-1.5 rounded-xl font-medium transition-colors flex items-center justify-center gap-1.5 cursor-pointer ${
+                        theme === "light"
+                          ? "bg-[#F5B838] text-neutral-950 font-bold shadow-xs"
+                          : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
+                      }`}
+                    >
+                      <Sun size={15} /> Terang
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleSelectTheme("dark")}
+                      className={`py-1.5 rounded-xl font-medium transition-colors flex items-center justify-center gap-1.5 cursor-pointer ${
+                        theme === "dark"
+                          ? "bg-[#F5B838] text-neutral-950 font-bold shadow-xs"
+                          : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
+                      }`}
+                    >
+                      <Moon size={15} /> Gelap
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => handleSelectTheme("auto")}
+                      className={`py-1.5 rounded-xl font-medium transition-colors flex items-center justify-center gap-1.5 cursor-pointer ${
+                        theme === "auto"
+                          ? "bg-[#F5B838] text-neutral-950 font-bold shadow-xs"
+                          : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
+                      }`}
+                    >
+                      <Monitor size={15} /> Auto
+                    </button>
+                  </div>
+                </div>
+
+                {/* Aksen Bubble Chat Chips */}
+                <div className="flex flex-col gap-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[11px] text-neutral-500 dark:text-neutral-400 font-bold uppercase tracking-wider">
+                      Aksen Bubble Chat
+                    </span>
+                    <span className="text-[11px] text-[#B45309] dark:text-[#F5B838] font-bold">
+                      {BUBBLE_THEMES[bubbleTheme]?.name || "Warm Amber"}
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-2.5 overflow-x-auto py-1">
+                    {BUBBLE_THEME_LIST.map((b) => (
+                      <button
+                        key={b.id}
+                        type="button"
+                        onClick={() => handleSelectBubbleTheme(b.id)}
+                        className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 cursor-pointer transition-transform ${
+                          bubbleTheme === b.id
+                            ? "ring-2 ring-[#F5B838] ring-offset-2 ring-offset-white dark:ring-offset-[#171920] scale-105"
+                            : "hover:scale-105"
+                        }`}
+                        style={{ backgroundColor: b.userBubbleBg }}
+                        title={b.name}
+                      >
+                        {bubbleTheme === b.id && <Check size={14} className="text-white drop-shadow" />}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </details>
+
+            {/* Getaran Haptik */}
+            <div className="w-full flex items-center justify-between px-4 py-3.5 text-left">
+              <div className="flex items-center gap-3.5 min-w-0 pr-2">
+                <Vibrate size={20} className="text-neutral-500 dark:text-[#8A8A93] shrink-0" />
+                <div className="flex flex-col min-w-0">
+                  <span className="text-[15px] font-medium text-neutral-900 dark:text-[#F2F3F7] truncate">
+                    Getaran Haptik
+                  </span>
+                  <span className="text-[11px] text-neutral-500 dark:text-neutral-400 truncate">
+                    Umpan balik saat mengetik chat
+                  </span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={toggleHaptics}
+                className={`w-12 h-7 rounded-full p-1 transition-colors cursor-pointer shrink-0 ${
+                  hapticFeedback ? "bg-[#F5B838]" : "bg-neutral-300 dark:bg-white/[0.15]"
+                }`}
+              >
+                <div
+                  className={`w-5 h-5 rounded-full bg-white shadow-xs transition-transform ${
+                    hapticFeedback ? "translate-x-5" : "translate-x-0"
+                  }`}
+                />
+              </button>
             </div>
-            <span className="text-xs text-neutral-500 dark:text-[#8A8A93] truncate">
-              {language === "en" ? "API keys, fine-tuning temperature, and endpoints" : "API keys, temperature fine-tuning, dan custom URL"}
-            </span>
-          </div>
-          <ChevronRight size={18} className="text-neutral-400 dark:text-neutral-600 shrink-0" />
-        </button>
 
-        {/* Danger Zone: Reset Data */}
-        <button
-          type="button"
-          onClick={() => setShowResetConfirmModal(true)}
-          className="py-3.5 px-4 flex items-center gap-4 text-left cursor-pointer active:bg-red-50 dark:active:bg-red-950/20 hover:bg-red-50/50 dark:hover:bg-red-950/10 transition-colors"
-        >
-          <div className="w-6 h-6 flex items-center justify-center text-red-500 shrink-0">
-            <Trash2 size={22} strokeWidth={1.8} />
+            {/* Chat & Gaya Respons (Inline Accordion) */}
+            <details className="group">
+              <summary className="w-full list-none cursor-pointer flex items-center justify-between px-4 py-3.5 text-left hover:bg-neutral-50 dark:hover:bg-white/[0.02] active:bg-neutral-100 dark:active:bg-white/[0.04] transition-colors">
+                <div className="flex items-center gap-3.5 min-w-0">
+                  <MessageSquareText size={20} className="text-neutral-500 dark:text-[#8A8A93] shrink-0" />
+                  <span className="text-[15px] font-medium text-neutral-900 dark:text-[#F2F3F7] truncate">
+                    Chat &amp; Gaya Respons
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                  <span className="text-[13px] text-neutral-500 dark:text-neutral-400">
+                    {replyLength}
+                  </span>
+                  <ChevronRight size={18} className="text-neutral-400 dark:text-neutral-500 transition-transform duration-200 group-open:rotate-90" />
+                </div>
+              </summary>
+              <div className="px-4 pb-4 pt-2.5 flex flex-col gap-3.5 bg-neutral-50/60 dark:bg-black/20 border-t border-black/5 dark:border-white/[0.04]">
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-[11px] text-neutral-500 dark:text-neutral-400 font-bold uppercase tracking-wider">
+                    Panjang Balasan
+                  </span>
+                  <div className="grid grid-cols-3 p-1 rounded-2xl bg-white dark:bg-white/[0.04] border border-black/5 dark:border-white/[0.06] gap-1 text-[12px]">
+                    {(["Pendek", "Sedang", "Panjang"] as const).map((len) => (
+                      <button
+                        key={len}
+                        type="button"
+                        onClick={() => handleSelectLength(len)}
+                        className={`py-1.5 rounded-xl transition-colors cursor-pointer ${
+                          replyLength === len
+                            ? "bg-[#F5B838] text-neutral-950 font-bold shadow-xs"
+                            : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
+                        }`}
+                      >
+                        {len}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="flex flex-col gap-2 pt-1">
+                  <span className="text-[11px] text-neutral-500 dark:text-neutral-400 font-bold uppercase tracking-wider">
+                    Sifat Nada Karakter
+                  </span>
+                  <div className="flex flex-col gap-1.5">
+                    {conversationPresets.map((preset) => (
+                      <div
+                        key={preset.label}
+                        onClick={() => handleTempChange(preset.temp)}
+                        className={`p-2.5 rounded-xl border flex items-center justify-between cursor-pointer transition-colors ${
+                          Math.abs(temperature - preset.temp) < 0.1
+                            ? "bg-amber-500/10 border-amber-500/30 text-[#B45309] dark:text-[#F5B838]"
+                            : "bg-white dark:bg-white/[0.03] border-black/5 dark:border-white/[0.06] text-neutral-800 dark:text-white"
+                        }`}
+                      >
+                        <div className="flex flex-col">
+                          <span className="text-[12px] font-bold">{preset.label}</span>
+                          <span className="text-[10px] text-neutral-500 dark:text-neutral-400">{preset.desc}</span>
+                        </div>
+                        {Math.abs(temperature - preset.temp) < 0.1 && (
+                          <Check size={16} className="text-[#F5B838] shrink-0" />
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </details>
+
+            {/* Opsi Lanjutan & Developer (Inline Accordion) */}
+            <details className="group">
+              <summary className="w-full list-none cursor-pointer flex items-center justify-between px-4 py-3.5 text-left hover:bg-neutral-50 dark:hover:bg-white/[0.02] active:bg-neutral-100 dark:active:bg-white/[0.04] transition-colors">
+                <div className="flex items-center gap-3.5 min-w-0">
+                  <Sliders size={20} className="text-neutral-500 dark:text-[#8A8A93] shrink-0" />
+                  <span className="text-[15px] font-medium text-neutral-900 dark:text-[#F2F3F7] truncate">
+                    Opsi Lanjutan &amp; Dev
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                  <span className="px-1.5 py-0.5 rounded bg-neutral-200 dark:bg-white/5 text-[10px] text-neutral-600 dark:text-neutral-400 font-bold">
+                    DEV
+                  </span>
+                  <ChevronRight size={18} className="text-neutral-400 dark:text-neutral-500 transition-transform duration-200 group-open:rotate-90" />
+                </div>
+              </summary>
+              <div className="px-4 pb-4 pt-2.5 flex flex-col gap-3.5 bg-neutral-50/60 dark:bg-black/20 border-t border-black/5 dark:border-white/[0.04]">
+                {/* Fine-Tuning Kreativitas (Temp) */}
+                <div className="flex flex-col gap-1.5">
+                  <div className="flex justify-between items-center text-[12px]">
+                    <span className="text-neutral-800 dark:text-neutral-300 font-medium">Fine-Tuning Kreativitas (Temp)</span>
+                    <span className="text-[#B45309] dark:text-[#F5B838] font-bold font-mono">{temperature.toFixed(2)}</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="2"
+                    step="0.05"
+                    value={temperature}
+                    onChange={(e) => handleTempChange(parseFloat(e.target.value))}
+                    className="w-full accent-[#F5B838] h-1.5 bg-neutral-200 dark:bg-white/10 rounded-full cursor-pointer"
+                  />
+                  <div className="flex justify-between text-[10px] text-neutral-500 dark:text-neutral-400">
+                    <span>Deterministik (0.0)</span>
+                    <span>Kreatif (1.5+)</span>
+                  </div>
+                </div>
+
+                {/* Proses Berpikir AI (Reasoning) */}
+                <div className="flex items-center justify-between py-1 border-t border-black/5 dark:border-white/[0.04]">
+                  <div className="flex flex-col min-w-0 pr-2">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[13px] font-medium text-neutral-800 dark:text-neutral-200">
+                        Proses Berpikir AI (Reasoning)
+                      </span>
+                      <span className="text-[9px] px-1.5 py-0.2 rounded bg-amber-500/20 text-[#B45309] dark:text-[#F5B838] font-bold">
+                        VIP
+                      </span>
+                    </div>
+                    <span className="text-[11px] text-neutral-500 dark:text-neutral-400">
+                      Tampilkan alur penalaran internal AI
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleToggleThinking}
+                    className={`w-10 h-6 rounded-full p-0.5 transition-colors cursor-pointer shrink-0 ${
+                      (settings.showThinkingProcess ?? false) && isPaidUser()
+                        ? "bg-[#F5B838]"
+                        : "bg-neutral-300 dark:bg-white/20"
+                    }`}
+                  >
+                    <div
+                      className={`w-5 h-5 rounded-full bg-white shadow-xs transition-transform ${
+                        (settings.showThinkingProcess ?? false) && isPaidUser()
+                          ? "translate-x-4"
+                          : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                </div>
+
+                {/* Akses GPS & Pencarian Real-Time */}
+                <div className="flex items-center justify-between py-1 border-t border-black/5 dark:border-white/[0.04]">
+                  <div className="flex flex-col min-w-0 pr-2">
+                    <span className="text-[13px] font-medium text-neutral-800 dark:text-neutral-200">
+                      Akses GPS &amp; Pencarian Real-Time
+                    </span>
+                    <span className="text-[11px] text-neutral-500 dark:text-neutral-400">
+                      Informasi cuaca dan internet terkini
+                    </span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleToggleLocationSearch}
+                    className={`w-10 h-6 rounded-full p-0.5 transition-colors cursor-pointer shrink-0 ${
+                      settings.enableLocationSearch !== false
+                        ? "bg-[#F5B838]"
+                        : "bg-neutral-300 dark:bg-white/20"
+                    }`}
+                  >
+                    <div
+                      className={`w-5 h-5 rounded-full bg-white shadow-xs transition-transform ${
+                        settings.enableLocationSearch !== false
+                          ? "translate-x-4"
+                          : "translate-x-0"
+                      }`}
+                    />
+                  </button>
+                </div>
+              </div>
+            </details>
           </div>
-          <div className="flex-1 min-w-0 flex flex-col gap-0.5">
-            <span className="font-medium text-base text-red-600 dark:text-red-400 leading-tight">
-              {dict.resetBtn}
-            </span>
-            <span className="text-xs text-red-500/80 dark:text-red-400/80">
-              {dict.resetAppDesc}
-            </span>
+        </section>
+
+        {/* ========================================================
+            SECTION 3: DUKUNGAN & LAINNYA (SUPPORT)
+            ======================================================== */}
+        <section className="flex flex-col gap-2">
+          <span className="px-2 font-semibold text-[13px] text-neutral-500 dark:text-neutral-400/80 tracking-wide uppercase">
+            Dukungan &amp; Lainnya
+          </span>
+          <div className="bg-white dark:bg-[#171920] border border-black/5 dark:border-white/[0.06] rounded-3xl overflow-hidden shadow-xs flex flex-col divide-y divide-black/5 dark:divide-white/[0.05]">
+            {/* Tentang Waguri & Fitur Baru (Inline Accordion) */}
+            <details className="group">
+              <summary className="w-full list-none cursor-pointer flex items-center justify-between px-4 py-3.5 text-left hover:bg-neutral-50 dark:hover:bg-white/[0.02] active:bg-neutral-100 dark:active:bg-white/[0.04] transition-colors">
+                <div className="flex items-center gap-3.5 min-w-0">
+                  <History size={20} className="text-neutral-500 dark:text-[#8A8A93] shrink-0" />
+                  <span className="text-[15px] font-medium text-neutral-900 dark:text-[#F2F3F7] truncate">
+                    Tentang Waguri &amp; Fitur Baru
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                  <span className="w-2 h-2 rounded-full bg-[#F5B838] shrink-0" />
+                  <span className="text-[12px] text-neutral-500 dark:text-neutral-400">
+                    {LATEST_APP_UPDATE.version}
+                  </span>
+                  <ChevronRight size={18} className="text-neutral-400 dark:text-neutral-500 transition-transform duration-200 group-open:rotate-90" />
+                </div>
+              </summary>
+              <div className="px-4 pb-4 pt-2.5 flex flex-col gap-3 bg-neutral-50/60 dark:bg-black/20 border-t border-black/5 dark:border-white/[0.04]">
+                <div className="p-3 rounded-2xl bg-white dark:bg-[#14161c] border border-black/5 dark:border-white/[0.06] flex flex-col gap-1.5">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[12px] font-bold text-neutral-900 dark:text-white">
+                      {LATEST_APP_UPDATE.version} - {LATEST_APP_UPDATE.date}
+                    </span>
+                    <span className="text-[10px] text-[#B45309] dark:text-[#F5B838] font-bold">Terbaru</span>
+                  </div>
+                  <ul className="text-[11px] text-neutral-600 dark:text-neutral-400 space-y-1 list-disc list-inside">
+                    <li>Redesign Stitch Glassmorphism dengan Light &amp; Dark Mode</li>
+                    <li>Preset Bahasa Karakter Subaru &amp; Waguri lebih dewasa &amp; natural</li>
+                    <li>Manajemen kuota terpadu: Nara Router (200/hari) &amp; Atria Dawn (500/hari)</li>
+                  </ul>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      window.dispatchEvent(new CustomEvent("waguri_open_update_changelog"));
+                    }}
+                    className="mt-1 text-xs text-[#B45309] dark:text-[#F5B838] font-semibold hover:underline text-left cursor-pointer"
+                  >
+                    Buka Seluruh Riwayat Pembaharuan &rarr;
+                  </button>
+                </div>
+              </div>
+            </details>
+
+            {/* Bersihkan Cache & Reset Data Sesi (Destructive Inline Accordion) */}
+            <details className="group">
+              <summary className="w-full list-none cursor-pointer flex items-center justify-between px-4 py-3.5 text-left hover:bg-red-500/[0.04] active:bg-red-500/[0.08] transition-colors">
+                <div className="flex items-center gap-3.5 min-w-0">
+                  <Trash2 size={20} className="text-red-500 shrink-0" />
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-[15px] font-medium text-red-600 dark:text-red-400 truncate">
+                      Bersihkan Cache &amp; Reset Sesi
+                    </span>
+                    <span className="text-[11px] text-red-500/70 truncate">
+                      Kembalikan pengaturan &amp; riwayat
+                    </span>
+                  </div>
+                </div>
+                <ChevronRight size={18} className="text-red-400/60 shrink-0 ml-2 transition-transform duration-200 group-open:rotate-90" />
+              </summary>
+              <div className="px-4 pb-4 pt-2.5 flex flex-col gap-3 bg-red-50/50 dark:bg-red-950/20 border-t border-red-500/20">
+                <div className="p-3 rounded-2xl bg-red-500/10 border border-red-500/30 flex flex-col gap-1.5">
+                  <span className="text-[12px] font-bold text-red-500 flex items-center gap-1.5">
+                    <AlertTriangle size={15} /> Reset Semua Data Pengguna?
+                  </span>
+                  <p className="text-[11px] text-red-700 dark:text-red-200/80 leading-relaxed">
+                    Tindakan ini tidak bisa dibatalkan. Seluruh riwayat obrolan, karakter yang kamu buat, dan API key akan dihapus secara permanen.
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowResetConfirmModal(true)}
+                  className="py-2.5 px-4 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs active:scale-95 transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer"
+                >
+                  <Trash2 size={15} /> Buka Konfirmasi Hapus Data
+                </button>
+              </div>
+            </details>
           </div>
-        </button>
+        </section>
       </div>
 
       {/* Spacer bawah untuk floating tab bar */}
-      <div className="h-12" />
+      <div className="h-14" />
 
       {/* ========================================================
           MODAL & BOTTOM SHEET DIALOGS (Clean WhatsApp / Project Style)

@@ -252,56 +252,72 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({
   };
 
   return (
-    <div className="flex-1 flex flex-col relative z-10 w-full pt-safe pb-36 sm:pb-40 bg-[#F4F5F7] dark:bg-[#0B0C0F]">
-      {/* Header Ringkas */}
-      <header className="w-full px-5 pt-4 pb-2 flex items-center justify-between">
+    <div className="flex-1 flex flex-col relative z-10 w-full pt-safe pb-36 sm:pb-40 bg-[#F4F5F7] dark:bg-[#0D0F12] text-neutral-900 dark:text-neutral-200 transition-colors">
+      {/* ========================================================
+          1. STITCH CENTERED HEADER
+          ======================================================== */}
+      <header className="sticky top-0 z-30 bg-[#F4F5F7]/90 dark:bg-[#0D0F12]/90 backdrop-blur-md px-5 pt-4 pb-3 flex items-center justify-between border-b border-black/5 dark:border-white/[0.04] relative">
+        <button
+          onClick={onCancel}
+          type="button"
+          aria-label="Kembali"
+          className="w-9 h-9 flex items-center justify-center rounded-full hover:bg-black/5 dark:hover:bg-white/5 active:scale-95 transition-all text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white -ml-1 cursor-pointer"
+        >
+          <ChevronLeft size={20} />
+        </button>
+
+        {/* Screen Title Centered */}
+        <h1 className="absolute left-1/2 -translate-x-1/2 m-0 text-center text-[17px] font-bold text-neutral-900 dark:text-white pointer-events-none whitespace-nowrap">
+          {isEditing ? "Edit Karakter" : "Buat Karakter"}
+        </h1>
+
+        {/* Right action items: Cancel */}
         <div className="flex items-center gap-2">
           <button
             onClick={onCancel}
             type="button"
-            className="w-9 h-9 rounded-lg bg-white dark:bg-[#16171B] border border-black/10 dark:border-white/10 shadow-xs flex items-center justify-center text-neutral-800 dark:text-[#E4E5EA] active:scale-95 transition-all cursor-pointer mr-1"
-            title="Kembali"
+            className="text-sm font-semibold text-neutral-500 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors cursor-pointer px-2 py-1 rounded-lg"
           >
-            <ChevronLeft size={20} />
+            Batal
           </button>
-          <h1 className="text-lg font-bold tracking-tight text-neutral-900 dark:text-[#F2F3F7]">
-            {isEditing ? "Edit Karakter" : "Buat Karakter"}
-          </h1>
         </div>
-        <button
-          onClick={onCancel}
-          type="button"
-          className="text-xs font-medium text-neutral-500 dark:text-[#8A8A93] hover:text-neutral-900 dark:hover:text-white px-3 py-1.5 rounded-lg hover:bg-neutral-200 dark:hover:bg-white/[0.08] transition-colors cursor-pointer"
-        >
-          Batal
-        </button>
       </header>
 
-      {/* Main Form */}
-      <main className="flex-1 flex flex-col px-5 pt-2">
-        <form onSubmit={handleSubmit} className="flex flex-col gap-3.5">
-          {/* Avatar Section */}
-          <div className="bg-white dark:bg-[#16171B] rounded-xl p-4 border border-black/5 dark:border-white/10 shadow-xs flex flex-col items-center">
+      {/* Main Content Form */}
+      <main className="px-5 pt-4 flex-1 flex flex-col space-y-6">
+        <form onSubmit={handleSubmit} className="flex flex-col gap-6">
+          {/* ========================================================
+              2. AVATAR SECTION (Circular frame + camera badge)
+              ======================================================== */}
+          <section className="flex flex-col items-center justify-center pt-2 pb-1">
             <div
               onClick={() => setShowAvatarPicker(!showAvatarPicker)}
-              className="relative w-20 h-20 rounded-full overflow-hidden border-2 border-amber-500 shadow-xs cursor-pointer active:scale-95 transition-transform"
+              className="relative group cursor-pointer active:scale-95 transition-transform"
             >
-              <img
-                src={avatarUrl}
-                alt="Avatar"
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute inset-0 bg-black/20 flex items-center justify-center text-white opacity-0 hover:opacity-100 transition-opacity">
-                <Camera size={20} />
+              <div className="w-24 h-24 rounded-full overflow-hidden ring-2 ring-[#F5B838]/60 dark:ring-white/10 ring-offset-2 ring-offset-[#F4F5F7] dark:ring-offset-[#0D0F12] shadow-xl relative bg-neutral-200 dark:bg-neutral-900">
+                <img
+                  src={avatarUrl}
+                  alt="Avatar Karakter"
+                  className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                />
               </div>
-              <div className="absolute bottom-0 right-0 w-6 h-6 rounded-full bg-amber-500 text-neutral-950 flex items-center justify-center shadow-xs">
-                <Camera size={13} />
+
+              {/* Floating glass camera badge */}
+              <div className="absolute bottom-0 right-0 bg-white/90 dark:bg-neutral-900/90 border border-black/10 dark:border-white/15 text-[#B45309] dark:text-[#F5B838] p-1.5 rounded-full shadow-lg backdrop-blur-md flex items-center justify-center translate-x-1">
+                <Camera size={14} />
               </div>
             </div>
 
+            <p className="mt-2.5 text-xs text-neutral-500 dark:text-neutral-400 tracking-wide font-normal">
+              Ketuk untuk ganti foto profil
+            </p>
+
             {/* Avatar Picker Dropdown */}
             {showAvatarPicker && (
-              <div className="w-full mt-3 pt-3 border-t border-neutral-100 dark:border-white/10 flex flex-col gap-2.5 animate-fade-in">
+              <div className="w-full max-w-sm mt-3 p-4 bg-white dark:bg-[#16171B] rounded-2xl border border-black/10 dark:border-white/10 shadow-lg flex flex-col gap-3 animate-fade-in">
+                <span className="text-xs font-semibold text-neutral-700 dark:text-neutral-300">
+                  Pilih Preset Avatar
+                </span>
                 <div className="grid grid-cols-4 gap-2">
                   {PRESET_AVATARS.map((p) => (
                     <button
@@ -313,7 +329,7 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({
                       }}
                       className={`relative w-12 h-12 rounded-full overflow-hidden border-2 transition-all cursor-pointer mx-auto ${
                         avatarUrl === p.url
-                          ? "border-amber-500 scale-105"
+                          ? "border-[#F5B838] scale-105"
                           : "border-neutral-200 dark:border-white/15"
                       }`}
                     >
@@ -322,7 +338,6 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({
                   ))}
                 </div>
 
-                {/* Tombol Unggah Foto */}
                 <div className="pt-1 flex flex-col gap-1.5">
                   <input
                     ref={avatarFileInputRef}
@@ -335,17 +350,17 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({
                     type="button"
                     disabled={isUploadingAvatar}
                     onClick={() => avatarFileInputRef.current?.click()}
-                    className="w-full py-2.5 px-3 rounded-lg bg-neutral-100 dark:bg-white/[0.08] hover:bg-neutral-200 dark:hover:bg-white/[0.14] text-neutral-800 dark:text-[#E4E5EA] text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer border border-black/5 dark:border-white/10"
+                    className="w-full py-2.5 px-3 rounded-xl bg-neutral-100 dark:bg-white/[0.08] hover:bg-neutral-200 dark:hover:bg-white/[0.14] text-neutral-800 dark:text-neutral-200 text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer border border-black/5 dark:border-white/10"
                   >
                     {isUploadingAvatar ? (
                       <>
-                        <Loader2 size={14} className="animate-spin text-amber-500" />
+                        <Loader2 size={14} className="animate-spin text-[#F5B838]" />
                         <span>Mengompres foto...</span>
                       </>
                     ) : (
                       <>
-                        <Upload size={14} className="text-amber-500" />
-                        <span>Unggah Foto dari Perangkat</span>
+                        <Upload size={14} className="text-[#F5B838]" />
+                        <span>Unggah Foto dari Galeri</span>
                       </>
                     )}
                   </button>
@@ -362,7 +377,7 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({
                     value={customAvatarInput}
                     onChange={(e) => setCustomAvatarInput(e.target.value)}
                     placeholder="Atau masukkan URL gambar..."
-                    className="flex-1 bg-neutral-100 dark:bg-white/[0.06] text-xs text-neutral-900 dark:text-[#F2F3F7] placeholder:text-neutral-400 dark:placeholder:text-white/35 rounded-lg px-3 py-2 border-none focus:outline-none"
+                    className="flex-1 bg-neutral-100 dark:bg-white/[0.06] text-xs text-neutral-900 dark:text-neutral-100 placeholder:text-neutral-400 dark:placeholder:text-white/35 rounded-xl px-3 py-2 border border-black/5 dark:border-white/10 focus:outline-none focus:border-[#F5B838]"
                   />
                   <button
                     type="button"
@@ -373,28 +388,30 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({
                         setShowAvatarPicker(false);
                       }
                     }}
-                    className="px-3 py-2 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 rounded-lg text-xs font-semibold cursor-pointer"
+                    className="px-3.5 py-2 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 rounded-xl text-xs font-semibold cursor-pointer"
                   >
                     Pakai
                   </button>
                 </div>
               </div>
             )}
-          </div>
+          </section>
 
-          {/* Form Fields Card */}
-          <div className="bg-white dark:bg-[#16171B] rounded-xl p-4 border border-black/5 dark:border-white/10 shadow-xs flex flex-col gap-3.5">
-            {/* Nama */}
-            <div className="flex flex-col gap-1.5">
+          {/* ========================================================
+              3. EDITORIAL FORM FIELDS (Clean borders & uppercase labels)
+              ======================================================== */}
+          <section className="space-y-6">
+            {/* Field: Nama Karakter */}
+            <div className="space-y-1.5">
               <div className="flex items-center justify-between">
-                <label className="text-xs font-semibold text-neutral-700 dark:text-[#C9CAD1]">
-                  Nama Karakter
+                <label className="text-[11px] font-bold uppercase tracking-wider text-[#B45309] dark:text-[#F5B838]/90">
+                  NAMA KARAKTER
                 </label>
                 <button
                   type="button"
                   disabled={isFetchingLore}
                   onClick={handleAutoFetchLore}
-                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium bg-amber-500/10 hover:bg-amber-500/20 text-amber-700 dark:text-amber-300 border border-amber-500/20 transition-colors cursor-pointer disabled:opacity-50"
+                  className="text-xs font-semibold text-[#B45309] dark:text-[#F5B838] hover:underline flex items-center gap-1 transition-colors cursor-pointer disabled:opacity-50"
                   title="Cari profil, kepribadian, dan ciri fisik kanon dari internet"
                 >
                   {isFetchingLore ? (
@@ -404,7 +421,7 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({
                     </>
                   ) : (
                     <>
-                      <Globe size={13} />
+                      <span>✦</span>
                       <span>Isi Otomatis</span>
                     </>
                   )}
@@ -417,16 +434,16 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({
                   setName(e.target.value);
                   if (nameError) setNameError("");
                 }}
-                placeholder="Contoh: Waguri Kaoruko"
+                placeholder="Masukkan nama karakter..."
                 required
-                className="bg-neutral-100 dark:bg-white/[0.06] text-sm text-neutral-900 dark:text-[#F2F3F7] placeholder:text-neutral-400 dark:placeholder:text-white/35 rounded-lg px-3.5 py-2.5 border-none focus:outline-none focus:ring-2 focus:ring-amber-500/40"
+                className="w-full bg-transparent px-0 py-2 text-[18px] font-semibold text-neutral-900 dark:text-white tracking-tight border-0 border-b border-black/10 dark:border-white/10 focus:ring-0 focus:border-[#F5B838] transition-colors placeholder:text-neutral-400 dark:placeholder:text-neutral-600 outline-none"
               />
               {nameError && (
-                <span className="text-xs font-semibold text-red-500 mt-0.5">{nameError}</span>
+                <span className="text-xs font-semibold text-red-500 mt-0.5 block">{nameError}</span>
               )}
               {loreNotice && (
                 <div
-                  className={`text-xs px-3 py-2 rounded-lg mt-1 font-medium flex items-center justify-between animate-fade-in ${
+                  className={`text-xs px-3 py-2 rounded-xl mt-2 font-medium flex items-center justify-between animate-fade-in ${
                     loreNotice.type === "success"
                       ? "bg-emerald-500/10 text-emerald-800 dark:text-emerald-200 border border-emerald-500/20"
                       : "bg-red-500/10 text-red-700 dark:text-red-300 border border-red-500/20"
@@ -436,7 +453,7 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({
                   <button
                     type="button"
                     onClick={() => setLoreNotice(null)}
-                    className="opacity-70 hover:opacity-100 ml-2"
+                    className="opacity-70 hover:opacity-100 ml-2 cursor-pointer"
                   >
                     ✕
                   </button>
@@ -444,28 +461,30 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({
               )}
             </div>
 
-            {/* Tagline / Bio */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-neutral-700 dark:text-[#C9CAD1]">
-                Bio Singkat
+            {/* Field: Bio Singkat */}
+            <div className="space-y-1.5">
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-[#B45309] dark:text-[#F5B838]/90">
+                BIO SINGKAT
               </label>
               <textarea
                 value={bio}
                 onChange={(e) => setBio(e.target.value)}
+                placeholder="Tuliskan bio singkat karakter..."
                 rows={2}
-                placeholder="Contoh: Teman sekelas yang diam-diam perhatian..."
-                className="bg-neutral-100 dark:bg-white/[0.06] text-sm text-neutral-900 dark:text-[#F2F3F7] placeholder:text-neutral-400 dark:placeholder:text-white/35 rounded-lg p-3 border-none focus:outline-none focus:ring-2 focus:ring-amber-500/40 resize-y min-h-[52px] leading-relaxed"
+                className="w-full bg-transparent px-0 py-1.5 text-sm text-neutral-800 dark:text-neutral-300 leading-relaxed border-0 border-b border-black/10 dark:border-white/10 focus:ring-0 focus:border-[#F5B838] transition-colors resize-none placeholder:text-neutral-400 dark:placeholder:text-neutral-600 outline-none"
               />
             </div>
 
-            {/* Kepribadian */}
-            <div className="flex flex-col gap-2">
-              <label className="text-xs font-semibold text-neutral-700 dark:text-[#C9CAD1]">
-                Kepribadian
-              </label>
+            {/* Field: Kepribadian & Sifat */}
+            <div className="space-y-2">
+              <div className="flex items-center justify-between">
+                <label className="text-[11px] font-bold uppercase tracking-wider text-[#B45309] dark:text-[#F5B838]/90">
+                  KEPRIBADIAN &amp; SIFAT
+                </label>
+              </div>
 
-              {/* Chips Sederhana */}
-              <div className="flex flex-wrap gap-1.5">
+              {/* Personality Tags Chips */}
+              <div className="flex flex-wrap gap-1.5 pt-0.5">
                 {PERSONALITY_TAGS.map((tag) => {
                   const isSelected = personality
                     .split(",")
@@ -478,8 +497,8 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({
                       onClick={() => toggleTag(personality, setPersonality, tag)}
                       className={`text-xs px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
                         isSelected
-                          ? "bg-amber-500 text-neutral-950 font-semibold shadow-2xs"
-                          : "bg-neutral-100 dark:bg-white/[0.06] text-neutral-600 dark:text-[#9B9BA3] hover:text-neutral-900 dark:hover:text-white border border-black/5 dark:border-white/5"
+                          ? "bg-[#F5B838] text-neutral-950 font-bold shadow-xs"
+                          : "bg-white dark:bg-white/[0.05] text-neutral-700 dark:text-neutral-300 hover:text-neutral-900 dark:hover:text-white border border-black/10 dark:border-white/10"
                       }`}
                     >
                       {tag}
@@ -491,41 +510,42 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({
               <textarea
                 value={personality}
                 onChange={(e) => setPersonality(e.target.value)}
-                rows={4}
-                placeholder="Contoh: Ceria, sedikit tsundere tapi perhatian..."
-                className="bg-neutral-100 dark:bg-white/[0.06] text-sm text-neutral-900 dark:text-[#F2F3F7] placeholder:text-neutral-400 dark:placeholder:text-white/35 rounded-lg p-3 border-none focus:outline-none focus:ring-2 focus:ring-amber-500/40 resize-y min-h-[90px] leading-relaxed"
+                placeholder="Tentukan kepribadian..."
+                rows={3}
+                className="w-full bg-transparent px-0 py-1.5 text-sm text-neutral-800 dark:text-neutral-300 leading-relaxed border-0 border-b border-black/10 dark:border-white/10 focus:ring-0 focus:border-[#F5B838] transition-colors resize-none placeholder:text-neutral-400 dark:placeholder:text-neutral-600 outline-none"
               />
             </div>
 
-            {/* Latar Belakang / Cerita Karakter (Backstory) */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-neutral-700 dark:text-[#C9CAD1]">
-                Latar Belakang & Persona Karakter (Backstory)
-              </label>
+            {/* Field: Latar Belakang & Persona */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label className="text-[11px] font-bold uppercase tracking-wider text-[#B45309] dark:text-[#F5B838]/90">
+                  LATAR BELAKANG &amp; PERSONA
+                </label>
+              </div>
               <textarea
                 value={backstory}
                 onChange={(e) => setBackstory(e.target.value)}
+                placeholder="Tuliskan kisah masa lalu, persona, dan latar belakang..."
                 rows={4}
-                placeholder="Cerita latar belakang, hubungan masa lalu, asal usul, atau detail lore panjang karakter..."
-                className="bg-neutral-100 dark:bg-white/[0.06] text-sm text-neutral-900 dark:text-[#F2F3F7] placeholder:text-neutral-400 dark:placeholder:text-white/35 rounded-lg p-3 border-none focus:outline-none focus:ring-2 focus:ring-amber-500/40 resize-y min-h-[90px] leading-relaxed"
+                className="w-full bg-transparent px-0 py-1.5 text-sm text-neutral-800 dark:text-neutral-300 leading-relaxed border-0 border-b border-black/10 dark:border-white/10 focus:ring-0 focus:border-[#F5B838] transition-colors resize-none placeholder:text-neutral-400 dark:placeholder:text-neutral-600 outline-none"
               />
-              <p className="text-[11px] text-neutral-400 dark:text-[#8A8A93] leading-tight">
-                Kamu bisa menempelkan (paste) deskripsi lore atau persona karakter yang panjang di sini tanpa terpotong.
-              </p>
+            </div>
+          </section>
+
+          {/* ========================================================
+              4. GAYA BICARA SECTION (With Style Chips & Greeting Preview)
+              ======================================================== */}
+          <section className="space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="text-[11px] font-bold uppercase tracking-wider text-[#B45309] dark:text-[#F5B838]/90">
+                GAYA BICARA
+              </label>
             </div>
 
-            {/* Gaya Bicara */}
-            <div className="flex flex-col gap-2">
-              <div className="flex items-center justify-between">
-                <label className="text-xs font-semibold text-neutral-700 dark:text-[#C9CAD1]">
-                  Gaya Bicara
-                </label>
-                <span className="text-[10px] font-medium text-amber-600 dark:text-[#F5B838]">
-                  Pedoman Main Skill
-                </span>
-              </div>
-
-              {/* Chips Sederhana */}
+            {/* Stylized Rule Sheet Container */}
+            <div className="bg-white dark:bg-white/[0.02] border border-black/5 dark:border-white/5 rounded-2xl p-4 space-y-3 shadow-xs">
+              {/* Chips Row */}
               <div className="flex flex-wrap gap-1.5">
                 {STYLE_TAGS.map((tag) => {
                   const isSelected = speakingStyle
@@ -537,10 +557,10 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({
                       key={tag}
                       type="button"
                       onClick={() => toggleTag(speakingStyle, setSpeakingStyle, tag)}
-                      className={`text-xs px-2.5 py-1 rounded-lg transition-all cursor-pointer ${
+                      className={`px-2.5 py-1 rounded-lg text-xs transition-colors cursor-pointer ${
                         isSelected
-                          ? "bg-amber-500 text-neutral-950 font-semibold shadow-2xs"
-                          : "bg-neutral-100 dark:bg-white/[0.06] text-neutral-600 dark:text-[#9B9BA3] hover:text-neutral-900 dark:hover:text-white border border-black/5 dark:border-white/5"
+                          ? "bg-[#F5B838] text-neutral-950 font-bold"
+                          : "bg-neutral-100 dark:bg-neutral-900/80 border border-black/5 dark:border-white/10 text-neutral-700 dark:text-neutral-300"
                       }`}
                     >
                       {tag}
@@ -553,147 +573,143 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({
                 value={speakingStyle}
                 onChange={(e) => setSpeakingStyle(e.target.value)}
                 rows={3}
-                placeholder="Gaya chat santai sahabat dekat, seluruh pesan huruf kecil tanpa kapital awal, tanpa tanda titik di akhir, tanpa tanda seru, vokal panjang (iyaaa, bangett), partikel santai (ihhh, donggg, hehehe)..."
-                className="bg-neutral-100 dark:bg-white/[0.06] text-sm text-neutral-900 dark:text-[#F2F3F7] placeholder:text-neutral-400 dark:placeholder:text-white/35 rounded-lg p-3 border-none focus:outline-none focus:ring-2 focus:ring-amber-500/40 resize-y min-h-[64px] leading-relaxed"
+                placeholder="Aturan gaya bicara: huruf kecil tanpa titik akhir, santai aku-kamu..."
+                className="w-full bg-transparent text-[13px] text-neutral-700 dark:text-neutral-300 leading-relaxed border-t border-black/5 dark:border-white/[0.05] pt-2.5 outline-none resize-none"
               />
-              <p className="text-[11px] text-neutral-400 dark:text-[#8A8A93] leading-tight">
-                Pedoman bawaan dari Main Skill. Kamu bebas mengedit atau menyesuaikan gaya bicara ini sesuai keinginanmu kapan saja.
-              </p>
             </div>
 
-            {/* Pesan Sapaan */}
-            <div className="flex flex-col gap-1.5">
-              <label className="text-xs font-semibold text-neutral-700 dark:text-[#C9CAD1]">
-                Pesan Sapaan Pertama
+            {/* First Greeting Message */}
+            <div className="pt-2 space-y-1.5">
+              <label className="block text-[11px] font-bold uppercase tracking-wider text-[#B45309] dark:text-[#F5B838]/90">
+                PESAN SAPAAN PERTAMA
               </label>
               <textarea
                 value={firstMsg}
                 onChange={(e) => setFirstMsg(e.target.value)}
                 rows={2}
-                placeholder="Contoh: eh kamu lagi santai engga, lagi ngapain nih hehehe"
-                className="bg-neutral-100 dark:bg-white/[0.06] text-sm text-neutral-900 dark:text-[#F2F3F7] placeholder:text-neutral-400 dark:placeholder:text-white/35 rounded-lg p-3 border-none focus:outline-none focus:ring-2 focus:ring-amber-500/40 resize-none"
+                placeholder="eh kamu lagi santai engga, lagi ngapain nih hehehe"
+                className="w-full bg-transparent px-0 py-1.5 text-sm text-neutral-800 dark:text-neutral-200 border-0 border-b border-black/10 dark:border-white/10 focus:ring-0 focus:border-[#F5B838] outline-none resize-none"
               />
             </div>
-          </div>
+          </section>
 
-          {/* Profil Visual & Seragam Card */}
-          <div className="bg-white dark:bg-[#16171B] rounded-xl p-4 border border-black/5 dark:border-white/10 shadow-xs flex flex-col gap-3">
-            <button
-              type="button"
-              onClick={() => setShowVisualDetails((prev) => !prev)}
-              className="flex items-center justify-between w-full text-left cursor-pointer"
-            >
-              <div className="flex items-center gap-2.5">
-                <div className="w-8 h-8 rounded-lg bg-neutral-100 dark:bg-white/[0.06] text-neutral-700 dark:text-neutral-300 flex items-center justify-center shrink-0">
-                  <Camera size={16} />
-                </div>
-                <div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-neutral-800 dark:text-[#E4E5EA]">
-                      Profil Visual & Seragam
-                    </span>
-                    <span className="text-[11px] px-2 py-0.5 rounded font-medium bg-neutral-200/60 dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400">
-                      Foto PAP
-                    </span>
+          {/* ========================================================
+              5. VISUAL PROFILE COLLAPSIBLE (Foto PAP)
+              ======================================================== */}
+          <section>
+            <div className="bg-white dark:bg-neutral-900/60 border border-black/5 dark:border-white/5 rounded-2xl p-4 transition-all shadow-xs">
+              <div
+                onClick={() => setShowVisualDetails((prev) => !prev)}
+                className="flex items-center justify-between cursor-pointer select-none"
+              >
+                <div className="flex items-center gap-3">
+                  <Camera size={18} className="text-[#F5B838] shrink-0" />
+                  <div>
+                    <h2 className="text-sm font-semibold text-neutral-900 dark:text-white">
+                      Profil Visual &amp; Foto PAP
+                    </h2>
+                    <p className="text-[11px] text-neutral-500 dark:text-neutral-400">
+                      Panduan fisik saat karakter mengirim foto
+                    </p>
                   </div>
-                  <p className="text-[11px] text-neutral-500 dark:text-[#8A8A93]">
-                    {hair || schoolUniform
-                      ? "Ciri fisik sudah terisi"
-                      : "Digunakan saat karakter mengirim foto di chat"}
-                  </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-[#B45309] dark:text-[#F5B838] font-medium">
+                    {hair || schoolUniform ? "Terkonfigurasi" : "Opsional"}
+                  </span>
+                  {showVisualDetails ? (
+                    <ChevronUp size={16} className="text-neutral-400" />
+                  ) : (
+                    <ChevronDown size={16} className="text-neutral-400" />
+                  )}
                 </div>
               </div>
-              <div className="text-neutral-400 dark:text-[#71717A]">
-                {showVisualDetails ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-              </div>
-            </button>
 
-            {showVisualDetails && (
-              <div className="pt-2 flex flex-col gap-3 border-t border-neutral-100 dark:border-white/5 animate-fade-in">
-                {/* Rambut */}
-                <div className="flex flex-col gap-1">
-                  <label className="text-[11px] font-semibold text-neutral-600 dark:text-[#A1A1AA]">
-                    Ciri Rambut (Hair)
-                  </label>
-                  <input
-                    type="text"
-                    value={hair}
-                    onChange={(e) => setHair(e.target.value)}
-                    placeholder="Contoh: dark wavy hair with gentle bangs, shoulder length"
-                    className="bg-neutral-100 dark:bg-white/[0.06] text-xs text-neutral-900 dark:text-[#F2F3F7] placeholder:text-neutral-400 dark:placeholder:text-white/35 rounded-lg px-3 py-2 border-none focus:outline-none focus:ring-2 focus:ring-amber-500/30"
-                  />
+              {showVisualDetails && (
+                <div className="pt-3 mt-3 border-t border-black/5 dark:border-white/5 space-y-3 animate-fade-in">
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold text-neutral-600 dark:text-neutral-400">
+                      Ciri Rambut (Hair)
+                    </label>
+                    <input
+                      type="text"
+                      value={hair}
+                      onChange={(e) => setHair(e.target.value)}
+                      placeholder="Contoh: dark wavy hair with gentle bangs, shoulder length"
+                      className="w-full bg-neutral-100 dark:bg-black/40 border border-black/5 dark:border-white/10 rounded-xl p-2.5 text-xs text-neutral-900 dark:text-neutral-200 outline-none focus:border-[#F5B838]"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold text-neutral-600 dark:text-neutral-400">
+                      Ciri Mata (Eyes)
+                    </label>
+                    <input
+                      type="text"
+                      value={eyes}
+                      onChange={(e) => setEyes(e.target.value)}
+                      placeholder="Contoh: warm expressive amber brown eyes"
+                      className="w-full bg-neutral-100 dark:bg-black/40 border border-black/5 dark:border-white/10 rounded-xl p-2.5 text-xs text-neutral-900 dark:text-neutral-200 outline-none focus:border-[#F5B838]"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold text-neutral-600 dark:text-neutral-400">
+                      Sekolah / Latar (School)
+                    </label>
+                    <input
+                      type="text"
+                      value={schoolName}
+                      onChange={(e) => setSchoolName(e.target.value)}
+                      placeholder="Contoh: Kikyo Girls' High School"
+                      className="w-full bg-neutral-100 dark:bg-black/40 border border-black/5 dark:border-white/10 rounded-xl p-2.5 text-xs text-neutral-900 dark:text-neutral-200 outline-none focus:border-[#F5B838]"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold text-neutral-600 dark:text-neutral-400">
+                      Seragam / Pakaian (Uniform)
+                    </label>
+                    <input
+                      type="text"
+                      value={schoolUniform}
+                      onChange={(e) => setSchoolUniform(e.target.value)}
+                      placeholder="Contoh: prestigious navy blazer with ribbon tie and pleated skirt"
+                      className="w-full bg-neutral-100 dark:bg-black/40 border border-black/5 dark:border-white/10 rounded-xl p-2.5 text-xs text-neutral-900 dark:text-neutral-200 outline-none focus:border-[#F5B838]"
+                    />
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-[11px] font-semibold text-neutral-600 dark:text-neutral-400">
+                      Penampilan Umum (General Look)
+                    </label>
+                    <input
+                      type="text"
+                      value={generalLook}
+                      onChange={(e) => setGeneralLook(e.target.value)}
+                      placeholder="Contoh: petite stature with charming cute smile"
+                      className="w-full bg-neutral-100 dark:bg-black/40 border border-black/5 dark:border-white/10 rounded-xl p-2.5 text-xs text-neutral-900 dark:text-neutral-200 outline-none focus:border-[#F5B838]"
+                    />
+                  </div>
                 </div>
+              )}
+            </div>
+          </section>
 
-                {/* Mata */}
-                <div className="flex flex-col gap-1">
-                  <label className="text-[11px] font-semibold text-neutral-600 dark:text-[#A1A1AA]">
-                    Ciri Mata (Eyes)
-                  </label>
-                  <input
-                    type="text"
-                    value={eyes}
-                    onChange={(e) => setEyes(e.target.value)}
-                    placeholder="Contoh: warm expressive amber brown eyes"
-                    className="bg-neutral-100 dark:bg-white/[0.06] text-xs text-neutral-900 dark:text-[#F2F3F7] placeholder:text-neutral-400 dark:placeholder:text-white/35 rounded-lg px-3 py-2 border-none focus:outline-none focus:ring-2 focus:ring-amber-500/30"
-                  />
-                </div>
-
-                {/* Sekolah / Latar */}
-                <div className="flex flex-col gap-1">
-                  <label className="text-[11px] font-semibold text-neutral-600 dark:text-[#A1A1AA]">
-                    Sekolah / Organisasi (School / Setting)
-                  </label>
-                  <input
-                    type="text"
-                    value={schoolName}
-                    onChange={(e) => setSchoolName(e.target.value)}
-                    placeholder="Contoh: Kikyo Girls' High School"
-                    className="bg-neutral-100 dark:bg-white/[0.06] text-xs text-neutral-900 dark:text-[#F2F3F7] placeholder:text-neutral-400 dark:placeholder:text-white/35 rounded-lg px-3 py-2 border-none focus:outline-none focus:ring-2 focus:ring-amber-500/30"
-                  />
-                </div>
-
-                {/* Seragam / Pakaian Khas */}
-                <div className="flex flex-col gap-1">
-                  <label className="text-[11px] font-semibold text-neutral-600 dark:text-[#A1A1AA]">
-                    Seragam / Pakaian Khas (Outfit / Uniform)
-                  </label>
-                  <input
-                    type="text"
-                    value={schoolUniform}
-                    onChange={(e) => setSchoolUniform(e.target.value)}
-                    placeholder="Contoh: prestigious navy blazer, ribbon tie, neat pleated skirt"
-                    className="bg-neutral-100 dark:bg-white/[0.06] text-xs text-neutral-900 dark:text-[#F2F3F7] placeholder:text-neutral-400 dark:placeholder:text-white/35 rounded-lg px-3 py-2 border-none focus:outline-none focus:ring-2 focus:ring-amber-500/30"
-                  />
-                </div>
-
-                {/* Ciri Khas Umum */}
-                <div className="flex flex-col gap-1">
-                  <label className="text-[11px] font-semibold text-neutral-600 dark:text-[#A1A1AA]">
-                    Penampilan Umum (General Look)
-                  </label>
-                  <input
-                    type="text"
-                    value={generalLook}
-                    onChange={(e) => setGeneralLook(e.target.value)}
-                    placeholder="Contoh: petite, charming cute smile, gentle and expressive"
-                    className="bg-neutral-100 dark:bg-white/[0.06] text-xs text-neutral-900 dark:text-[#F2F3F7] placeholder:text-neutral-400 dark:placeholder:text-white/35 rounded-lg px-3 py-2 border-none focus:outline-none focus:ring-2 focus:ring-amber-500/30"
-                  />
-                </div>
-              </div>
-            )}
-          </div>
-
-          {/* Submit Button */}
-          <div className="pt-1 pb-4">
+          {/* ========================================================
+              6. PRIMARY ACTION BUTTON (Save / Start Chat)
+              ======================================================== */}
+          <section className="pt-2 pb-6">
             <button
               type="submit"
               disabled={isSaved}
-              className="w-full py-3 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-98 text-neutral-950 font-semibold text-sm shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              className="w-full py-3.5 px-6 rounded-full bg-[#F5B838] hover:bg-[#E5A929] active:scale-[0.99] text-neutral-950 font-bold text-sm tracking-wide flex items-center justify-center gap-2 shadow-lg transition-all cursor-pointer disabled:opacity-50"
             >
               {isSaved ? (
                 <>
                   <Check size={18} />
-                  <span>Disimpan!</span>
+                  <span>Karakter Disimpan!</span>
                 </>
               ) : (
                 <>
@@ -702,9 +718,10 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({
                 </>
               )}
             </button>
-          </div>
+          </section>
         </form>
       </main>
     </div>
   );
 };
+

@@ -33,10 +33,80 @@ const STORAGE_KEY = "waguri_last_seen_update_id";
  */
 export const APP_UPDATES: AppUpdateInfo[] = [
   {
+    id: "2026.10.08-stitch-glassmorphism-and-spotify-card-share",
+    version: "v1.9.1",
+    date: "8 Oktober 2026",
+    badge: "Terbaru",
+    bannerGradient: "from-amber-500 via-orange-500 to-amber-600",
+    bannerImage: "/waguri-pfp.jpg",
+    title: {
+      id: "Redesign Stitch Glassmorphism & Kartu Share Karakter Ala Spotify",
+      en: "Stitch Glassmorphism Redesign & Spotify-Style Share Card",
+    },
+    subtitle: {
+      id: "Antarmuka profil, form karakter, dan pengaturan kini menggunakan Obsidian Luster Glassmorphism, plus fitur Bagikan bergambar kartu estetik ala Spotify Canvas.",
+      en: "Profile, character form, and settings are refreshed with Obsidian Luster Glassmorphism, plus an aesthetic Spotify Canvas-style character share card.",
+    },
+    highlights: {
+      id: [
+        {
+          title: "Kartu Bagikan Karakter Estetik Ala Spotify",
+          description:
+            "Fitur Bagikan di profil karakter kini membuat kartu gambar cantik bergaya Spotify Canvas beresolusi tinggi lengkap dengan foto, bio, dan link web untuk diunduh atau dibagikan.",
+          tag: "Fitur Baru",
+        },
+        {
+          title: "Redesign Profil Obsidian Luster",
+          description:
+            "Tampilan profil karakter diperbarui dengan artwork full-bleed, gradient scrim halus, accordion jadwal rutin interaktif, dan grafik emosi live.",
+          tag: "Tampilan",
+        },
+        {
+          title: "Formulir Karakter Simetris & Bersih",
+          description:
+            "Header terpusat, bingkai avatar melingkar dengan lencana kamera, input bergaris bawah minimalis, dan kartu panduan foto PAP yang rapi.",
+          tag: "Desain",
+        },
+        {
+          title: "Pengaturan Berbasis Grup Accordion",
+          description:
+            "Hero profil baru dengan indikator kuota dinamis, serta navigasi pengaturan terstruktur ke dalam kartu Akun, Preferensi, dan Dukungan.",
+          tag: "Pengaturan",
+        },
+      ],
+      en: [
+        {
+          title: "Spotify-Style Aesthetic Share Card",
+          description:
+            "Sharing character profiles now generates a high-resolution Spotify Canvas-style aesthetic card with artwork, bio, and website link.",
+          tag: "New Feature",
+        },
+        {
+          title: "Obsidian Luster Profile Redesign",
+          description:
+            "Character details feature full-bleed artwork, smooth gradient scrims, interactive inline routines, and embedded emotion analytics.",
+          tag: "Design",
+        },
+        {
+          title: "Clean Editorial Character Form",
+          description:
+            "Centered header, circular avatar with floating camera badge, minimal underline inputs, and collapsible visual PAP guide.",
+          tag: "Form",
+        },
+        {
+          title: "Grouped Settings Accordions",
+          description:
+            "New hero card with dynamic quota tracking and grouped accordion sections for Account, Preferences, and Support.",
+          tag: "Settings",
+        },
+      ],
+    },
+  },
+  {
     id: "2026.10.08-dynamic-theme-typing-fix-and-clean-mood-stats",
     version: "v1.9.0",
     date: "8 Oktober 2026",
-    badge: "Terbaru",
+    badge: "Peningkatan",
     bannerGradient: "from-amber-500 via-rose-500 to-amber-600",
     bannerImage: "/waguri-pfp.jpg",
     title: {

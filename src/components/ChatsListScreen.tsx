@@ -16,6 +16,7 @@ import {
 import { Character, Chat, AppLanguage } from "../types";
 import { getDictionary, t } from "../lib/i18n";
 import { haptics } from "../lib/haptics";
+import { UpdateNoticeBanner } from "./UpdateNoticeBanner";
 
 interface ChatsListScreenProps {
   characters: Character[];
@@ -284,6 +285,11 @@ export const ChatsListScreen: React.FC<ChatsListScreenProps> = ({
           )}
         </div>
       </div>
+
+      {/* Banner Pemberitahuan Pembaruan Baru */}
+      {!showArchivedView && !searchQuery && (
+        <UpdateNoticeBanner language={language} />
+      )}
 
       {/* Horizontal Carousel (Only on main chats view, not archived view) */}
       {!showArchivedView && (
