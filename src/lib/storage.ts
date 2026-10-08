@@ -4,12 +4,18 @@ import { isPaidUser } from "./quotaService";
 
 export const DEFAULT_WAGURI_AVATAR = "/waguri-pfp.jpg";
 export const DEFAULT_USER_AVATAR = "/rintaro-pfp.jpg";
+export const DEFAULT_SUBARU_AVATAR = "/subaru-pfp.jpg";
 
 export const PRESET_AVATARS = [
   {
     name: "Kaoruko",
     url: DEFAULT_WAGURI_AVATAR,
     description: "Waguri Kaoruko - gentle schoolgirl anime style"
+  },
+  {
+    name: "Subaru",
+    url: DEFAULT_SUBARU_AVATAR,
+    description: "Subaru Hoshina - intelligent Kikyo study tutor"
   },
   {
     name: "Rintaro",
@@ -149,7 +155,7 @@ export const WAGURI_GIRLFRIEND_CHARACTER: Character = {
 export const SUBARU_TUTOR_CHARACTER: Character = {
   id: "subaru-hoshina-tutor",
   name: "Subaru Hoshina",
-  avatarUrl: "https://lh3.googleusercontent.com/aida-public/AB6AXuDDsDcXHEv9qm3vekmRfQH6AABC3cd9E0_RjqxJ4K4xUJPH8wFbnZtiMw-tT0S8MUXlo-5tNANbjIKS-9XvRSp31EV-Iat-l3x7MBpLxOxGpJp-ZpREu9lDBSLYT95SFEnMkFJcX3wIiq0aaWL0Z8h9P9kmzH3fCCFsqJb2r6cbyyKO99onNHfUMUn803FXbieSFaUyU1xbbWnRA4MYJYz1n1mc7R2ul-cxHarS_oBw6f-Yb8DxkkI",
+  avatarUrl: DEFAULT_SUBARU_AVATAR,
   tagline: "Tutor belajar sabar dari Kikyo yang bikin materi sulit jadi mudah dipahami",
   category: "Belajar",
   personality:
@@ -249,6 +255,12 @@ export const storage = {
         if (c.name.trim().toLowerCase() === "waguri kaoruko") {
           if (!c.avatarUrl || c.avatarUrl.includes("googleusercontent.com") || c.avatarUrl.includes("unsplash")) {
             c.avatarUrl = DEFAULT_WAGURI_AVATAR;
+          }
+        }
+
+        if (c.id === "subaru-hoshina-tutor" || c.name.trim().toLowerCase().includes("subaru")) {
+          if (!c.avatarUrl || c.avatarUrl.includes("googleusercontent.com") || c.avatarUrl.includes("unsplash")) {
+            c.avatarUrl = DEFAULT_SUBARU_AVATAR;
           }
         }
 

@@ -38,7 +38,7 @@ export const APP_UPDATES: AppUpdateInfo[] = [
     date: "8 Oktober 2026",
     badge: "Terbaru",
     bannerGradient: "from-amber-500 via-purple-600 to-indigo-700",
-    bannerImage: "https://lh3.googleusercontent.com/aida-public/AB6AXuDDsDcXHEv9qm3vekmRfQH6AABC3cd9E0_RjqxJ4K4xUJPH8wFbnZtiMw-tT0S8MUXlo-5tNANbjIKS-9XvRSp31EV-Iat-l3x7MBpLxOxGpJp-ZpREu9lDBSLYT95SFEnMkFJcX3wIiq0aaWL0Z8h9P9kmzH3fCCFsqJb2r6cbyyKO99onNHfUMUn803FXbieSFaUyU1xbbWnRA4MYJYz1n1mc7R2ul-cxHarS_oBw6f-Yb8DxkkI",
+    bannerImage: "/subaru-pfp.jpg",
     title: {
       id: "Proses Berpikir AI, Karakter Tutor, & Pencarian GPS",
       en: "AI Thinking Process, Study Tutor & GPS Search",
