@@ -67,13 +67,11 @@ export const UpdateNoticeBanner: React.FC<UpdateNoticeBannerProps> = ({
                   {LATEST_APP_UPDATE.version}
                 </span>
                 <span className="text-xs font-bold text-neutral-900 dark:text-[#F2F3F7] truncate">
-                  {isEn ? "New Stitch Redesign & Share Card" : "Redesign Baru & Kartu Bagikan"}
+                  {isEn ? LATEST_APP_UPDATE.title.en : LATEST_APP_UPDATE.title.id}
                 </span>
               </div>
               <p className="text-[11px] text-neutral-600 dark:text-[#A1A2AA] truncate mt-0.5">
-                {isEn
-                  ? "Explore full glassmorphism, Spotify-style share card & dynamic themes!"
-                  : "Cek tampilan Stitch glassmorphism, kartu share ala Spotify, dan tema dinamis!"}
+                {isEn ? LATEST_APP_UPDATE.subtitle.en : LATEST_APP_UPDATE.subtitle.id}
               </p>
             </div>
           </div>

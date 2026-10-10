@@ -22,8 +22,11 @@ Aplikasi chat AI interaktif berbasis web untuk karakter **Waguri Kaoruko** (dari
 | **Multi-Provider AI & Dual Model** | Built-in Google Gemini API + Custom OpenAI-compatible dengan pemisahan Model Teks (default: `gemini-3.1-flash-lite`) dan Model Khusus Gambar/PAP (default: `gemini-3.1-flash-lite-image`) |
 | **Auto-Fetch Lore (Search Grounding)** | Riset otomatis biodata kanon, kepribadian, gaya bicara, dan profil visual karakter dari internet via Google Search Grounding |
 | **In-Character Photo / PAP (Dual Model)** | AI dapat mengirim foto selfie/PAP karakter portrait (9:16) saat diminta user menggunakan model generasi gambar khusus & referensi profil visual |
-| **Hierarki Pengaturan WhatsApp-Style** | Tata letak pengaturan terpusat dengan top action bar, profile header tengah, dan flat list menu bersih dengan modal terpadu |
-| **PWA Installable & Notifikasi** | Web App Manifest standalone dengan icon maskable dan Service Worker aktif, siap diinstal langsung ke homescreen Android Chrome & iOS Safari |
+| **Kunci PIN Arsip Chat** | Proteksi keamanan 4-digit PIN untuk folder obrolan yang diarsipkan, dikonfigurasi langsung di Pengaturan |
+| **Jadwal Rutin Otomatis** | Karakter AI dapat berinisiatif mengirim pesan atau menyapa di jam tertentu dengan toleransi waktu & tombol uji coba instan |
+| **Inline AI Provider Accordion** | Pengaturan Model & Provider AI kini tersaji secara inline expandable tanpa modal pop-up, menyatu dengan desain halaman |
+| **PWA Installable & Notifikasi** | Web App Manifest standalone dengan icon maskable, chime lonceng Web Audio API (aktif walau chat terbuka), dan Service Worker |
+| **Format Jam 24-Jam & 12-Jam** | Format jam pesan akurat standar 24 jam untuk Bahasa Indonesia dan 12 jam (AM/PM) untuk Bahasa Inggris |
 
 ---
 

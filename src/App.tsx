@@ -309,16 +309,21 @@ export default function App() {
       checkAndExecuteScheduledRoutines((updatedChat: Chat) => {
         handleUpdateChat(updatedChat);
         const char = characters.find((c) => c.id === updatedChat.characterId);
-        if (char && activeCharacterRef.current?.id !== char.id) {
-          setUnreadCharacterIds((prev) => new Set([...prev, char.id]));
-          const lastMsg = updatedChat.messages[updatedChat.messages.length - 1];
-          if (lastMsg) {
+        if (char) {
+          if (settings.soundNotifications !== false) {
             playNotificationSound();
-            haptics.receive(settings.hapticFeedback !== false);
-            setActiveNotification({
-              character: char,
-              messageText: lastMsg.text,
-            });
+          }
+          haptics.receive(settings.hapticFeedback !== false);
+
+          if (activeCharacterRef.current?.id !== char.id) {
+            setUnreadCharacterIds((prev) => new Set([...prev, char.id]));
+            const lastMsg = updatedChat.messages[updatedChat.messages.length - 1];
+            if (lastMsg) {
+              setActiveNotification({
+                character: char,
+                messageText: lastMsg.text,
+              });
+            }
           }
         }
       });

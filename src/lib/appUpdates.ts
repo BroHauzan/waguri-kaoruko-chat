@@ -33,10 +33,92 @@ const STORAGE_KEY = "waguri_last_seen_update_id";
  */
 export const APP_UPDATES: AppUpdateInfo[] = [
   {
+    id: "2026.10.10-bugfixes-archive-lock-inline-provider",
+    version: "v1.9.2",
+    date: "10 Oktober 2026",
+    badge: "Terbaru",
+    bannerGradient: "from-amber-500 via-yellow-500 to-amber-600",
+    bannerImage: "/waguri-pfp.jpg",
+    title: {
+      id: "Kunci PIN Arsip Chat, Provider Inline & Pembaruan Sistem Chat",
+      en: "Chat Archive PIN Lock, Inline AI Provider & Chat Refinements",
+    },
+    subtitle: {
+      id: "Fitur keamanan baru penguncian arsip pesan dengan PIN, Provider AI inline expandable, highlight Isi Otomatis karakter, dan 11 perbaikan bug.",
+      en: "New privacy feature with PIN-locked chat archives, inline expandable AI provider, highlighted AI auto-fill, and 11 critical bug fixes.",
+    },
+    highlights: {
+      id: [
+        {
+          title: "Kunci PIN Folder Arsip Chat",
+          description:
+            "Folder pesan yang diarsipkan kini dapat dikunci dengan 4-digit kode PIN yang dapat diatur di Pengaturan demi privasi obrolan Anda.",
+          tag: "Privasi",
+        },
+        {
+          title: "Model & Provider AI Inline",
+          description:
+            "Menu Provider AI di Pengaturan kini dapat dibuka langsung secara expandable inline tanpa pop-up modal, lebih mulus dan senada dengan menu lainnya.",
+          tag: "Pengaturan",
+        },
+        {
+          title: "Jadwal Rutin Otomatis Lebih Cerdas",
+          description:
+            "Jadwal rutin kini mendukung toleransi waktu, perbaikan zona waktu lokal, prompt inisiatif natural, serta tombol uji coba kirim langsung.",
+          tag: "Fitur Baru",
+        },
+        {
+          title: "Highlight 'Isi Otomatis' Karakter",
+          description:
+            "Tombol pencarian lore karakter otomatis kini tampil mencolok dengan badge gradien emas dan sparkle AI di formulir edit karakter.",
+          tag: "Desain",
+        },
+        {
+          title: "Pembaruan Format Jam & Efek Suara",
+          description:
+            "Format jam kini rapi dalam standar 24 jam (ID), suara lonceng pesan tetap berbunyi saat chat terbuka, dan highlight foto di menu konteks telah diperbaiki.",
+          tag: "Perbaikan",
+        },
+      ],
+      en: [
+        {
+          title: "Archived Chat PIN Lock",
+          description:
+            "The archived chats folder can now be secured with a 4-digit PIN configured in Settings for enhanced privacy.",
+          tag: "Privacy",
+        },
+        {
+          title: "Inline AI Provider & Model Accordion",
+          description:
+            "AI Provider settings now expand inline directly inside Settings without popup modals, seamlessly matching other menus.",
+          tag: "Settings",
+        },
+        {
+          title: "Enhanced Scheduled Routines",
+          description:
+            "Scheduled routines now include local timezone support, catch-up tolerance, natural AI greeting prompts, and a manual test button.",
+          tag: "New Feature",
+        },
+        {
+          title: "AI Auto-Fill Highlight",
+          description:
+            "The character lore auto-fill button is now prominently highlighted with an animated golden badge and sparkle icon.",
+          tag: "Design",
+        },
+        {
+          title: "Time Formatting & Notification Chimes",
+          description:
+            "Standard 24-hour time format for Indonesian, chime notifications playing even when chat is open, and context menu photo highlight fixes.",
+          tag: "Bug Fix",
+        },
+      ],
+    },
+  },
+  {
     id: "2026.10.08-stitch-glassmorphism-and-spotify-card-share",
     version: "v1.9.1",
     date: "8 Oktober 2026",
-    badge: "Terbaru",
+    badge: "Pembaruan",
     bannerGradient: "from-amber-500 via-orange-500 to-amber-600",
     bannerImage: "/waguri-pfp.jpg",
     title: {

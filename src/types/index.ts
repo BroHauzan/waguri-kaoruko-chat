@@ -179,6 +179,10 @@ export interface Settings {
     weatherText?: string;
     lastUpdated?: number;
   };
+  /** Suara notifikasi balasan (chime Web Audio API). */
+  soundNotifications?: boolean;
+  /** Kunci PIN untuk membuka folder Arsip Chat (opsional). */
+  archivePin?: string;
 }
 
 export type EmotionType =

@@ -29,6 +29,7 @@ import {
   Brain,
   MapPin,
   Loader2,
+  Lock,
 } from "lucide-react";
 import { Character, Chat, Settings, ThemeMode, AppLanguage } from "../types";
 import { haptics } from "../lib/haptics";
@@ -84,6 +85,9 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   const [toastMsg, setToastMsg] = useState<string | null>(null);
   const [notifPermission, setNotifPermission] = useState<string>(getNotificationPermission());
   const [quotaInfo, setQuotaInfo] = useState<DailyUsageInfo>(getDailyUsage());
+  const [archivePin, setArchivePin] = useState<string>(settings.archivePin || "");
+  const [tempPin, setTempPin] = useState("");
+  const [pinError, setPinError] = useState<string | null>(null);
 
   // Modal & Sheet States
   const [activeModal, setActiveModal] = useState<
@@ -130,6 +134,37 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
       setLanguage(settings.language);
     }
   }, [settings.language]);
+
+  useEffect(() => {
+    if (settings.archivePin !== undefined && settings.archivePin !== archivePin) {
+      setArchivePin(settings.archivePin || "");
+    }
+  }, [settings.archivePin]);
+
+  const handleSaveArchivePin = () => {
+    if (!tempPin || tempPin.length < 4) {
+      setPinError(language === "en" ? "PIN must be at least 4 digits." : "PIN minimal harus terdiri dari 4 angka.");
+      haptics.error(hapticFeedback);
+      return;
+    }
+    setArchivePin(tempPin);
+    setTempPin("");
+    setPinError(null);
+    const nextSettings: Settings = { ...settings, archivePin: tempPin };
+    onSaveSettings(nextSettings);
+    haptics.light(hapticFeedback);
+    showToast(language === "en" ? "Archive PIN saved successfully!" : "Kunci PIN Arsip berhasil disimpan!");
+  };
+
+  const handleRemoveArchivePin = () => {
+    setArchivePin("");
+    setTempPin("");
+    setPinError(null);
+    const nextSettings: Settings = { ...settings, archivePin: undefined };
+    onSaveSettings(nextSettings);
+    haptics.light(hapticFeedback);
+    showToast(language === "en" ? "Archive PIN disabled" : "Kunci PIN Arsip dinonaktifkan");
+  };
 
   const dict = getDictionary(language);
 
@@ -649,7 +684,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             </button>
 
             {/* Password & Status Kuota (Inline Accordion) */}
-            <details className="group" open>
+            <details className="group">
               <summary className="w-full list-none cursor-pointer flex items-center justify-between px-4 py-3.5 text-left hover:bg-neutral-50 dark:hover:bg-white/[0.02] active:bg-neutral-100 dark:active:bg-white/[0.04] transition-colors">
                 <div className="flex items-center gap-3.5 min-w-0">
                   <Crown size={20} className="text-neutral-500 dark:text-[#8A8A93] shrink-0" />
@@ -838,25 +873,33 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             Preferensi
           </span>
           <div className="bg-white dark:bg-[#171920] border border-black/5 dark:border-white/[0.06] rounded-3xl overflow-hidden shadow-xs flex flex-col divide-y divide-black/5 dark:divide-white/[0.05]">
-            {/* Model & Provider AI (Inline Trigger) */}
-            <button
-              type="button"
-              onClick={() => setActiveModal("model")}
-              className="w-full flex items-center justify-between px-4 py-3.5 text-left hover:bg-neutral-50 dark:hover:bg-white/[0.02] active:bg-neutral-100 dark:active:bg-white/[0.04] transition-colors cursor-pointer"
-            >
-              <div className="flex items-center gap-3.5 min-w-0">
-                <Sparkles size={20} className="text-neutral-500 dark:text-[#8A8A93] shrink-0" />
-                <span className="text-[15px] font-medium text-neutral-900 dark:text-[#F2F3F7] truncate">
-                  Model &amp; Provider AI
-                </span>
+            {/* Model & Provider AI (Inline Accordion) */}
+            <details className="group">
+              <summary className="w-full list-none cursor-pointer flex items-center justify-between px-4 py-3.5 text-left hover:bg-neutral-50 dark:hover:bg-white/[0.02] active:bg-neutral-100 dark:active:bg-white/[0.04] transition-colors">
+                <div className="flex items-center gap-3.5 min-w-0">
+                  <Sparkles size={20} className="text-neutral-500 dark:text-[#8A8A93] shrink-0" />
+                  <span className="text-[15px] font-medium text-neutral-900 dark:text-[#F2F3F7] truncate">
+                    Model &amp; Provider AI
+                  </span>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                  <span className="text-[12px] font-semibold text-[#B45309] dark:text-[#F5B838] truncate max-w-[120px]">
+                    {activeProvider.name}
+                  </span>
+                  <ChevronRight size={18} className="text-neutral-400 dark:text-neutral-500 transition-transform duration-200 group-open:rotate-90" />
+                </div>
+              </summary>
+              <div className="px-4 pb-4 pt-2.5 flex flex-col gap-3.5 bg-neutral-50/60 dark:bg-black/20 border-t border-black/5 dark:border-white/[0.04]">
+                <ProviderManager
+                  settings={settings}
+                  hapticFeedback={hapticFeedback}
+                  onSaveSettings={onSaveSettings}
+                  showToast={showToast}
+                  embedded={true}
+                  onRequirePaid={() => setActiveModal("accountTier")}
+                />
               </div>
-              <div className="flex items-center gap-1.5 shrink-0 ml-2">
-                <span className="text-[12px] font-semibold text-[#B45309] dark:text-[#F5B838] truncate max-w-[120px]">
-                  {activeProvider.name}
-                </span>
-                <ChevronRight size={18} className="text-neutral-400 dark:text-neutral-500 shrink-0" />
-              </div>
-            </button>
+            </details>
 
             {/* Tema & Tampilan (Inline Accordion) */}
             <details className="group">
@@ -938,7 +981,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                             ? "ring-2 ring-[#F5B838] ring-offset-2 ring-offset-white dark:ring-offset-[#171920] scale-105"
                             : "hover:scale-105"
                         }`}
-                        style={{ backgroundColor: b.userBubbleBg }}
+                        style={{ background: b.previewColor }}
                         title={b.name}
                       >
                         {bubbleTheme === b.id && <Check size={14} className="text-white drop-shadow" />}
@@ -1042,6 +1085,74 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                     ))}
                   </div>
                 </div>
+              </div>
+            </details>
+
+            {/* Kunci PIN Arsip Chat (Inline Accordion) */}
+            <details className="group">
+              <summary className="w-full list-none cursor-pointer flex items-center justify-between px-4 py-3.5 text-left hover:bg-neutral-50 dark:hover:bg-white/[0.02] active:bg-neutral-100 dark:active:bg-white/[0.04] transition-colors">
+                <div className="flex items-center gap-3.5 min-w-0">
+                  <Lock size={20} className="text-neutral-500 dark:text-[#8A8A93] shrink-0" />
+                  <div className="flex flex-col min-w-0">
+                    <span className="text-[15px] font-medium text-neutral-900 dark:text-[#F2F3F7] truncate">
+                      {language === "en" ? "Archive Chat Lock" : "Kunci Arsip Chat"}
+                    </span>
+                    <span className="text-[11px] text-neutral-500 dark:text-neutral-400 truncate">
+                      {language === "en" ? "Protect archived chats with a PIN" : "Proteksi folder arsip dengan kode PIN"}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex items-center gap-1.5 shrink-0 ml-2">
+                  <span className={`px-2 py-0.5 rounded-full text-[11px] font-semibold ${
+                    archivePin
+                      ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
+                      : "bg-neutral-200 dark:bg-white/10 text-neutral-600 dark:text-neutral-400"
+                  }`}>
+                    {archivePin
+                      ? (language === "en" ? "Active" : "Aktif")
+                      : (language === "en" ? "Disabled" : "Nonaktif")}
+                  </span>
+                  <ChevronRight size={18} className="text-neutral-400 dark:text-neutral-500 transition-transform duration-200 group-open:rotate-90" />
+                </div>
+              </summary>
+              <div className="px-4 pb-4 pt-2.5 flex flex-col gap-3 bg-neutral-50/60 dark:bg-black/20 border-t border-black/5 dark:border-white/[0.04]">
+                <p className="text-xs text-neutral-600 dark:text-[#8A8A93] leading-relaxed">
+                  {language === "en"
+                    ? "The archived chats folder will only be accessible after entering this PIN."
+                    : "Folder pesan yang diarsipkan hanya dapat dibuka setelah memasukkan kode PIN yang sesuai."}
+                </p>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="password"
+                    maxLength={6}
+                    placeholder={archivePin ? (language === "en" ? "Change PIN (4-6 digits)..." : "Ganti PIN (4-6 angka)...") : (language === "en" ? "Set 4-digit PIN..." : "Masukkan 4 angka PIN baru...")}
+                    value={tempPin}
+                    onChange={(e) => {
+                      setTempPin(e.target.value.replace(/\D/g, ""));
+                      setPinError(null);
+                    }}
+                    className="flex-1 px-3 py-2 rounded-xl bg-white dark:bg-white/[0.06] border border-black/10 dark:border-white/10 text-sm font-mono tracking-widest text-neutral-900 dark:text-white outline-none focus:border-amber-500"
+                  />
+                  <button
+                    type="button"
+                    onClick={handleSaveArchivePin}
+                    className="px-3.5 py-2 rounded-xl bg-[#F5B838] hover:bg-[#E5A929] text-neutral-950 font-bold text-xs transition-colors cursor-pointer shrink-0"
+                  >
+                    {language === "en" ? "Save" : "Simpan"}
+                  </button>
+                  {archivePin && (
+                    <button
+                      type="button"
+                      onClick={handleRemoveArchivePin}
+                      className="px-3 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-600 dark:text-red-400 font-semibold text-xs transition-colors cursor-pointer shrink-0"
+                    >
+                      {language === "en" ? "Disable" : "Hapus"}
+                    </button>
+                  )}
+                </div>
+                {pinError && (
+                  <span className="text-xs font-medium text-red-500">{pinError}</span>
+                )}
               </div>
             </details>
 
@@ -1391,47 +1502,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
         )}
       </AnimatePresence>
 
-      {/* 3. Modal Model & Provider AI */}
-      <AnimatePresence>
-        {activeModal === "model" && (
-          <div className="fixed inset-0 z-[100] bg-black/60 dark:bg-black/75 backdrop-blur-xs flex items-end sm:items-center justify-center p-0 sm:p-4 pb-safe">
-            <motion.div
-              initial={{ y: "100%", opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              exit={{ y: "100%", opacity: 0 }}
-              transition={{ type: "spring", damping: 28, stiffness: 300 }}
-              className="bg-white dark:bg-[#16171B] rounded-t-[28px] sm:rounded-3xl max-w-md w-full p-5 max-h-[90vh] overflow-y-auto shadow-2xl border border-black/10 dark:border-white/10 flex flex-col gap-4 text-neutral-900 dark:text-[#F2F3F7] pb-10 sm:pb-5"
-            >
-              <div className="flex items-center justify-between pb-2 border-b border-neutral-100 dark:border-white/10">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-full bg-amber-50 dark:bg-[#F5B838]/15 text-[#F5B838] flex items-center justify-center">
-                    <Sparkles size={16} />
-                  </div>
-                  <h3 className="text-base font-bold">
-                    {language === "en" ? "AI Model & Provider" : "Model & Provider AI"}
-                  </h3>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => setActiveModal("none")}
-                  className="w-8 h-8 rounded-full bg-neutral-100 dark:bg-white/[0.08] flex items-center justify-center hover:bg-neutral-200 dark:hover:bg-white/[0.14]"
-                >
-                  <X size={16} />
-                </button>
-              </div>
 
-              <ProviderManager
-                settings={settings}
-                hapticFeedback={hapticFeedback}
-                onSaveSettings={onSaveSettings}
-                showToast={showToast}
-                embedded={true}
-                onRequirePaid={() => setActiveModal("accountTier")}
-              />
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
 
       {/* 4. Modal Chat & Gaya Respons */}
       <AnimatePresence>

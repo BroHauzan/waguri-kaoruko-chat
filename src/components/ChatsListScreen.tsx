@@ -12,10 +12,12 @@ import {
   MoreVertical,
   ChevronLeft,
   X,
+  Lock,
 } from "lucide-react";
 import { Character, Chat, AppLanguage } from "../types";
 import { getDictionary, t } from "../lib/i18n";
 import { haptics } from "../lib/haptics";
+import { storage } from "../lib/storage";
 import { UpdateNoticeBanner } from "./UpdateNoticeBanner";
 
 interface ChatsListScreenProps {
@@ -58,11 +60,43 @@ export const ChatsListScreen: React.FC<ChatsListScreenProps> = ({
   const [internalShowArchivedView, setInternalShowArchivedView] = useState(false);
   const showArchivedView = isArchivedViewProp !== undefined ? isArchivedViewProp : internalShowArchivedView;
 
+  const [showPinModal, setShowPinModal] = useState(false);
+  const [enteredPin, setEnteredPin] = useState("");
+  const [pinError, setPinError] = useState<string | null>(null);
+
   const handleOpenArchived = () => {
+    const currentSettings = storage.getSettings();
+    if (currentSettings.archivePin && currentSettings.archivePin.trim().length > 0) {
+      setEnteredPin("");
+      setPinError(null);
+      setShowPinModal(true);
+      return;
+    }
+
     if (onOpenArchived) {
       onOpenArchived();
     } else {
       setInternalShowArchivedView(true);
+    }
+  };
+
+  const handleVerifyPin = (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    const currentSettings = storage.getSettings();
+    if (enteredPin === currentSettings.archivePin) {
+      setShowPinModal(false);
+      setEnteredPin("");
+      setPinError(null);
+      haptics.light(hapticFeedback);
+      if (onOpenArchived) {
+        onOpenArchived();
+      } else {
+        setInternalShowArchivedView(true);
+      }
+    } else {
+      haptics.error(hapticFeedback);
+      setPinError(language === "en" ? "Incorrect PIN" : "PIN salah");
+      setEnteredPin("");
     }
   };
 
@@ -638,6 +672,63 @@ export const ChatsListScreen: React.FC<ChatsListScreenProps> = ({
                 {dict.confirmDeleteAction}
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Kunci PIN Arsip Chat */}
+      {showPinModal && (
+        <div className="fixed inset-0 z-50 bg-black/60 dark:bg-black/75 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white dark:bg-[#16171B] rounded-3xl max-w-xs w-full p-6 shadow-2xl border border-black/10 dark:border-white/10 flex flex-col items-center gap-4 text-center animate-scale-in">
+            <div className="w-12 h-12 rounded-full bg-amber-500/15 text-[#F5B838] flex items-center justify-center shadow-xs">
+              <Lock size={22} />
+            </div>
+            <div className="flex flex-col">
+              <h3 className="text-base font-bold text-neutral-900 dark:text-[#F2F3F7]">
+                {language === "en" ? "Archived Chats Locked" : "Arsip Chat Terkunci"}
+              </h3>
+              <p className="text-xs text-neutral-500 dark:text-[#8A8A93] mt-0.5">
+                {language === "en" ? "Enter your PIN to open archived chats" : "Masukkan PIN untuk membuka folder arsip"}
+              </p>
+            </div>
+
+            <form onSubmit={handleVerifyPin} className="w-full flex flex-col gap-3">
+              <input
+                type="password"
+                maxLength={6}
+                autoFocus
+                placeholder="• • • •"
+                value={enteredPin}
+                onChange={(e) => {
+                  setEnteredPin(e.target.value.replace(/\D/g, ""));
+                  setPinError(null);
+                }}
+                className="w-full text-center py-2.5 px-4 rounded-2xl bg-neutral-100 dark:bg-white/[0.06] border border-black/10 dark:border-white/10 text-xl font-mono tracking-[0.4em] text-neutral-900 dark:text-white outline-none focus:border-amber-500"
+              />
+
+              {pinError && (
+                <span className="text-xs font-semibold text-red-500">
+                  {pinError}
+                </span>
+              )}
+
+              <div className="flex items-center gap-2 mt-1">
+                <button
+                  type="button"
+                  onClick={() => setShowPinModal(false)}
+                  className="flex-1 py-2.5 rounded-xl bg-neutral-100 dark:bg-white/[0.08] hover:bg-neutral-200 dark:hover:bg-white/[0.12] text-xs font-semibold text-neutral-700 dark:text-[#C9CAD1] transition-colors cursor-pointer"
+                >
+                  {language === "en" ? "Cancel" : "Batal"}
+                </button>
+                <button
+                  type="submit"
+                  disabled={!enteredPin}
+                  className="flex-1 py-2.5 rounded-xl bg-[#F5B838] hover:bg-[#E5A929] text-xs font-bold text-neutral-950 transition-colors cursor-pointer disabled:opacity-50 shadow-xs"
+                >
+                  {language === "en" ? "Unlock" : "Buka"}
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

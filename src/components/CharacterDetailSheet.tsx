@@ -224,7 +224,7 @@ export const CharacterDetailSheet: React.FC<CharacterDetailSheetProps> = ({
             2. QUICK ACTIONS (Edit Profil & Bagikan)
             ======================================================== */}
         <div className="px-5 mb-5 relative z-10">
-          <div className="grid grid-cols-2 gap-2.5">
+          <div className="grid grid-cols-1 gap-2.5">
             <button
               type="button"
               onClick={() => {
@@ -235,14 +235,6 @@ export const CharacterDetailSheet: React.FC<CharacterDetailSheetProps> = ({
             >
               <Edit3 size={15} className="text-neutral-500 dark:text-neutral-300" />
               <span>Edit Profil</span>
-            </button>
-            <button
-              type="button"
-              onClick={handleShare}
-              className="w-full py-2.5 rounded-2xl bg-white dark:bg-white/[0.07] hover:bg-neutral-50 dark:hover:bg-white/[0.12] border border-black/5 dark:border-white/10 text-xs font-semibold text-neutral-800 dark:text-white flex items-center justify-center gap-2 active:scale-98 transition shadow-xs cursor-pointer"
-            >
-              <Share2 size={15} className="text-neutral-500 dark:text-neutral-300" />
-              <span>Bagikan</span>
             </button>
           </div>
         </div>
@@ -611,12 +603,6 @@ export const CharacterDetailSheet: React.FC<CharacterDetailSheetProps> = ({
         </footer>
       </motion.div>
 
-      {/* Spotify Canvas-Style Character Share Modal */}
-      <SpotifyShareModal
-        isOpen={showShareModal}
-        onClose={() => setShowShareModal(false)}
-        character={character}
-      />
     </div>
   );
 };

@@ -77,6 +77,7 @@ import { formatDateSeparator, isSameDay } from "../lib/dateUtils";
 import { getMoodTheme } from "../lib/moodConfig";
 import { getDictionary } from "../lib/i18n";
 import { getEffectiveUserBubbleBg } from "../lib/bubbleThemes";
+import { playNotificationSound } from "../lib/notificationSound";
 
 interface ThinkingAccordionProps {
   thinkingText: string;
@@ -809,6 +810,9 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
 
         onUpdateChat(intermediateChat);
         haptics.receive(isHapticEnabled);
+        if (settings.soundNotifications !== false) {
+          playNotificationSound();
+        }
 
         if (i < incomingList.length - 1) {
           setIsTyping(false);
@@ -1121,12 +1125,16 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
 
   const formatMessageTime = (timestamp: number) => {
     const d = new Date(timestamp);
-    let hours = d.getHours();
     const minutes = String(d.getMinutes()).padStart(2, "0");
-    const ampm = hours >= 12 ? "pm" : "am";
-    hours = hours % 12;
-    hours = hours ? hours : 12;
-    return `${hours}:${minutes} ${ampm}`;
+    if (settings.language === "en") {
+      let hours = d.getHours();
+      const ampm = hours >= 12 ? "PM" : "AM";
+      hours = hours % 12;
+      hours = hours ? hours : 12;
+      return `${String(hours).padStart(2, "0")}:${minutes} ${ampm}`;
+    }
+    // Format 24-jam standar WhatsApp Indonesia (mis. 21:30, 08:15)
+    return `${String(d.getHours()).padStart(2, "0")}:${minutes}`;
   };
 
   /**
@@ -1374,17 +1382,25 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                 <span className="text-[15px] font-bold text-neutral-900 dark:text-[#F2F3F7] tracking-tight truncate leading-tight">
                   {character.name}
                 </span>
-                <div className="flex items-center gap-1.5 leading-tight mt-0.5">
-                  <span className="text-[12px] font-medium text-emerald-600 dark:text-emerald-400">
-                    {isTyping ? (settings.language === "en" ? "typing..." : "sedang mengetik...") : dict.online}
-                  </span>
-                  <span className="text-neutral-300 dark:text-neutral-700 text-[10px]">•</span>
-                  <span
-                    className="text-[12px] font-medium text-neutral-500 dark:text-[#8A8A93]"
-                    title={`Suasana hati: ${moodTheme.label}`}
-                  >
-                    {moodTheme.label}
-                  </span>
+                <div className="flex items-center gap-1.5 leading-tight mt-0.5 min-w-0 truncate">
+                  {isTyping ? (
+                    <span className="text-[12px] font-medium text-emerald-600 dark:text-emerald-400 truncate whitespace-nowrap animate-pulse">
+                      {settings.language === "en" ? "typing..." : "sedang mengetik..."}
+                    </span>
+                  ) : (
+                    <>
+                      <span className="text-[12px] font-medium text-emerald-600 dark:text-emerald-400 shrink-0">
+                        {dict.online}
+                      </span>
+                      <span className="text-neutral-300 dark:text-neutral-700 text-[10px] shrink-0">•</span>
+                      <span
+                        className="text-[12px] font-medium text-neutral-500 dark:text-[#8A8A93] truncate"
+                        title={`Suasana hati: ${moodTheme.label}`}
+                      >
+                        {moodTheme.label}
+                      </span>
+                    </>
+                  )}
                 </div>
               </div>
             </div>
@@ -1624,14 +1640,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                           ? `${userBubbleBg} rounded-[12px] rounded-br-[0px] shadow-2xs`
                           : "bg-white dark:bg-[#1F2025] text-neutral-900 dark:text-[#F2F3F7] rounded-[12px] rounded-bl-[0px] border border-black/5 dark:border-white/10 shadow-2xs"
                       } ${
-                        // Sembunyikan HANYA kalau preview pengganti benar-benar
-                        // dirender. Kalau tidak, bubble (mis. berisi gambar) akan
-                        // hilang tanpa ada yang menggantikannya.
-                        isSelected &&
-                        menuAnchor &&
-                        message.text &&
-                        message.text !== "[Foto]" &&
-                        !message.image
+                        isSelected && menuAnchor
                           ? "opacity-0"
                           : "opacity-100"
                       }`}
@@ -1808,11 +1817,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
             actions={contextMenuActions}
             quickReactions={["❤️", "😂", "😮", "😢", "🙏"]}
             onReact={(emoji) => handleReact(selectedMessage.id, emoji)}
-            hideOriginalBubble={Boolean(
-              selectedMessage.text &&
-                selectedMessage.text !== "[Foto]" &&
-                !selectedMessage.image
-            )}
+            hideOriginalBubble={true}
             onClose={() => {
               setSelectedMessageId(null);
               setMenuAnchor(null);

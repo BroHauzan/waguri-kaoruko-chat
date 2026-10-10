@@ -411,18 +411,18 @@ export const CharacterForm: React.FC<CharacterFormProps> = ({
                   type="button"
                   disabled={isFetchingLore}
                   onClick={handleAutoFetchLore}
-                  className="text-xs font-semibold text-[#B45309] dark:text-[#F5B838] hover:underline flex items-center gap-1 transition-colors cursor-pointer disabled:opacity-50"
-                  title="Cari profil, kepribadian, dan ciri fisik kanon dari internet"
+                  className="px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-500/20 via-amber-400/15 to-amber-500/25 hover:from-amber-500/30 hover:to-amber-500/35 border border-amber-500/40 dark:border-amber-400/40 text-amber-900 dark:text-amber-200 text-xs font-bold flex items-center gap-1.5 transition-all shadow-xs active:scale-95 cursor-pointer disabled:opacity-50"
+                  title="Cari profil, kepribadian, dan ciri fisik kanon otomatis dari internet"
                 >
                   {isFetchingLore ? (
                     <>
-                      <Loader2 size={13} className="animate-spin" />
+                      <Loader2 size={13} className="animate-spin text-amber-500" />
                       <span>Mencari di Internet...</span>
                     </>
                   ) : (
                     <>
-                      <span>✦</span>
-                      <span>Isi Otomatis</span>
+                      <Sparkles size={13} className="text-[#F5B838] animate-pulse" />
+                      <span>✦ Isi Otomatis AI</span>
                     </>
                   )}
                 </button>

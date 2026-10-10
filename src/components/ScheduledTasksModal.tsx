@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { Clock, Plus, Trash2, X, Check, Bell, BellOff, Calendar } from "lucide-react";
+import { Clock, Plus, Trash2, X, Check, Bell, BellOff, Calendar, Play, Loader2 } from "lucide-react";
 import { ScheduledTask, Character } from "../types";
 import { storage } from "../lib/storage";
+import { executeSingleScheduledTask } from "../lib/routineService";
 
 interface ScheduledTasksModalProps {
   isOpen: boolean;
@@ -21,10 +22,32 @@ export const ScheduledTasksModal: React.FC<ScheduledTasksModalProps> = ({
   const [instruction, setInstruction] = useState("");
   const [repeatDaily, setRepeatDaily] = useState(true);
   const [errorNotice, setErrorNotice] = useState<string | null>(null);
+  const [successNotice, setSuccessNotice] = useState<string | null>(null);
+  const [runningTaskId, setRunningTaskId] = useState<string | null>(null);
 
   const loadTasks = () => {
     const list = storage.getScheduledTasks(character.id);
     setTasks(list);
+  };
+
+  const handleRunNow = async (task: ScheduledTask) => {
+    setRunningTaskId(task.id);
+    setErrorNotice(null);
+    setSuccessNotice(null);
+    try {
+      const ok = await executeSingleScheduledTask(task, undefined, true);
+      if (ok) {
+        setSuccessNotice(`Pesan jadwal "${task.title}" berhasil dikirim ke riwayat chat!`);
+        setTimeout(() => setSuccessNotice(null), 3500);
+      } else {
+        setErrorNotice("Gagal mengeksekusi pesan jadwal.");
+      }
+    } catch {
+      setErrorNotice("Terjadi kesalahan saat mengeksekusi pesan jadwal.");
+    } finally {
+      setRunningTaskId(null);
+      loadTasks();
+    }
   };
 
   useEffect(() => {
@@ -114,6 +137,11 @@ export const ScheduledTasksModal: React.FC<ScheduledTasksModalProps> = ({
           {errorNotice && (
             <div className="p-2.5 bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20 rounded-xl text-xs text-red-600 dark:text-red-400">
               {errorNotice}
+            </div>
+          )}
+          {successNotice && (
+            <div className="p-2.5 bg-emerald-50 dark:bg-emerald-500/10 border border-emerald-200 dark:border-emerald-500/20 rounded-xl text-xs text-emerald-700 dark:text-emerald-300">
+              {successNotice}
             </div>
           )}
 
@@ -241,6 +269,21 @@ export const ScheduledTasksModal: React.FC<ScheduledTasksModalProps> = ({
                   </div>
 
                   <div className="flex items-center gap-1.5 shrink-0 pt-0.5">
+                    {/* Uji Coba / Kirim Sekarang */}
+                    <button
+                      type="button"
+                      disabled={runningTaskId === task.id}
+                      onClick={() => handleRunNow(task)}
+                      className="p-1.5 rounded-lg text-xs bg-amber-500/10 hover:bg-amber-500/20 text-[#B45309] dark:text-[#F5B838] transition-colors cursor-pointer disabled:opacity-50 flex items-center gap-1"
+                      title="Uji coba kirim pesan jadwal ini sekarang"
+                    >
+                      {runningTaskId === task.id ? (
+                        <Loader2 size={14} className="animate-spin" />
+                      ) : (
+                        <Play size={14} className="fill-current" />
+                      )}
+                    </button>
+
                     {/* Toggle Sakelar */}
                     <button
                       type="button"
