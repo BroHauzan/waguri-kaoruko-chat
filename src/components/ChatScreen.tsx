@@ -385,7 +385,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
             className="italic font-medium opacity-90 underline decoration-dotted decoration-current/30 underline-offset-3"
             title="Aksi roleplay"
           >
-            _{content}_
+            {content}
           </span>
         );
       }
