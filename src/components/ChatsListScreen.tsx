@@ -63,10 +63,12 @@ export const ChatsListScreen: React.FC<ChatsListScreenProps> = ({
   const [showPinModal, setShowPinModal] = useState(false);
   const [enteredPin, setEnteredPin] = useState("");
   const [pinError, setPinError] = useState<string | null>(null);
+  const [pendingCharacterToOpen, setPendingCharacterToOpen] = useState<Character | null>(null);
 
   const handleOpenArchived = () => {
     const currentSettings = storage.getSettings();
     if (currentSettings.archivePin && currentSettings.archivePin.trim().length > 0) {
+      setPendingCharacterToOpen(null);
       setEnteredPin("");
       setPinError(null);
       setShowPinModal(true);
@@ -80,6 +82,20 @@ export const ChatsListScreen: React.FC<ChatsListScreenProps> = ({
     }
   };
 
+  const handleSelectCharacterWithLock = (char: Character) => {
+    if (char.isArchived && !showArchivedView) {
+      const currentSettings = storage.getSettings();
+      if (currentSettings.archivePin && currentSettings.archivePin.trim().length > 0) {
+        setPendingCharacterToOpen(char);
+        setEnteredPin("");
+        setPinError(null);
+        setShowPinModal(true);
+        return;
+      }
+    }
+    onSelectCharacter(char);
+  };
+
   const handleVerifyPin = (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     const currentSettings = storage.getSettings();
@@ -88,10 +104,17 @@ export const ChatsListScreen: React.FC<ChatsListScreenProps> = ({
       setEnteredPin("");
       setPinError(null);
       haptics.light(hapticFeedback);
-      if (onOpenArchived) {
-        onOpenArchived();
+
+      if (pendingCharacterToOpen) {
+        const target = pendingCharacterToOpen;
+        setPendingCharacterToOpen(null);
+        onSelectCharacter(target);
       } else {
-        setInternalShowArchivedView(true);
+        if (onOpenArchived) {
+          onOpenArchived();
+        } else {
+          setInternalShowArchivedView(true);
+        }
       }
     } else {
       haptics.error(hapticFeedback);
@@ -342,27 +365,29 @@ export const ChatsListScreen: React.FC<ChatsListScreenProps> = ({
               </span>
             </button>
 
-            {/* List of Characters with Online Indicator */}
-            {characters.map((char) => (
-              <button
-                key={`story_${char.id}`}
-                onClick={() => onSelectCharacter(char)}
-                className="flex flex-col items-center gap-1.5 shrink-0 group cursor-pointer"
-              >
-                <div className="relative w-[52px] h-[52px] rounded-full overflow-hidden border-2 border-white dark:border-white/15 shadow-xs">
-                  <img
-                    src={char.avatarUrl}
-                    alt={char.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform"
-                  />
-                  {/* Green Online Dot */}
-                  <span className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-white dark:border-[#0B0C0F]" />
-                </div>
-                <span className="text-[12px] font-medium text-neutral-700 dark:text-[#C9CAD1] truncate max-w-[58px] text-center group-hover:text-neutral-900 dark:group-hover:text-[#F2F3F7]">
-                  {char.name.split(" ")[0]}
-                </span>
-              </button>
-            ))}
+            {/* List of Characters with Online Indicator (Exclude archived characters) */}
+            {characters
+              .filter((char) => !char.isArchived)
+              .map((char) => (
+                <button
+                  key={`story_${char.id}`}
+                  onClick={() => handleSelectCharacterWithLock(char)}
+                  className="flex flex-col items-center gap-1.5 shrink-0 group cursor-pointer"
+                >
+                  <div className="relative w-[52px] h-[52px] rounded-full overflow-hidden border-2 border-white dark:border-white/15 shadow-xs">
+                    <img
+                      src={char.avatarUrl}
+                      alt={char.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                    />
+                    {/* Green Online Dot */}
+                    <span className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-emerald-500 border-2 border-white dark:border-[#0B0C0F]" />
+                  </div>
+                  <span className="text-[12px] font-medium text-neutral-700 dark:text-[#C9CAD1] truncate max-w-[58px] text-center group-hover:text-neutral-900 dark:group-hover:text-[#F2F3F7]">
+                    {char.name.split(" ")[0]}
+                  </span>
+                </button>
+              ))}
           </div>
         </div>
       )}
@@ -715,7 +740,10 @@ export const ChatsListScreen: React.FC<ChatsListScreenProps> = ({
               <div className="flex items-center gap-2 mt-1">
                 <button
                   type="button"
-                  onClick={() => setShowPinModal(false)}
+                  onClick={() => {
+                    setShowPinModal(false);
+                    setPendingCharacterToOpen(null);
+                  }}
                   className="flex-1 py-2.5 rounded-xl bg-neutral-100 dark:bg-white/[0.08] hover:bg-neutral-200 dark:hover:bg-white/[0.12] text-xs font-semibold text-neutral-700 dark:text-[#C9CAD1] transition-colors cursor-pointer"
                 >
                   {language === "en" ? "Cancel" : "Batal"}
