@@ -66,6 +66,24 @@ export const translations = {
     deleteMessage: "Hapus Pesan",
     today: "Hari ini",
     yesterday: "Kemarin",
+    starMessage: "Bintang",
+    unstarMessage: "Hapus Bintang",
+    starredToast: "Pesan dibintangi",
+    unstarredToast: "Bintang dihapus",
+
+    // Home Header Dropdown & Starred Messages Screen
+    menuNewCharacter: "Buat Karakter Baru",
+    menuStarredMessages: "Pesan Berbintang",
+    starredMessagesTitle: "Pesan Berbintang",
+    noStarredMessages: "Belum Ada Pesan Berbintang",
+    noStarredMessagesDesc: "Tekan lama pesan apa saja di obrolan untuk menambahkannya ke pesan berbintang.",
+    goToChat: "Buka Obrolan",
+    lockedChatStarred: "Pesan dari Obrolan Terkunci",
+    lockedChatStarredDesc: "Buka kunci dengan PIN untuk melihat pesan ini.",
+    unlockPrompt: "Buka Kunci",
+    archivedBadge: "Diarsipkan",
+    enterPinTitle: "Masukkan PIN Arsip",
+    enterPinDesc: "Masukkan kode PIN untuk membuka pesan dari obrolan terkunci.",
 
     // Desktop Empty State
     desktopEmptyTitle: "Pilih obrolan",
@@ -219,6 +237,24 @@ export const translations = {
     deleteMessage: "Delete Message",
     today: "Today",
     yesterday: "Yesterday",
+    starMessage: "Star",
+    unstarMessage: "Unstar",
+    starredToast: "Message starred",
+    unstarredToast: "Message unstarred",
+
+    // Home Header Dropdown & Starred Messages Screen
+    menuNewCharacter: "New Character",
+    menuStarredMessages: "Starred Messages",
+    starredMessagesTitle: "Starred Messages",
+    noStarredMessages: "No Starred Messages Yet",
+    noStarredMessagesDesc: "Long press on any message in chat to star it.",
+    goToChat: "Go to Chat",
+    lockedChatStarred: "Message from Locked Chat",
+    lockedChatStarredDesc: "Unlock with PIN to view this message.",
+    unlockPrompt: "Unlock",
+    archivedBadge: "Archived",
+    enterPinTitle: "Enter Archive PIN",
+    enterPinDesc: "Enter your PIN code to unlock messages from locked chats.",
 
     // Desktop Empty State
     desktopEmptyTitle: "Select a chat",

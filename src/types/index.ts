@@ -87,6 +87,8 @@ export interface Message {
   readByCharacter?: boolean;
   /** Proses berpikir AI (reasoning / thinking) jika model mendukung dan fitur diaktifkan. */
   thinkingProcess?: string;
+  /** Status pesan dibintangi / difavoritkan, ditiru dari WhatsApp. */
+  isStarred?: boolean;
 }
 
 export interface Chat {

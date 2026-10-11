@@ -126,8 +126,11 @@ export const CharacterDetailSheet: React.FC<CharacterDetailSheetProps> = ({
         <div className="relative w-full min-h-[420px] flex flex-col justify-between mb-5">
           {/* Full-bleed background image */}
           <img
-            src={character.avatarUrl}
+            src={character.avatarUrl || "/waguri-pfp.jpg"}
             alt={character.name}
+            onError={(e) => {
+              e.currentTarget.src = "/waguri-pfp.jpg";
+            }}
             className="absolute inset-0 w-full h-full object-cover object-top select-none"
           />
 

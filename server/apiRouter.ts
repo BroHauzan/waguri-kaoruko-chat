@@ -10,12 +10,47 @@ import {
   GeneratePhotoApiRequest,
 } from "./geminiService";
 
-/** Batas ukuran body request. Payload berisi gambar base64 bisa besar,
- *  jadi longgar — tapi tetap dibatasi supaya request raksasa tidak
- *  menghabiskan memori server. */
-const MAX_BODY_BYTES = 25 * 1024 * 1024; // 25 MB
+/** Batas ukuran body request. */
+const MAX_CHAT_BODY_BYTES = 10 * 1024 * 1024; // 10 MB (cukup untuk audio/gambar base64)
+const MAX_TEXT_BODY_BYTES = 1 * 1024 * 1024;  // 1 MB (untuk summarize/lore)
 
-function parseJsonBody<T>(req: IncomingMessage): Promise<T> {
+// Simple in-memory rate limiter per IP
+const ipRequestHistory = new Map<string, number[]>();
+const RATE_LIMIT_WINDOW_MS = 60_000; // 1 menit
+const MAX_REQUESTS_PER_WINDOW = 35; // Maksimal 35 request per menit per IP
+
+function getClientIp(req: IncomingMessage): string {
+  const forwarded = req.headers["x-forwarded-for"];
+  if (typeof forwarded === "string") {
+    return forwarded.split(",")[0].trim();
+  }
+  return req.socket.remoteAddress || "127.0.0.1";
+}
+
+function isRateLimited(ip: string): boolean {
+  const now = Date.now();
+  const timestamps = ipRequestHistory.get(ip) || [];
+  const recent = timestamps.filter((t) => now - t < RATE_LIMIT_WINDOW_MS);
+  if (recent.length >= MAX_REQUESTS_PER_WINDOW) {
+    ipRequestHistory.set(ip, recent);
+    return true;
+  }
+  recent.push(now);
+  ipRequestHistory.set(ip, recent);
+
+  // Bersihkan key lama jika map terlalu besar
+  if (ipRequestHistory.size > 1000) {
+    for (const [key, tsList] of ipRequestHistory.entries()) {
+      if (tsList.every((t) => now - t >= RATE_LIMIT_WINDOW_MS)) {
+        ipRequestHistory.delete(key);
+      }
+    }
+  }
+
+  return false;
+}
+
+function parseJsonBody<T>(req: IncomingMessage, maxBytes: number = MAX_CHAT_BODY_BYTES): Promise<T> {
   return new Promise((resolve, reject) => {
     let body = "";
     let bytes = 0;
@@ -25,13 +60,13 @@ function parseJsonBody<T>(req: IncomingMessage): Promise<T> {
       if (aborted) return;
       bytes += chunk.length;
 
-      if (bytes > MAX_BODY_BYTES) {
+      if (bytes > maxBytes) {
         aborted = true;
         reject(
           new Error(
             `Payload terlalu besar (${Math.round(
               bytes / 1024 / 1024
-            )} MB). Maksimal ${Math.round(MAX_BODY_BYTES / 1024 / 1024)} MB.`
+            )} MB). Maksimal ${Math.round(maxBytes / 1024 / 1024)} MB.`
           )
         );
         req.destroy();
@@ -80,9 +115,18 @@ export async function handleApiRequest(
     return true;
   }
 
+  const clientIp = getClientIp(req);
+  if (url.startsWith("/api/") && req.method === "POST" && isRateLimited(clientIp)) {
+    sendJsonResponse(res, 429, {
+      error: "Too Many Requests",
+      details: "Batas frekuensi permintaan terlampaui. Silakan tunggu beberapa saat.",
+    });
+    return true;
+  }
+
   if (url === "/api/chat" && req.method === "POST") {
     try {
-      const body = await parseJsonBody<ChatTurnRequest>(req);
+      const body = await parseJsonBody<ChatTurnRequest>(req, MAX_CHAT_BODY_BYTES);
       const result = await handleChatTurn(body);
       sendJsonResponse(res, 200, result);
     } catch (err: any) {
@@ -98,7 +142,7 @@ export async function handleApiRequest(
 
   if (url === "/api/summarize" && req.method === "POST") {
     try {
-      const body = await parseJsonBody<SummarizeRequest>(req);
+      const body = await parseJsonBody<SummarizeRequest>(req, MAX_TEXT_BODY_BYTES);
       const result = await handleSummarize(body);
       sendJsonResponse(res, 200, result);
     } catch (err: any) {
@@ -114,7 +158,7 @@ export async function handleApiRequest(
 
   if (url === "/api/lore" && req.method === "POST") {
     try {
-      const body = await parseJsonBody<LoreRequest>(req);
+      const body = await parseJsonBody<LoreRequest>(req, MAX_TEXT_BODY_BYTES);
       const result = await handleFetchLore(body);
       sendJsonResponse(res, 200, result);
     } catch (err: any) {
@@ -130,7 +174,7 @@ export async function handleApiRequest(
 
   if (url === "/api/photo" && req.method === "POST") {
     try {
-      const body = await parseJsonBody<GeneratePhotoApiRequest>(req);
+      const body = await parseJsonBody<GeneratePhotoApiRequest>(req, MAX_CHAT_BODY_BYTES);
       const result = await handleGeneratePhoto(body);
       sendJsonResponse(res, 200, result);
     } catch (err: any) {

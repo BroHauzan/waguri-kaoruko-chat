@@ -381,29 +381,37 @@ export const storage = {
   },
 
   saveCharacter(char: Character): void {
-    const chars = this.getCharacters();
-    const index = chars.findIndex((c) => c.id === char.id);
-    if (index >= 0) {
-      chars[index] = char;
-    } else {
-      chars.unshift(char);
+    try {
+      const chars = this.getCharacters();
+      const index = chars.findIndex((c) => c.id === char.id);
+      if (index >= 0) {
+        chars[index] = char;
+      } else {
+        chars.unshift(char);
+      }
+      localStorage.setItem(STORAGE_KEYS.CHARACTERS, JSON.stringify(chars));
+    } catch (e) {
+      console.error("Gagal menyimpan karakter ke localStorage", e);
     }
-    localStorage.setItem(STORAGE_KEYS.CHARACTERS, JSON.stringify(chars));
   },
 
   deleteCharacter(id: string): void {
-    const chars = this.getCharacters().filter((c) => c.id !== id);
-    localStorage.setItem(STORAGE_KEYS.CHARACTERS, JSON.stringify(chars));
-    this.deleteChat(id);
-    const pinned = new Set(this.getPinnedIds());
-    if (pinned.has(id)) {
-      pinned.delete(id);
-      localStorage.setItem(STORAGE_KEYS.PINNED, JSON.stringify([...pinned]));
-    }
-    const archived = new Set(this.getArchivedIds());
-    if (archived.has(id)) {
-      archived.delete(id);
-      localStorage.setItem(STORAGE_KEYS.ARCHIVED, JSON.stringify([...archived]));
+    try {
+      const chars = this.getCharacters().filter((c) => c.id !== id);
+      localStorage.setItem(STORAGE_KEYS.CHARACTERS, JSON.stringify(chars));
+      this.deleteChat(id);
+      const pinned = new Set(this.getPinnedIds());
+      if (pinned.has(id)) {
+        pinned.delete(id);
+        localStorage.setItem(STORAGE_KEYS.PINNED, JSON.stringify([...pinned]));
+      }
+      const archived = new Set(this.getArchivedIds());
+      if (archived.has(id)) {
+        archived.delete(id);
+        localStorage.setItem(STORAGE_KEYS.ARCHIVED, JSON.stringify([...archived]));
+      }
+    } catch (e) {
+      console.error("Gagal menghapus karakter dari localStorage", e);
     }
   },
 
@@ -442,6 +450,15 @@ export const storage = {
       return JSON.parse(raw) || {};
     } catch (e) {
       console.error("Error reading chats from localStorage", e);
+      // Backup darurat string korup untuk mencegah silent loss permanen
+      try {
+        const rawCorrupt = localStorage.getItem(STORAGE_KEYS.CHATS);
+        if (rawCorrupt) {
+          localStorage.setItem(`waguri_corrupt_chats_backup_${Date.now()}`, rawCorrupt);
+        }
+      } catch {
+        // ignore
+      }
       return {};
     }
   },
@@ -478,7 +495,11 @@ export const storage = {
     };
 
     allChats[characterId] = newChat;
-    localStorage.setItem(STORAGE_KEYS.CHATS, JSON.stringify(allChats));
+    try {
+      localStorage.setItem(STORAGE_KEYS.CHATS, JSON.stringify(allChats));
+    } catch (e) {
+      console.error("Gagal menyimpan inisialisasi chat baru", e);
+    }
     return newChat;
   },
 
@@ -509,32 +530,30 @@ export const storage = {
         return false;
       }
 
-      // Kuota penuh. Buang gambar dari pesan TERLAMA dulu supaya teks
-      // percakapan tetap utuh dan aplikasi tetap bisa dipakai.
+      // Kuota penuh. Buang gambar dari pesan TERLAMA secara bertahap
+      // supaya teks percakapan tetap utuh dan aplikasi tetap bisa dipakai.
       const messages = [...chat.messages];
-      let stripped = false;
+      let strippedAny = false;
 
-      for (let i = 0; i < messages.length && !stripped; i++) {
+      for (let i = 0; i < messages.length; i++) {
         if (messages[i].image) {
           messages[i] = { ...messages[i], image: undefined };
-          stripped = true;
+          strippedAny = true;
+          allChats[chat.characterId] = { ...chat, messages };
+          try {
+            localStorage.setItem(STORAGE_KEYS.CHATS, JSON.stringify(allChats));
+            console.warn("Kuota localStorage penuh — gambar lama dilepas untuk menghemat ruang.");
+            return true;
+          } catch {
+            // Lanjutkan melepas gambar berikutnya jika masih belum cukup
+          }
         }
       }
 
-      if (!stripped) {
+      if (!strippedAny) {
         console.error("localStorage penuh dan tidak ada gambar untuk dilepas", e);
-        return false;
       }
-
-      allChats[chat.characterId] = { ...chat, messages };
-      try {
-        localStorage.setItem(STORAGE_KEYS.CHATS, JSON.stringify(allChats));
-        console.warn("Kuota localStorage penuh — gambar lama dilepas.");
-        return true;
-      } catch (retryErr) {
-        console.error("Masih gagal menyimpan setelah melepas gambar", retryErr);
-        return false;
-      }
+      return false;
     }
   },
 
@@ -678,9 +697,13 @@ export const storage = {
   },
 
   saveSettings(settings: Settings): void {
-    localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
-    if (typeof window !== "undefined") {
-      window.dispatchEvent(new Event("waguri_quota_updated"));
+    try {
+      localStorage.setItem(STORAGE_KEYS.SETTINGS, JSON.stringify(settings));
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("waguri_quota_updated"));
+      }
+    } catch (e) {
+      console.error("Gagal menyimpan settings ke localStorage", e);
     }
   },
 
@@ -699,27 +722,39 @@ export const storage = {
   },
 
   saveScheduledTask(task: ScheduledTask): void {
-    const tasks = this.getScheduledTasks();
-    const idx = tasks.findIndex((t) => t.id === task.id);
-    if (idx >= 0) {
-      tasks[idx] = task;
-    } else {
-      tasks.push(task);
+    try {
+      const tasks = this.getScheduledTasks();
+      const idx = tasks.findIndex((t) => t.id === task.id);
+      if (idx >= 0) {
+        tasks[idx] = task;
+      } else {
+        tasks.push(task);
+      }
+      localStorage.setItem(STORAGE_KEYS.SCHEDULED_TASKS, JSON.stringify(tasks));
+    } catch (e) {
+      console.error("Gagal menyimpan scheduled task ke localStorage", e);
     }
-    localStorage.setItem(STORAGE_KEYS.SCHEDULED_TASKS, JSON.stringify(tasks));
   },
 
   deleteScheduledTask(taskId: string): void {
-    const tasks = this.getScheduledTasks().filter((t) => t.id !== taskId);
-    localStorage.setItem(STORAGE_KEYS.SCHEDULED_TASKS, JSON.stringify(tasks));
+    try {
+      const tasks = this.getScheduledTasks().filter((t) => t.id !== taskId);
+      localStorage.setItem(STORAGE_KEYS.SCHEDULED_TASKS, JSON.stringify(tasks));
+    } catch (e) {
+      console.error("Gagal menghapus scheduled task dari localStorage", e);
+    }
   },
 
   toggleScheduledTask(taskId: string, enabled: boolean): void {
-    const tasks = this.getScheduledTasks();
-    const task = tasks.find((t) => t.id === taskId);
-    if (task) {
-      task.enabled = enabled;
-      localStorage.setItem(STORAGE_KEYS.SCHEDULED_TASKS, JSON.stringify(tasks));
+    try {
+      const tasks = this.getScheduledTasks();
+      const task = tasks.find((t) => t.id === taskId);
+      if (task) {
+        task.enabled = enabled;
+        localStorage.setItem(STORAGE_KEYS.SCHEDULED_TASKS, JSON.stringify(tasks));
+      }
+    } catch (e) {
+      console.error("Gagal toggle status scheduled task di localStorage", e);
     }
   },
 

@@ -1271,29 +1271,59 @@ export const ATRIA_API_KEYS = [
   "atr_QwtaE8p5g0AUMZlo9D3dv8iZ5IN0lmcy",
 ];
 
+export function validateBaseUrl(urlStr: string): string {
+  const clean = (urlStr || "").trim().replace(/\/+$/, "");
+  if (!clean) {
+    throw new Error("Base URL provider belum diisi. Contoh: https://api.atria-asi.ai/v1");
+  }
+
+  let parsed: URL;
+  try {
+    parsed = new URL(clean);
+  } catch {
+    throw new Error("Base URL bukan URL yang valid.");
+  }
+
+  if (parsed.protocol !== "https:" && parsed.protocol !== "http:") {
+    throw new Error("Protokol URL provider hanya boleh http: atau https:.");
+  }
+
+  const hostname = parsed.hostname.toLowerCase();
+  // Cegah SSRF ke localhost, link-local, dan private networks
+  if (
+    hostname === "localhost" ||
+    hostname === "127.0.0.1" ||
+    hostname === "0.0.0.0" ||
+    hostname === "169.254.169.254" ||
+    hostname.startsWith("10.") ||
+    hostname.startsWith("192.168.") ||
+    /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname)
+  ) {
+    throw new Error("Akses ke host lokal / private network tidak diizinkan.");
+  }
+
+  return clean;
+}
+
 async function callOpenAICompatible(
   req: ChatTurnRequest,
   cfg: ProviderConfig,
   systemInstruction: string,
   temperature: number
 ): Promise<ModelPayload> {
-  const baseUrl = (cfg.baseUrl || "").trim().replace(/\/+$/, "");
-  if (!baseUrl) {
-    throw new Error(
-      "Base URL provider belum diisi. Contoh: https://api.atria-asi.ai/v1"
-    );
-  }
+  const baseUrl = validateBaseUrl(cfg.baseUrl || "");
 
   const model = (cfg.model || "").trim();
   if (!model) {
     throw new Error("Nama model provider belum diisi.");
   }
 
-  const isAtria = baseUrl.includes("api.atria-asi.ai") || model === "Atria-Dawn-Preview";
+  const isOfficialAtria = baseUrl.startsWith("https://api.atria-asi.ai");
+  const isOfficialNara = baseUrl.startsWith("https://router.bynara.id");
 
-  // Susun daftar API key yang akan dicoba (rotasi otomatis jika Atria Dawn)
+  // Susun daftar API key yang akan dicoba (hanya suntikkan key sistem jika domain resmi)
   let candidateKeys: string[];
-  if (isAtria) {
+  if (isOfficialAtria) {
     const startIdx = Math.floor(Math.random() * ATRIA_API_KEYS.length);
     candidateKeys = [
       ...ATRIA_API_KEYS.slice(startIdx),
@@ -1302,10 +1332,14 @@ async function callOpenAICompatible(
     if (cfg.apiKey && !candidateKeys.includes(cfg.apiKey.trim())) {
       candidateKeys.unshift(cfg.apiKey.trim());
     }
+  } else if (isOfficialNara) {
+    const defaultNaraKey = (process.env.NARA_API_KEY || "sk-nry-sgXTu4Sl3NdCFsL7V3c4t4Og7bjlXvEgXk1Tq39Vs4I").trim();
+    candidateKeys = [cfg.apiKey?.trim() || defaultNaraKey];
   } else {
+    // Custom domain provider: DILARANG menyuntikkan key sistem internal!
     const directKey = (cfg.apiKey || "").trim();
     if (!directKey) {
-      throw new Error("API key provider belum diisi.");
+      throw new Error("API key provider belum diisi untuk custom endpoint.");
     }
     candidateKeys = [directKey];
   }
@@ -1636,13 +1670,23 @@ Task: Write a concise 2-4 sentence summary of what was discussed, personal detai
 
   try {
     if (cfg.type === "openai-compatible") {
-      const baseUrl = (cfg.baseUrl || "").trim().replace(/\/+$/, "");
+      let baseUrl: string;
+      try {
+        baseUrl = validateBaseUrl(cfg.baseUrl || "");
+      } catch {
+        return { summary: req.existingSummary || "" };
+      }
       const apiKey = (cfg.apiKey || "").trim();
       const model = (cfg.model || "").trim();
-      const isAtria = baseUrl.includes("api.atria-asi.ai") || model === "Atria-Dawn-Preview";
-      const resolvedApiKey = isAtria && (!apiKey || apiKey.startsWith("sk-") || apiKey.includes("MY_"))
-        ? ATRIA_API_KEYS[0]
-        : apiKey;
+      const isOfficialAtria = baseUrl.startsWith("https://api.atria-asi.ai");
+      const isOfficialNara = baseUrl.startsWith("https://router.bynara.id");
+
+      let resolvedApiKey = apiKey;
+      if (isOfficialAtria && (!apiKey || apiKey.startsWith("sk-") || apiKey.includes("MY_"))) {
+        resolvedApiKey = ATRIA_API_KEYS[0];
+      } else if (isOfficialNara && !apiKey) {
+        resolvedApiKey = (process.env.NARA_API_KEY || "sk-nry-sgXTu4Sl3NdCFsL7V3c4t4Og7bjlXvEgXk1Tq39Vs4I").trim();
+      }
 
       if (!baseUrl || !resolvedApiKey || !model) {
         return { summary: req.existingSummary || "" };

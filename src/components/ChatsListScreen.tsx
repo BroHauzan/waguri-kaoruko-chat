@@ -13,11 +13,14 @@ import {
   ChevronLeft,
   X,
   Lock,
+  Star,
+  UserPlus,
 } from "lucide-react";
 import { Character, Chat, AppLanguage } from "../types";
 import { getDictionary, t } from "../lib/i18n";
 import { haptics } from "../lib/haptics";
 import { storage } from "../lib/storage";
+import { verifyPin, hashPin } from "../lib/crypto";
 import { UpdateNoticeBanner } from "./UpdateNoticeBanner";
 
 interface ChatsListScreenProps {
@@ -32,6 +35,7 @@ interface ChatsListScreenProps {
   onTogglePinCharacter?: (characterId: string) => void;
   onToggleArchiveCharacter?: (characterId: string) => void;
   onCreateNew: () => void;
+  onOpenStarredMessages?: () => void;
   language?: AppLanguage;
   hapticFeedback?: boolean;
   isArchivedView?: boolean;
@@ -50,6 +54,7 @@ export const ChatsListScreen: React.FC<ChatsListScreenProps> = ({
   onTogglePinCharacter,
   onToggleArchiveCharacter,
   onCreateNew,
+  onOpenStarredMessages,
   language = "id",
   hapticFeedback = true,
   isArchivedView: isArchivedViewProp,
@@ -57,6 +62,7 @@ export const ChatsListScreen: React.FC<ChatsListScreenProps> = ({
   onCloseArchived,
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
+  const [showHeaderMenu, setShowHeaderMenu] = useState(false);
   const [internalShowArchivedView, setInternalShowArchivedView] = useState(false);
   const showArchivedView = isArchivedViewProp !== undefined ? isArchivedViewProp : internalShowArchivedView;
 
@@ -96,10 +102,21 @@ export const ChatsListScreen: React.FC<ChatsListScreenProps> = ({
     onSelectCharacter(char);
   };
 
-  const handleVerifyPin = (e?: React.FormEvent) => {
+  const handleVerifyPin = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     const currentSettings = storage.getSettings();
-    if (enteredPin === currentSettings.archivePin) {
+    const isMatch = await verifyPin(enteredPin, currentSettings.archivePin);
+    if (isMatch) {
+      // Migrasi otomatis jika PIN lama masih berupa plaintext
+      if (
+        currentSettings.archivePin &&
+        currentSettings.archivePin.length < 64 &&
+        !currentSettings.archivePin.startsWith("hash_")
+      ) {
+        const hashed = await hashPin(currentSettings.archivePin);
+        storage.saveSettings({ ...currentSettings, archivePin: hashed });
+      }
+
       setShowPinModal(false);
       setEnteredPin("");
       setPinError(null);
@@ -307,16 +324,61 @@ export const ChatsListScreen: React.FC<ChatsListScreenProps> = ({
             {dict.chatsHeading}
           </h1>
 
-          {/* Options icon button on right */}
-          <button
-            type="button"
-            onClick={onCreateNew}
-            className="w-10 h-10 rounded-full bg-white dark:bg-[#16171B] border border-black/10 dark:border-white/10 shadow-xs flex items-center justify-center text-neutral-700 dark:text-[#C9CAD1] hover:bg-neutral-50 dark:hover:bg-white/[0.04] active:scale-95 transition-all cursor-pointer"
-            title={dict.navCreateTitle}
-            aria-label={dict.navCreateTitle}
-          >
-            <Plus size={20} />
-          </button>
+          {/* Options icon button on right -> Dropdown Menu */}
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => {
+                haptics.light(hapticFeedback);
+                setShowHeaderMenu((prev) => !prev);
+              }}
+              className="w-10 h-10 rounded-full bg-white dark:bg-[#16171B] border border-black/10 dark:border-white/10 shadow-xs flex items-center justify-center text-neutral-700 dark:text-[#C9CAD1] hover:bg-neutral-50 dark:hover:bg-white/[0.04] active:scale-95 transition-all cursor-pointer"
+              title={dict.chatOptions}
+              aria-label={dict.chatOptions}
+            >
+              <Plus
+                size={20}
+                className={`transition-transform duration-200 ${
+                  showHeaderMenu ? "rotate-45 text-[#F5B838]" : ""
+                }`}
+              />
+            </button>
+
+            {/* Header Dropdown Menu (Minimalist, No Emojis, No Slop) */}
+            {showHeaderMenu && (
+              <>
+                <div
+                  className="fixed inset-0 z-40"
+                  onClick={() => setShowHeaderMenu(false)}
+                />
+                <div className="absolute right-0 top-12 w-52 bg-white/95 dark:bg-[#16171B]/95 backdrop-blur-xl border border-black/10 dark:border-white/10 rounded-2xl shadow-xl py-1.5 z-50 animate-slide-down flex flex-col">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowHeaderMenu(false);
+                      onCreateNew();
+                    }}
+                    className="w-full px-3.5 py-2.5 text-left text-[13px] font-medium text-neutral-800 dark:text-[#E4E5EA] hover:bg-black/5 dark:hover:bg-white/[0.06] flex items-center gap-2.5 transition-colors cursor-pointer"
+                  >
+                    <UserPlus size={16} className="text-[#F5B838] shrink-0" />
+                    <span>{dict.menuNewCharacter}</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowHeaderMenu(false);
+                      if (onOpenStarredMessages) onOpenStarredMessages();
+                    }}
+                    className="w-full px-3.5 py-2.5 text-left text-[13px] font-medium text-neutral-800 dark:text-[#E4E5EA] hover:bg-black/5 dark:hover:bg-white/[0.06] flex items-center gap-2.5 transition-colors cursor-pointer"
+                  >
+                    <Star size={16} className="text-[#F5B838] shrink-0" />
+                    <span>{dict.menuStarredMessages}</span>
+                  </button>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       )}
 
@@ -471,18 +533,21 @@ export const ChatsListScreen: React.FC<ChatsListScreenProps> = ({
                 <div className="relative w-12 h-12 rounded-full overflow-hidden shrink-0 mr-3.5 mt-0.5 border border-black/5 dark:border-white/10 shadow-xs">
                   <img
                     className="w-full h-full object-cover"
-                    src={item.character.avatarUrl}
+                    src={item.character.avatarUrl || "/waguri-pfp.jpg"}
                     alt={item.character.name}
                     loading="lazy"
+                    onError={(e) => {
+                      e.currentTarget.src = "/waguri-pfp.jpg";
+                    }}
                   />
                   <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white dark:border-[#16171B]" />
                 </div>
 
-                {/* Content: Dynamic multi-line sentence display */}
+                {/* Content: Clean truncated header and line-clamped preview */}
                 <div className="flex-1 min-w-0 pr-1">
                   <div className="flex items-center justify-between mb-1">
-                    <h2 className="text-[15px] font-bold text-neutral-900 dark:text-[#F2F3F7] flex items-center gap-1.5 break-words">
-                      <span>{item.character.name}</span>
+                    <h2 className="text-[15px] font-bold text-neutral-900 dark:text-[#F2F3F7] flex items-center gap-1.5 min-w-0">
+                      <span className="truncate">{item.character.name}</span>
                       {item.isPinned && (
                         <Pin size={13} className="text-[#F5B838] fill-[#F5B838] shrink-0" />
                       )}
@@ -514,9 +579,9 @@ export const ChatsListScreen: React.FC<ChatsListScreenProps> = ({
                       <span>{dict.typing}</span>
                     </span>
                   ) : (
-                    /* Dynamic multiline text without line-clamp, wrapping seamlessly */
+                    /* Line-clamped preview to prevent long AI messages from dominating the screen */
                     <p
-                      className={`text-[13px] leading-relaxed break-words whitespace-pre-wrap ${
+                      className={`text-[13px] leading-relaxed break-words [overflow-wrap:anywhere] line-clamp-2 ${
                         item.isUnread
                           ? "text-neutral-900 dark:text-[#F2F3F7] font-semibold"
                           : "text-neutral-500 dark:text-[#8A8A93]"

@@ -28,6 +28,7 @@ import {
   Clock,
   Crown,
   Brain,
+  Star,
 } from "lucide-react";
 import {
   Character,
@@ -234,6 +235,8 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const isMountedRef = useRef(true);
+  const isSubmittingRef = useRef(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
   
   const [cooldownTime, setCooldownTime] = useState(0);
   const [showInputMenu, setShowInputMenu] = useState(false);
@@ -382,7 +385,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
         return (
           <span
             key={idx}
-            className="italic font-medium opacity-90 underline decoration-dotted decoration-current/30 underline-offset-3"
+            className="italic font-medium opacity-90 underline decoration-dotted decoration-current/30 underline-offset-3 break-words [overflow-wrap:anywhere]"
             title="Aksi roleplay"
           >
             {content}
@@ -464,7 +467,8 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
     const audioToSend = overrideAudio;
 
     // Pesan boleh kosong asal ada lampiran (gambar atau suara).
-    if ((!textToSend && !imageToSend && !audioToSend) || isTyping) return;
+    if ((!textToSend && !imageToSend && !audioToSend) || isTyping || isSubmittingRef.current) return;
+    isSubmittingRef.current = true;
 
     if (editingMessage) {
       const updatedMessages = chat.messages.map((m) =>
@@ -481,11 +485,13 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
         textareaRef.current.style.height = "auto";
         textareaRef.current.style.overflowY = "hidden";
       }
+      isSubmittingRef.current = false;
       return;
     }
 
     // Cek batas kuota pesan harian untuk user Free (200 pesan/hari)
     if (!canSendMessage()) {
+      isSubmittingRef.current = false;
       setQuotaModalReason("exceeded");
       setShowQuotaModal(true);
       return;
@@ -593,6 +599,9 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
       setIsGeneratingPhoto(true);
     }
 
+    const currentAbortController = new AbortController();
+    abortControllerRef.current = currentAbortController;
+
     try {
       const response = await sendMessageToGemini({
         character,
@@ -601,12 +610,19 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
         settings,
         image: imageToSend,
         audio: audioToSend,
+        signal: currentAbortController.signal,
         replyToText: replyTo
           ? `${replyTo.role === "user" ? (settings.userName || "Pengguna") : character.name}: "${replyTo.text || (replyTo.image ? "[Foto]" : "[Pesan suara]")}"`
           : null,
       });
 
       setIsGeneratingPhoto(false);
+
+      // Cegah zombie resurrection jika karakter telah dihapus saat AI merespons
+      if (!storage.getCharacterById(character.id)) {
+        console.warn("Karakter telah dihapus saat AI merespons, batalkan penyimpanan.");
+        return;
+      }
 
       const incomingList =
         response.messages && response.messages.length > 0
@@ -840,14 +856,17 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
           newSpeakingStyle = `${callRule} ${cleaned}`.trim();
         }
 
-        const updatedChar: Character = {
-          ...character,
-          speakingStyle: newSpeakingStyle,
-          customInstructions: currentInstructions,
-        };
+        const existingChar = storage.getCharacterById(character.id);
+        if (existingChar) {
+          const updatedChar: Character = {
+            ...existingChar,
+            speakingStyle: newSpeakingStyle,
+            customInstructions: currentInstructions,
+          };
 
-        storage.saveCharacter(updatedChar);
-        onUpdateCharacter(updatedChar);
+          storage.saveCharacter(updatedChar);
+          onUpdateCharacter(updatedChar);
+        }
 
         // Jika ada pembaruan nama panggilan user
         if (response.preferredUserName && response.preferredUserName !== settings.userName) {
@@ -871,6 +890,10 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
       removeTask(taskId).catch(() => {});
     } catch (err: any) {
       removeTask(taskId).catch(() => {});
+      if (err?.name === "AbortError") {
+        // Request dibatalkan dengan sengaja (misal saat clear chat)
+        return;
+      }
       console.error("Chat error:", err);
       haptics.error(isHapticEnabled);
       if (isMountedRef.current) {
@@ -907,6 +930,8 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
       // Always unmark on every exit path. Every path above already removed
       // the task from IndexedDB, so this is purely cleanup to keep the
       // foreground set from growing without bound.
+      isSubmittingRef.current = false;
+      abortControllerRef.current = null;
       backgroundQueue.releaseForeground(taskId);
       onTypingChange?.(character.id, false);
       if (isMountedRef.current) {
@@ -1005,8 +1030,28 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
     ? chat.messages.find((m) => m.id === selectedMessageId) || null
     : null;
 
+  const handleToggleStarMessage = (msg: Message) => {
+    const isNowStarred = !msg.isStarred;
+    const updatedMessages = chat.messages.map((m) =>
+      m.id === msg.id ? { ...m, isStarred: isNowStarred } : m
+    );
+    onUpdateChat({
+      ...chat,
+      messages: updatedMessages,
+      updatedAt: Date.now(),
+    });
+    haptics.light(settings.hapticFeedback !== false);
+    setSelectedMessageId(null);
+    setMenuAnchor(null);
+    setSuccessNotice(isNowStarred ? dict.starredToast : dict.unstarredToast);
+    setTimeout(() => setSuccessNotice(null), 2000);
+  };
+
   /**
    * Daftar aksi menu konteks, disusun mengikuti konteks pesan:
+   * - "Balas" selalu ada.
+   * - "Bintang" selalu ada (menandai pesan favorit).
+   * - "Salin" selalu ada.
    * - "Dengarkan Suara" hanya untuk pesan karakter yang punya teks.
    * - "Edit" hanya untuk pesan sendiri yang punya teks.
    * - "Hapus" selalu ada.
@@ -1018,11 +1063,12 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
     const hasText = Boolean(
       selectedMessage.text && selectedMessage.text !== "[Foto]"
     );
+    const isStarred = Boolean(selectedMessage.isStarred);
 
     const actions: ContextMenuAction[] = [
       {
         id: "reply",
-        label: "Balas",
+        label: dict.reply,
         icon: <Reply size={17} />,
         onSelect: () => {
           setReplyTo(selectedMessage);
@@ -1033,8 +1079,21 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
         },
       },
       {
+        id: "star",
+        label: isStarred ? dict.unstarMessage : dict.starMessage,
+        icon: (
+          <Star
+            size={17}
+            className={isStarred ? "fill-[#F5B838] text-[#F5B838]" : ""}
+          />
+        ),
+        onSelect: () => {
+          handleToggleStarMessage(selectedMessage);
+        },
+      },
+      {
         id: "copy",
-        label: "Salin",
+        label: dict.copyText,
         icon: <Copy size={17} />,
         onSelect: () => {
           handleCopyMessage(selectedMessage);
@@ -1046,7 +1105,9 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
     if (!isMsgUser && hasText) {
       actions.push({
         id: "play",
-        label: isPlayingAudio ? "Hentikan Suara" : "Dengarkan Suara",
+        label: isPlayingAudio
+          ? (settings.language === "en" ? "Stop Audio" : "Hentikan Suara")
+          : (settings.language === "en" ? "Listen to Audio" : "Dengarkan Suara"),
         icon: isPlayingAudio ? (
           <span className="flex items-end gap-[2px] h-4">
             <span className="w-[2px] h-2 rounded-full bg-current animate-pulse" />
@@ -1073,7 +1134,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
     if (isMsgUser && hasText) {
       actions.push({
         id: "edit",
-        label: "Edit Pesan",
+        label: settings.language === "en" ? "Edit Message" : "Edit Pesan",
         icon: <Edit3 size={17} />,
         onSelect: () => {
           setEditingMessage(selectedMessage);
@@ -1087,7 +1148,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
 
     actions.push({
       id: "delete",
-      label: "Hapus Pesan",
+      label: dict.deleteMessage,
       icon: <Trash2 size={17} />,
       danger: true,
       onSelect: () => {
@@ -1100,7 +1161,22 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
   })();
 
   const executeClearChat = () => {
+    const isEn = settings.language === "en";
+    const confirmed = window.confirm(
+      isEn
+        ? `Are you sure you want to clear chat history with ${character.name}?`
+        : `Yakin ingin menghapus seluruh riwayat chat dengan ${character.name}?`
+    );
+    if (!confirmed) return;
+
+    // Batalkan AI request yang sedang berjalan jika ada
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    isSubmittingRef.current = false;
     setIsTyping(false);
+    onTypingChange?.(character.id, false);
     setSelectedMessageId(null);
     setEditingMessage(null);
     setInputText("");
@@ -1113,7 +1189,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
     setShowActionMenu(false);
 
     haptics.light(settings.hapticFeedback !== false);
-    setSuccessNotice("Riwayat chat berhasil dibersihkan!");
+    setSuccessNotice(isEn ? "Chat history cleared successfully!" : "Riwayat chat berhasil dibersihkan!");
     setTimeout(() => {
       setSuccessNotice(null);
     }, 2500);
@@ -1279,7 +1355,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
           /* Search Bar Header Mode - Minimalist, NO emojis */
           <div className="h-[62px] px-3 flex items-center justify-between gap-2 max-w-md lg:max-w-none mx-auto">
             <button
-              aria-label="Tutup pencarian"
+              aria-label={settings.language === "en" ? "Close search" : "Tutup pencarian"}
               className="w-9 h-9 rounded-full hover:bg-neutral-100 dark:hover:bg-white/[0.08] flex items-center justify-center text-neutral-800 dark:text-[#E4E5EA] active:scale-95 transition-all cursor-pointer shrink-0"
               onClick={() => {
                 setIsSearching(false);
@@ -1297,7 +1373,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Cari pesan..."
+                placeholder={settings.language === "en" ? "Search messages..." : "Cari pesan..."}
                 autoFocus
                 className="w-full bg-transparent text-[14px] text-neutral-900 dark:text-[#F2F3F7] placeholder:text-neutral-400 dark:placeholder:text-white/35 outline-none leading-normal min-w-0"
               />
@@ -1324,7 +1400,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                 onClick={handlePrevMatch}
                 disabled={searchMatches.length === 0}
                 className="w-8 h-8 rounded-full flex items-center justify-center text-neutral-600 dark:text-[#C9CAD1] disabled:opacity-30 hover:bg-neutral-100 dark:hover:bg-white/[0.08] cursor-pointer"
-                title="Pesan sebelumnya"
+                title={settings.language === "en" ? "Previous match" : "Pesan sebelumnya"}
               >
                 <ChevronUp size={18} />
               </button>
@@ -1333,7 +1409,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                 onClick={handleNextMatch}
                 disabled={searchMatches.length === 0}
                 className="w-8 h-8 rounded-full flex items-center justify-center text-neutral-600 dark:text-[#C9CAD1] disabled:opacity-30 hover:bg-neutral-100 dark:hover:bg-white/[0.08] cursor-pointer"
-                title="Pesan berikutnya"
+                title={settings.language === "en" ? "Next match" : "Pesan berikutnya"}
               >
                 <ChevronDown size={18} />
               </button>
@@ -1341,7 +1417,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                 type="button"
                 onClick={() => setShowDatePicker(true)}
                 className="w-8 h-8 rounded-full flex items-center justify-center text-neutral-600 dark:text-[#C9CAD1] hover:bg-neutral-100 dark:hover:bg-white/[0.08] cursor-pointer ml-0.5"
-                title="Cari berdasarkan tanggal"
+                title={settings.language === "en" ? "Search by date" : "Cari berdasarkan tanggal"}
               >
                 <Calendar size={17} />
               </button>
@@ -1369,7 +1445,10 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                 <img
                   alt={character.name}
                   className="w-full h-full object-cover"
-                  src={character.avatarUrl}
+                  src={character.avatarUrl || "/waguri-pfp.jpg"}
+                  onError={(e) => {
+                    e.currentTarget.src = "/waguri-pfp.jpg";
+                  }}
                 />
                 <span className="absolute bottom-0 right-0 w-3 h-3 rounded-full bg-emerald-500 border-2 border-white dark:border-[#16171B]" />
               </div>
@@ -1447,7 +1526,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                 className="w-full px-3 py-2 text-left text-xs font-semibold text-neutral-800 dark:text-[#E4E5EA] hover:bg-neutral-100 dark:hover:bg-white/[0.08] rounded-xl flex items-center gap-2.5 cursor-pointer"
               >
                 <Search size={15} className="text-neutral-500 dark:text-[#8A8A93]" />
-                <span>Cari Pesan</span>
+                <span>{settings.language === "en" ? "Search Messages" : "Cari Pesan"}</span>
               </button>
               <button
                 onClick={() => {
@@ -1457,7 +1536,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                 className="w-full px-3 py-2 text-left text-xs font-semibold text-neutral-800 dark:text-[#E4E5EA] hover:bg-neutral-100 dark:hover:bg-white/[0.08] rounded-xl flex items-center gap-2.5 cursor-pointer"
               >
                 <Calendar size={15} className="text-neutral-500 dark:text-[#8A8A93]" />
-                <span>Cari Berdasarkan Tanggal</span>
+                <span>{settings.language === "en" ? "Search by Date" : "Cari Berdasarkan Tanggal"}</span>
               </button>
               <button
                 onClick={() => {
@@ -1470,8 +1549,8 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                 <Crown size={15} className="text-amber-500" />
                 <span>
                   {quotaInfo.isPaid
-                    ? "Status Akun (VIP Unlimited)"
-                    : `Kuota Chat (${quotaInfo.remaining}/${quotaInfo.limit})`}
+                    ? (settings.language === "en" ? "Account Status (VIP Unlimited)" : "Status Akun (VIP Unlimited)")
+                    : `${settings.language === "en" ? "Chat Quota" : "Kuota Chat"} (${quotaInfo.remaining}/${quotaInfo.limit})`}
                 </span>
               </button>
             </div>
@@ -1484,7 +1563,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                 className="w-full px-3 py-2 text-left text-xs font-semibold text-neutral-800 dark:text-[#E4E5EA] hover:bg-neutral-100 dark:hover:bg-white/[0.08] rounded-xl flex items-center gap-2.5 cursor-pointer"
               >
                 <Sliders size={15} className="text-[#F5B838]" />
-                <span>Lihat Profil Karakter</span>
+                <span>{dict.viewCharacterProfile}</span>
               </button>
               <button
                 onClick={() => {
@@ -1494,7 +1573,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                 className="w-full px-3 py-2 text-left text-xs font-semibold text-neutral-800 dark:text-[#E4E5EA] hover:bg-neutral-100 dark:hover:bg-white/[0.08] rounded-xl flex items-center gap-2.5 cursor-pointer"
               >
                 <BarChart2 size={15} className="text-[#F5B838]" />
-                <span>Statistik & Tren Mood</span>
+                <span>{dict.moodStatsAndTrends}</span>
               </button>
               <button
                 onClick={() => {
@@ -1504,7 +1583,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                 className="w-full px-3 py-2 text-left text-xs font-semibold text-neutral-800 dark:text-[#E4E5EA] hover:bg-neutral-100 dark:hover:bg-white/[0.08] rounded-xl flex items-center gap-2.5 cursor-pointer"
               >
                 <Edit3 size={15} className="text-neutral-500 dark:text-[#8A8A93]" />
-                <span>Instruksi Khusus (System)</span>
+                <span>{dict.customInstructionsSystem}</span>
               </button>
               <button
                 onClick={() => {
@@ -1514,7 +1593,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                 className="w-full px-3 py-2 text-left text-xs font-semibold text-neutral-800 dark:text-[#E4E5EA] hover:bg-neutral-100 dark:hover:bg-white/[0.08] rounded-xl flex items-center gap-2.5 cursor-pointer"
               >
                 <Clock size={15} className="text-[#F5B838]" />
-                <span>Instruksi Terjadwal</span>
+                <span>{settings.language === "en" ? "Scheduled Tasks" : "Instruksi Terjadwal"}</span>
               </button>
             </div>
             <div className="py-1">
@@ -1523,7 +1602,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                 className="w-full px-3 py-2 text-left text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-xl flex items-center gap-2.5 cursor-pointer"
               >
                 <Trash2 size={15} />
-                <span>Bersihkan Isi Chat</span>
+                <span>{dict.clearChatHistory}</span>
               </button>
             </div>
           </div>
@@ -1681,7 +1760,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                             : character.name.split(" ")[0]}
                         </span>
                         <span
-                          className={`text-[12px] line-clamp-2 leading-snug ${
+                          className={`text-[12px] line-clamp-2 leading-snug break-words [overflow-wrap:anywhere] ${
                             isUser
                               ? "text-neutral-900/70"
                               : "text-neutral-500 dark:text-[#9B9BA3]"
@@ -1718,7 +1797,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                       message.text !== "[Foto]" &&
                       message.text !== "[Pesan suara]" && (
                         <p
-                          className={`text-[15px] leading-[1.35] whitespace-pre-wrap break-words ${
+                          className={`text-[15px] leading-[1.35] whitespace-pre-wrap break-words [overflow-wrap:anywhere] min-w-0 ${
                             message.audio || message.image ? "mt-2" : ""
                           }`}
                         >
@@ -1727,13 +1806,21 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                       )}
 
                     {/* Baris meta di DALAM bubble, seperti WhatsApp:
-                        jam + centang status. Diletakkan rata kanan supaya
+                        bintang + jam + centang status. Diletakkan rata kanan supaya
                         mengalir di samping teks terakhir. */}
                     <div
                       className={`flex items-center justify-end gap-1 mt-0.5 -mb-0.5 ${
-                        isUser ? "text-neutral-900/55" : "text-neutral-400 dark:text-[#8A8A93]"
+                        isUser ? "text-neutral-900/55" : "text-neutral-400 dark:text-[#A6A6B0]"
                       }`}
                     >
+                      {message.isStarred && (
+                        <span title={dict.starMessage} className="inline-flex">
+                          <Star
+                            size={11}
+                            className="shrink-0 fill-[#F5B838] text-[#F5B838]"
+                          />
+                        </span>
+                      )}
                       <span className="text-[11px] leading-none tabular-nums">
                         {formatMessageTime(message.timestamp)}
                       </span>
@@ -1847,9 +1934,11 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
 
       {/* Editing Message Banner */}
       {editingMessage && (
-        <div className="fixed bottom-[74px] inset-x-0 z-30 max-w-md lg:max-w-3xl mx-auto px-4">
+        <div className="absolute bottom-[66px] inset-x-0 z-30 max-w-md lg:max-w-3xl mx-auto px-4">
           <div className="bg-amber-50 dark:bg-[#F5B838]/15 border border-amber-200 dark:border-[#F5B838]/30 rounded-2xl p-2.5 flex items-center justify-between text-xs text-amber-900 dark:text-amber-200 shadow-md">
-            <span className="truncate pr-2">Mengedit: "{editingMessage.text}"</span>
+            <span className="truncate pr-2">
+              {settings.language === "en" ? "Editing:" : "Mengedit:"} "{editingMessage.text}"
+            </span>
             <button
               onClick={() => {
                 setEditingMessage(null);
@@ -1857,7 +1946,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
               }}
               className="text-amber-800 dark:text-amber-300 font-bold underline shrink-0 cursor-pointer"
             >
-              Batal
+              {settings.language === "en" ? "Cancel" : "Batal"}
             </button>
           </div>
         </div>

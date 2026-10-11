@@ -43,6 +43,7 @@ import {
   sendPushLikeNotification,
 } from "../lib/pushNotification";
 import { QuotaModal } from "./QuotaModal";
+import { hashPin } from "../lib/crypto";
 import { getDailyUsage, DailyUsageInfo, isPaidUser } from "../lib/quotaService";
 import {
   getCachedUserLocation,
@@ -141,16 +142,17 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
     }
   }, [settings.archivePin]);
 
-  const handleSaveArchivePin = () => {
+  const handleSaveArchivePin = async () => {
     if (!tempPin || tempPin.length < 4) {
       setPinError(language === "en" ? "PIN must be at least 4 digits." : "PIN minimal harus terdiri dari 4 angka.");
       haptics.error(hapticFeedback);
       return;
     }
-    setArchivePin(tempPin);
+    const hashed = await hashPin(tempPin);
+    setArchivePin(hashed);
     setTempPin("");
     setPinError(null);
-    const nextSettings: Settings = { ...settings, archivePin: tempPin };
+    const nextSettings: Settings = { ...settings, archivePin: hashed };
     onSaveSettings(nextSettings);
     haptics.light(hapticFeedback);
     showToast(language === "en" ? "Archive PIN saved successfully!" : "Kunci PIN Arsip berhasil disimpan!");
@@ -663,7 +665,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             ======================================================== */}
         <section className="flex flex-col gap-2">
           <span className="px-2 font-semibold text-[13px] text-neutral-500 dark:text-neutral-400/80 tracking-wide uppercase">
-            Akun
+            {language === "en" ? "Account" : "Akun"}
           </span>
           <div className="bg-white dark:bg-[#171920] border border-black/5 dark:border-white/[0.06] rounded-3xl overflow-hidden shadow-xs flex flex-col divide-y divide-black/5 dark:divide-white/[0.05]">
             {/* Kelola Profil */}
@@ -677,7 +679,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   <Pencil size={20} />
                 </span>
                 <span className="text-[15px] font-medium text-neutral-900 dark:text-[#F2F3F7] truncate">
-                  Kelola Profil
+                  {language === "en" ? "Manage Profile" : "Kelola Profil"}
                 </span>
               </div>
               <ChevronRight size={18} className="text-neutral-400 dark:text-neutral-500 shrink-0 ml-2" />
@@ -689,7 +691,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 <div className="flex items-center gap-3.5 min-w-0">
                   <Crown size={20} className="text-neutral-500 dark:text-[#8A8A93] shrink-0" />
                   <span className="text-[15px] font-medium text-neutral-900 dark:text-[#F2F3F7] truncate">
-                    Status Kuota &amp; Akun
+                    {language === "en" ? "Account Tier & Quota" : "Status Kuota & Akun"}
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0 ml-2">
@@ -702,11 +704,13 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               <div className="px-4 pb-4 pt-1 flex flex-col gap-3.5 bg-neutral-50/60 dark:bg-black/20 border-t border-black/5 dark:border-white/[0.04]">
                 <div className="flex flex-col gap-1.5 pt-1">
                   <div className="flex justify-between items-center text-[12px]">
-                    <span className="text-neutral-600 dark:text-neutral-400 font-medium">Penggunaan Hari Ini</span>
+                    <span className="text-neutral-600 dark:text-neutral-400 font-medium">
+                      {language === "en" ? "Today's Usage" : "Penggunaan Hari Ini"}
+                    </span>
                     <span className="text-[#B45309] dark:text-[#F5B838] font-bold">
                       {quotaInfo.used} / {quotaInfo.limit}
                       <span className="text-neutral-500 dark:text-neutral-400 font-normal ml-1">
-                        (sisa {quotaInfo.remaining})
+                        ({language === "en" ? `remaining ${quotaInfo.remaining}` : `sisa ${quotaInfo.remaining}`})
                       </span>
                     </span>
                   </div>
@@ -719,16 +723,18 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                     />
                   </div>
                   <span className="text-[11px] text-neutral-500 dark:text-neutral-400">
-                    Akun Free dibatasi kuota harian. Kuota direset otomatis tiap 00:00 WIB.
+                    {language === "en"
+                      ? "Free accounts are subject to daily message limits. Resets at 00:00 WIB."
+                      : "Akun Free dibatasi kuota harian. Kuota direset otomatis tiap 00:00 WIB."}
                   </span>
                 </div>
 
                 <div className="flex flex-wrap gap-2">
                   <div className="px-2.5 py-1 rounded-xl bg-white dark:bg-white/[0.04] border border-black/5 dark:border-white/[0.06] text-[11px] flex items-center gap-1.5">
-                    <span>Nara Router: <strong className="text-neutral-900 dark:text-white">200/hari</strong></span>
+                    <span>Nara Router: <strong className="text-neutral-900 dark:text-white">200/{language === "en" ? "day" : "hari"}</strong></span>
                   </div>
                   <div className="px-2.5 py-1 rounded-xl bg-white dark:bg-white/[0.04] border border-black/5 dark:border-white/[0.06] text-[11px] flex items-center gap-1.5">
-                    <span>Atria Dawn: <strong className="text-neutral-900 dark:text-white">500/hari</strong></span>
+                    <span>Atria Dawn: <strong className="text-neutral-900 dark:text-white">500/{language === "en" ? "day" : "hari"}</strong></span>
                   </div>
                 </div>
 
@@ -736,7 +742,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 <div className="p-3 rounded-2xl bg-white dark:bg-[#14161c] border border-amber-500/30 flex flex-col gap-2.5 mt-0.5">
                   <div className="flex items-center justify-between">
                     <span className="text-[12px] font-bold text-[#B45309] dark:text-[#F5B838] flex items-center gap-1.5">
-                      <Crown size={15} /> Aktivasi Paid Mode (VIP)
+                      <Crown size={15} /> {language === "en" ? "Activate Paid Mode (VIP)" : "Aktivasi Paid Mode (VIP)"}
                     </span>
                     <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/10 text-[#B45309] dark:text-[#F5B838] font-bold">
                       Unlimited
@@ -747,7 +753,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                     onClick={() => setActiveModal("accountTier")}
                     className="w-full py-2 px-3 rounded-xl bg-[#F5B838] hover:bg-[#E5A929] text-neutral-950 font-bold text-[12px] active:scale-95 transition-all text-center cursor-pointer shadow-xs"
                   >
-                    Buka Dialog Kuota &amp; Kode VIP
+                    {language === "en" ? "Open Quota & VIP Code Dialog" : "Buka Dialog Kuota & Kode VIP"}
                   </button>
                 </div>
               </div>
@@ -759,7 +765,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 <div className="flex items-center gap-3.5 min-w-0">
                   <Bell size={20} className="text-neutral-500 dark:text-[#8A8A93] shrink-0" />
                   <span className="text-[15px] font-medium text-neutral-900 dark:text-[#F2F3F7] truncate">
-                    Notifikasi Balasan
+                    {language === "en" ? "Reply Notifications" : "Notifikasi Balasan"}
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0 ml-2">
@@ -768,14 +774,18 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                       ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400"
                       : "bg-neutral-200 dark:bg-white/5 text-neutral-500"
                   }`}>
-                    {notifPermission === "granted" ? "✓ Aktif" : "Nonaktif"}
+                    {notifPermission === "granted"
+                      ? (language === "en" ? "Active" : "✓ Aktif")
+                      : (language === "en" ? "Disabled" : "Nonaktif")}
                   </span>
                   <ChevronRight size={18} className="text-neutral-400 dark:text-neutral-500 transition-transform duration-200 group-open:rotate-90" />
                 </div>
               </summary>
               <div className="px-4 pb-4 pt-2.5 flex flex-col gap-3 bg-neutral-50/60 dark:bg-black/20 border-t border-black/5 dark:border-white/[0.04]">
                 <p className="text-[11px] text-neutral-500 dark:text-neutral-400 leading-relaxed">
-                  Aktifkan notifikasi untuk mendapatkan balasan karakter bahkan saat layar terkunci atau di latar belakang.
+                  {language === "en"
+                    ? "Enable notifications to receive character replies when the app is in background or screen is locked."
+                    : "Aktifkan notifikasi untuk mendapatkan balasan karakter bahkan saat layar terkunci atau di latar belakang."}
                 </p>
                 <div className="flex gap-2">
                   {notifPermission !== "granted" ? (
@@ -784,25 +794,25 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                       onClick={async () => {
                         const granted = await requestNotificationPermission();
                         setNotifPermission(granted ? "granted" : "denied");
-                        if (granted) showToast("Notifikasi aktif!");
+                        if (granted) showToast(language === "en" ? "Notifications enabled!" : "Notifikasi aktif!");
                       }}
                       className="flex-1 py-2 rounded-xl bg-[#F5B838] text-neutral-950 font-bold text-xs active:scale-95 transition-all cursor-pointer"
                     >
-                      Minta Izin Notifikasi
+                      {language === "en" ? "Request Permission" : "Minta Izin Notifikasi"}
                     </button>
                   ) : null}
                   <button
                     type="button"
                     onClick={async () => {
                       await sendPushLikeNotification("Waguri Kaoruko", {
-                        body: "Tes notifikasi berhasil! Balasan akan tetap masuk saat layar ditutup.",
+                        body: language === "en" ? "Notification test successful!" : "Tes notifikasi berhasil! Balasan akan tetap masuk saat layar ditutup.",
                         characterId: "waguri-kaoruko",
                       });
-                      showToast("Notifikasi uji coba terkirim!");
+                      showToast(language === "en" ? "Test notification sent!" : "Notifikasi uji coba terkirim!");
                     }}
                     className="flex-1 py-2 px-3 rounded-xl bg-white dark:bg-white/[0.04] hover:bg-neutral-100 dark:hover:bg-white/[0.08] border border-black/5 dark:border-white/[0.06] text-[12px] font-semibold text-neutral-800 dark:text-white flex items-center justify-center gap-2 active:scale-95 transition-all cursor-pointer"
                   >
-                    <Bell size={14} className="text-[#F5B838]" /> Kirim Tes
+                    <Bell size={14} className="text-[#F5B838]" /> {language === "en" ? "Send Test" : "Kirim Tes"}
                   </button>
                 </div>
               </div>
@@ -814,7 +824,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 <div className="flex items-center gap-3.5 min-w-0">
                   <Globe size={20} className="text-neutral-500 dark:text-[#8A8A93] shrink-0" />
                   <span className="text-[15px] font-medium text-neutral-900 dark:text-[#F2F3F7] truncate">
-                    Bahasa Tampilan
+                    {language === "en" ? "App Language" : "Bahasa Tampilan"}
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0 ml-2">
@@ -838,7 +848,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                       <span className={`text-[13px] font-bold ${language === "id" ? "text-[#B45309] dark:text-[#F5B838]" : "text-neutral-800 dark:text-white"}`}>
                         Indonesia
                       </span>
-                      <span className="text-[10px] text-neutral-500 dark:text-neutral-400">Default lokal</span>
+                      <span className="text-[10px] text-neutral-500 dark:text-neutral-400">{language === "en" ? "Default local" : "Default lokal"}</span>
                     </div>
                     {language === "id" && <Check size={16} className="text-[#F5B838]" />}
                   </div>
@@ -870,7 +880,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             ======================================================== */}
         <section className="flex flex-col gap-2">
           <span className="px-2 font-semibold text-[13px] text-neutral-500 dark:text-neutral-400/80 tracking-wide uppercase">
-            Preferensi
+            {language === "en" ? "Preferences" : "Preferensi"}
           </span>
           <div className="bg-white dark:bg-[#171920] border border-black/5 dark:border-white/[0.06] rounded-3xl overflow-hidden shadow-xs flex flex-col divide-y divide-black/5 dark:divide-white/[0.05]">
             {/* Model & Provider AI (Inline Accordion) */}
@@ -879,7 +889,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 <div className="flex items-center gap-3.5 min-w-0">
                   <Sparkles size={20} className="text-neutral-500 dark:text-[#8A8A93] shrink-0" />
                   <span className="text-[15px] font-medium text-neutral-900 dark:text-[#F2F3F7] truncate">
-                    Model &amp; Provider AI
+                    {language === "en" ? "AI Model & Provider" : "Model & Provider AI"}
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0 ml-2">
@@ -907,12 +917,16 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 <div className="flex items-center gap-3.5 min-w-0">
                   <Palette size={20} className="text-neutral-500 dark:text-[#8A8A93] shrink-0" />
                   <span className="text-[15px] font-medium text-neutral-900 dark:text-[#F2F3F7] truncate">
-                    Tema &amp; Tampilan
+                    {language === "en" ? "Appearance & Theme" : "Tema & Tampilan"}
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0 ml-2">
                   <span className="text-[13px] text-neutral-500 dark:text-neutral-400">
-                    {theme === "light" ? "Terang" : theme === "dark" ? "Gelap" : "Auto"}
+                    {theme === "light"
+                      ? (language === "en" ? "Light" : "Terang")
+                      : theme === "dark"
+                      ? (language === "en" ? "Dark" : "Gelap")
+                      : "Auto"}
                   </span>
                   <ChevronRight size={18} className="text-neutral-400 dark:text-neutral-500 transition-transform duration-200 group-open:rotate-90" />
                 </div>
@@ -921,7 +935,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 {/* Mode Tampilan Switch */}
                 <div className="flex flex-col gap-2">
                   <span className="text-[11px] text-neutral-500 dark:text-neutral-400 font-bold uppercase tracking-wider">
-                    Mode Tampilan
+                    {language === "en" ? "Display Mode" : "Mode Tampilan"}
                   </span>
                   <div className="grid grid-cols-3 p-1 rounded-2xl bg-white dark:bg-white/[0.04] border border-black/5 dark:border-white/[0.06] gap-1 text-[12px]">
                     <button
@@ -933,7 +947,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                           : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
                       }`}
                     >
-                      <Sun size={15} /> Terang
+                      <Sun size={15} /> {language === "en" ? "Light" : "Terang"}
                     </button>
                     <button
                       type="button"
@@ -944,7 +958,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                           : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
                       }`}
                     >
-                      <Moon size={15} /> Gelap
+                      <Moon size={15} /> {language === "en" ? "Dark" : "Gelap"}
                     </button>
                     <button
                       type="button"
@@ -964,7 +978,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 <div className="flex flex-col gap-2">
                   <div className="flex justify-between items-center">
                     <span className="text-[11px] text-neutral-500 dark:text-neutral-400 font-bold uppercase tracking-wider">
-                      Aksen Bubble Chat
+                      {language === "en" ? "Chat Bubble Accent" : "Aksen Bubble Chat"}
                     </span>
                     <span className="text-[11px] text-[#B45309] dark:text-[#F5B838] font-bold">
                       {BUBBLE_THEMES[bubbleTheme]?.name || "Warm Amber"}
@@ -998,10 +1012,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 <Vibrate size={20} className="text-neutral-500 dark:text-[#8A8A93] shrink-0" />
                 <div className="flex flex-col min-w-0">
                   <span className="text-[15px] font-medium text-neutral-900 dark:text-[#F2F3F7] truncate">
-                    Getaran Haptik
+                    {language === "en" ? "Haptic Feedback" : "Getaran Haptik"}
                   </span>
                   <span className="text-[11px] text-neutral-500 dark:text-neutral-400 truncate">
-                    Umpan balik saat mengetik chat
+                    {language === "en" ? "Tactile feedback when interacting & typing" : "Umpan balik saat mengetik chat"}
                   </span>
                 </div>
               </div>
@@ -1026,7 +1040,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 <div className="flex items-center gap-3.5 min-w-0">
                   <MessageSquareText size={20} className="text-neutral-500 dark:text-[#8A8A93] shrink-0" />
                   <span className="text-[15px] font-medium text-neutral-900 dark:text-[#F2F3F7] truncate">
-                    Chat &amp; Gaya Respons
+                    {language === "en" ? "Chat Style & Responses" : "Chat & Gaya Respons"}
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0 ml-2">
@@ -1039,29 +1053,39 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               <div className="px-4 pb-4 pt-2.5 flex flex-col gap-3.5 bg-neutral-50/60 dark:bg-black/20 border-t border-black/5 dark:border-white/[0.04]">
                 <div className="flex flex-col gap-1.5">
                   <span className="text-[11px] text-neutral-500 dark:text-neutral-400 font-bold uppercase tracking-wider">
-                    Panjang Balasan
+                    {language === "en" ? "Reply Length" : "Panjang Balasan"}
                   </span>
                   <div className="grid grid-cols-3 p-1 rounded-2xl bg-white dark:bg-white/[0.04] border border-black/5 dark:border-white/[0.06] gap-1 text-[12px]">
-                    {(["Pendek", "Sedang", "Panjang"] as const).map((len) => (
-                      <button
-                        key={len}
-                        type="button"
-                        onClick={() => handleSelectLength(len)}
-                        className={`py-1.5 rounded-xl transition-colors cursor-pointer ${
-                          replyLength === len
-                            ? "bg-[#F5B838] text-neutral-950 font-bold shadow-xs"
-                            : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
-                        }`}
-                      >
-                        {len}
-                      </button>
-                    ))}
+                    {(["Pendek", "Sedang", "Panjang"] as const).map((len) => {
+                      const displayLen =
+                        language === "en"
+                          ? len === "Pendek"
+                            ? "Short"
+                            : len === "Sedang"
+                            ? "Medium"
+                            : "Long"
+                          : len;
+                      return (
+                        <button
+                          key={len}
+                          type="button"
+                          onClick={() => handleSelectLength(len)}
+                          className={`py-1.5 rounded-xl transition-colors cursor-pointer ${
+                            replyLength === len
+                              ? "bg-[#F5B838] text-neutral-950 font-bold shadow-xs"
+                              : "text-neutral-600 dark:text-neutral-400 hover:text-neutral-900 dark:hover:text-white"
+                          }`}
+                        >
+                          {displayLen}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
 
                 <div className="flex flex-col gap-2 pt-1">
                   <span className="text-[11px] text-neutral-500 dark:text-neutral-400 font-bold uppercase tracking-wider">
-                    Sifat Nada Karakter
+                    {language === "en" ? "Character Response Tone" : "Sifat Nada Karakter"}
                   </span>
                   <div className="flex flex-col gap-1.5">
                     {conversationPresets.map((preset) => (
@@ -1075,8 +1099,28 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                         }`}
                       >
                         <div className="flex flex-col">
-                          <span className="text-[12px] font-bold">{preset.label}</span>
-                          <span className="text-[10px] text-neutral-500 dark:text-neutral-400">{preset.desc}</span>
+                          <span className="text-[12px] font-bold">
+                            {language === "en"
+                              ? preset.label === "Sangat Logis"
+                                ? "Very Logical"
+                                : preset.label === "Natural & Santai"
+                                ? "Natural & Casual"
+                                : preset.label === "Super Manja & Ekspresif"
+                                ? "Affectionate & Expressive"
+                                : preset.label
+                              : preset.label}
+                          </span>
+                          <span className="text-[10px] text-neutral-500 dark:text-neutral-400">
+                            {language === "en"
+                              ? preset.desc === "Konsisten, runtut, minim halusinasi"
+                                ? "Consistent, structured, minimal hallucinations"
+                                : preset.desc === "Percakapan seimbang layaknya sahabat (rekomendasi)"
+                                ? "Balanced companion conversation (recommended)"
+                                : preset.desc === "Variatif, kreatif, dan dinamis"
+                                ? "Creative, diverse, and dynamic"
+                                : preset.desc
+                              : preset.desc}
+                          </span>
                         </div>
                         {Math.abs(temperature - preset.temp) < 0.1 && (
                           <Check size={16} className="text-[#F5B838] shrink-0" />
@@ -1162,7 +1206,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 <div className="flex items-center gap-3.5 min-w-0">
                   <Sliders size={20} className="text-neutral-500 dark:text-[#8A8A93] shrink-0" />
                   <span className="text-[15px] font-medium text-neutral-900 dark:text-[#F2F3F7] truncate">
-                    Opsi Lanjutan &amp; Dev
+                    {language === "en" ? "Advanced & Developer Options" : "Opsi Lanjutan & Dev"}
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0 ml-2">
@@ -1176,7 +1220,9 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 {/* Fine-Tuning Kreativitas (Temp) */}
                 <div className="flex flex-col gap-1.5">
                   <div className="flex justify-between items-center text-[12px]">
-                    <span className="text-neutral-800 dark:text-neutral-300 font-medium">Fine-Tuning Kreativitas (Temp)</span>
+                    <span className="text-neutral-800 dark:text-neutral-300 font-medium">
+                      {language === "en" ? "Creativity Fine-Tuning (Temperature)" : "Fine-Tuning Kreativitas (Temp)"}
+                    </span>
                     <span className="text-[#B45309] dark:text-[#F5B838] font-bold font-mono">{temperature.toFixed(2)}</span>
                   </div>
                   <input
@@ -1189,8 +1235,8 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                     className="w-full accent-[#F5B838] h-1.5 bg-neutral-200 dark:bg-white/10 rounded-full cursor-pointer"
                   />
                   <div className="flex justify-between text-[10px] text-neutral-500 dark:text-neutral-400">
-                    <span>Deterministik (0.0)</span>
-                    <span>Kreatif (1.5+)</span>
+                    <span>{language === "en" ? "Deterministic (0.0)" : "Deterministik (0.0)"}</span>
+                    <span>{language === "en" ? "Creative (1.5+)" : "Kreatif (1.5+)"}</span>
                   </div>
                 </div>
 
@@ -1199,14 +1245,14 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   <div className="flex flex-col min-w-0 pr-2">
                     <div className="flex items-center gap-1.5">
                       <span className="text-[13px] font-medium text-neutral-800 dark:text-neutral-200">
-                        Proses Berpikir AI (Reasoning)
+                        {language === "en" ? "AI Thinking & Reasoning" : "Proses Berpikir AI (Reasoning)"}
                       </span>
                       <span className="text-[9px] px-1.5 py-0.2 rounded bg-amber-500/20 text-[#B45309] dark:text-[#F5B838] font-bold">
                         VIP
                       </span>
                     </div>
                     <span className="text-[11px] text-neutral-500 dark:text-neutral-400">
-                      Tampilkan alur penalaran internal AI
+                      {language === "en" ? "Display internal AI thought process" : "Tampilkan alur penalaran internal AI"}
                     </span>
                   </div>
                   <button
@@ -1232,10 +1278,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 <div className="flex items-center justify-between py-1 border-t border-black/5 dark:border-white/[0.04]">
                   <div className="flex flex-col min-w-0 pr-2">
                     <span className="text-[13px] font-medium text-neutral-800 dark:text-neutral-200">
-                      Akses GPS &amp; Pencarian Real-Time
+                      {language === "en" ? "GPS & Real-Time Search" : "Akses GPS & Pencarian Real-Time"}
                     </span>
                     <span className="text-[11px] text-neutral-500 dark:text-neutral-400">
-                      Informasi cuaca dan internet terkini
+                      {language === "en" ? "Real-time weather and internet data" : "Informasi cuaca dan internet terkini"}
                     </span>
                   </div>
                   <button
@@ -1266,7 +1312,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
             ======================================================== */}
         <section className="flex flex-col gap-2">
           <span className="px-2 font-semibold text-[13px] text-neutral-500 dark:text-neutral-400/80 tracking-wide uppercase">
-            Dukungan &amp; Lainnya
+            {language === "en" ? "Support & About" : "Dukungan & Lainnya"}
           </span>
           <div className="bg-white dark:bg-[#171920] border border-black/5 dark:border-white/[0.06] rounded-3xl overflow-hidden shadow-xs flex flex-col divide-y divide-black/5 dark:divide-white/[0.05]">
             {/* Tentang Waguri & Fitur Baru (Inline Accordion) */}
@@ -1275,7 +1321,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                 <div className="flex items-center gap-3.5 min-w-0">
                   <History size={20} className="text-neutral-500 dark:text-[#8A8A93] shrink-0" />
                   <span className="text-[15px] font-medium text-neutral-900 dark:text-[#F2F3F7] truncate">
-                    Tentang Waguri &amp; Fitur Baru
+                    {language === "en" ? "About & Updates" : "Tentang Waguri & Fitur Baru"}
                   </span>
                 </div>
                 <div className="flex items-center gap-1.5 shrink-0 ml-2">
@@ -1292,12 +1338,14 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                     <span className="text-[12px] font-bold text-neutral-900 dark:text-white">
                       {LATEST_APP_UPDATE.version} - {LATEST_APP_UPDATE.date}
                     </span>
-                    <span className="text-[10px] text-[#B45309] dark:text-[#F5B838] font-bold">Terbaru</span>
+                    <span className="text-[10px] text-[#B45309] dark:text-[#F5B838] font-bold">
+                      {language === "en" ? "Latest" : "Terbaru"}
+                    </span>
                   </div>
                   <ul className="text-[11px] text-neutral-600 dark:text-neutral-400 space-y-1 list-disc list-inside">
-                    <li>Redesign Stitch Glassmorphism dengan Light &amp; Dark Mode</li>
-                    <li>Preset Bahasa Karakter Subaru &amp; Waguri lebih dewasa &amp; natural</li>
-                    <li>Manajemen kuota terpadu: Nara Router (200/hari) &amp; Atria Dawn (500/hari)</li>
+                    <li>{language === "en" ? "Stitch Glassmorphism redesign with Light & Dark Mode" : "Redesign Stitch Glassmorphism dengan Light & Dark Mode"}</li>
+                    <li>{language === "en" ? "Subaru & Waguri conversational style preset updates" : "Preset Bahasa Karakter Subaru & Waguri lebih dewasa & natural"}</li>
+                    <li>{language === "en" ? "Integrated multi-provider AI quota management" : "Manajemen kuota terpadu: Nara Router (200/hari) & Atria Dawn (500/hari)"}</li>
                   </ul>
                   <button
                     type="button"
@@ -1306,7 +1354,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                     }}
                     className="mt-1 text-xs text-[#B45309] dark:text-[#F5B838] font-semibold hover:underline text-left cursor-pointer"
                   >
-                    Buka Seluruh Riwayat Pembaharuan &rarr;
+                    {language === "en" ? "View Full Changelog &rarr;" : "Buka Seluruh Riwayat Pembaharuan &rarr;"}
                   </button>
                 </div>
               </div>
@@ -1319,10 +1367,10 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   <Trash2 size={20} className="text-red-500 shrink-0" />
                   <div className="flex flex-col min-w-0">
                     <span className="text-[15px] font-medium text-red-600 dark:text-red-400 truncate">
-                      Bersihkan Cache &amp; Reset Sesi
+                      {language === "en" ? "Clear Cache & Reset Data" : "Bersihkan Cache & Reset Sesi"}
                     </span>
                     <span className="text-[11px] text-red-500/70 truncate">
-                      Kembalikan pengaturan &amp; riwayat
+                      {language === "en" ? "Reset settings and chat history" : "Kembalikan pengaturan & riwayat"}
                     </span>
                   </div>
                 </div>
@@ -1331,10 +1379,12 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
               <div className="px-4 pb-4 pt-2.5 flex flex-col gap-3 bg-red-50/50 dark:bg-red-950/20 border-t border-red-500/20">
                 <div className="p-3 rounded-2xl bg-red-500/10 border border-red-500/30 flex flex-col gap-1.5">
                   <span className="text-[12px] font-bold text-red-500 flex items-center gap-1.5">
-                    <AlertTriangle size={15} /> Reset Semua Data Pengguna?
+                    <AlertTriangle size={15} /> {language === "en" ? "Reset All User Data?" : "Reset Semua Data Pengguna?"}
                   </span>
                   <p className="text-[11px] text-red-700 dark:text-red-200/80 leading-relaxed">
-                    Tindakan ini tidak bisa dibatalkan. Seluruh riwayat obrolan, karakter yang kamu buat, dan API key akan dihapus secara permanen.
+                    {language === "en"
+                      ? "This action cannot be undone. All conversations, custom characters, and API keys will be permanently cleared."
+                      : "Tindakan ini tidak bisa dibatalkan. Seluruh riwayat obrolan, karakter yang kamu buat, dan API key akan dihapus secara permanen."}
                   </p>
                 </div>
                 <button
@@ -1342,7 +1392,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
                   onClick={() => setShowResetConfirmModal(true)}
                   className="py-2.5 px-4 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-xs active:scale-95 transition-all flex items-center justify-center gap-2 shadow-xs cursor-pointer"
                 >
-                  <Trash2 size={15} /> Buka Konfirmasi Hapus Data
+                  <Trash2 size={15} /> {language === "en" ? "Open Reset Confirmation" : "Buka Konfirmasi Hapus Data"}
                 </button>
               </div>
             </details>

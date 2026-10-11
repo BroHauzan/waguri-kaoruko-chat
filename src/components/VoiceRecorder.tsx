@@ -231,7 +231,7 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
 
   if (permissionError) {
     return (
-      <div className="fixed inset-x-0 bottom-0 z-50 max-w-md mx-auto px-3 pb-3 animate-slide-up">
+      <div className="fixed inset-x-0 bottom-0 z-50 max-w-md mx-auto px-3 pb-safe pb-4 animate-slide-up">
         <div className="bg-white dark:bg-[#16171B] rounded-3xl border border-black/10 dark:border-white/10 shadow-2xl p-4 flex flex-col gap-3">
           <div className="flex items-start gap-3">
             <div className="w-9 h-9 rounded-full bg-red-50 dark:bg-red-500/15 text-red-500 flex items-center justify-center shrink-0">
@@ -256,7 +256,7 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
   // Layar awal: konfirmasi dulu sebelum mikrofon dinyalakan.
   if (!hasStarted) {
     return (
-      <div className="fixed inset-x-0 bottom-0 z-50 max-w-md mx-auto px-3 pb-3 animate-slide-up">
+      <div className="fixed inset-x-0 bottom-0 z-50 max-w-md mx-auto px-3 pb-safe pb-4 animate-slide-up">
         <div className="bg-white dark:bg-[#16171B] rounded-3xl border border-black/10 dark:border-white/10 shadow-2xl p-4 flex flex-col gap-3">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-full bg-[#F5B838]/20 text-[#E5A929] flex items-center justify-center shrink-0">
@@ -294,7 +294,7 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
   }
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-50 max-w-md mx-auto px-3 pb-3 animate-slide-up">
+    <div className="fixed inset-x-0 bottom-0 z-50 max-w-md mx-auto px-3 pb-safe pb-4 animate-slide-up">
       <div
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}

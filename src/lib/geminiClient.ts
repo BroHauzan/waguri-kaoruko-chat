@@ -22,6 +22,8 @@ export interface SendMessageParams {
   audio?: { base64: string; mimeType: string } | null;
   /** Pesan yang sedang dibalas, kalau user memakai fitur reply. */
   replyToText?: string | null;
+  /** Sinyal pembatalan request (AbortSignal) dari pemanggil. */
+  signal?: AbortSignal;
 }
 
 export interface SendMessageResult {
@@ -65,6 +67,7 @@ export async function sendMessageToGemini({
   image,
   audio,
   replyToText,
+  signal,
 }: SendMessageParams): Promise<SendMessageResult> {
   // Batasi history pesan. Jika ringkasan memori (`chat.summary`) sudah ada,
   // 15 pesan terakhir sudah sangat cukup untuk alur aktif dan menghemat token AI.
@@ -191,6 +194,14 @@ export async function sendMessageToGemini({
   const timeoutMs = image ? 90_000 : 60_000;
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  if (signal) {
+    if (signal.aborted) {
+      controller.abort();
+    } else {
+      signal.addEventListener("abort", () => controller.abort(), { once: true });
+    }
+  }
 
   let res: Response;
   try {

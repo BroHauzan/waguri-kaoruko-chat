@@ -1,29 +1,17 @@
 import { AIProvider, Settings } from "../types";
 import { isPaidUser } from "./quotaService";
 
-export const ATRIA_API_KEYS = [
-  "atr_HlXNzlKb09Mi3a9eM8hWBaN1DrT5uzu7",
-  "atr_LpDwanXdzDf0-j_hkBfPzU9aH_XFX7xp",
-  "atr_Rl-b8A40ryFcTwIQvJEOsEKyLi66KcED",
-  "atr_tsM2na9EhSG6uol7QFVsqGRYwe2rwPi7",
-  "atr_3gqX1egrAg5F0DCmMvUUzby4sxnMURQA",
-  "atr_pm48VZ6kW6Uw0wlX5r--drfsiT6s1zzB",
-  "atr_xuEX2NUa4iNw4u-32AyM7aBQJISESurv",
-  "atr_RVP95pol_56B-5PaQ_IMigE0zWavGlIB",
-  "atr_uBraTieXmzZRrNq_zb_gS6UmO0nqLfKU",
-  "atr_QwtaE8p5g0AUMZlo9D3dv8iZ5IN0lmcy",
-];
-
 /**
  * Provider bawaan Atria Dawn (OpenAI-compatible).
  * Kuota 500 chat / hari untuk akun gratis.
+ * API key diinjeksi secara aman di sisi server.
  */
 export const BUILTIN_ATRIA_PROVIDER: AIProvider = {
   id: "builtin-atria",
   name: "Atria Dawn",
   type: "openai-compatible",
   baseUrl: "https://api.atria-asi.ai/v1",
-  apiKey: ATRIA_API_KEYS[0],
+  apiKey: "",
   model: "Atria-Dawn-Preview",
   imageModel: "gemini-3.1-flash-lite-image",
   isBuiltin: true,
@@ -33,13 +21,14 @@ export const BUILTIN_ATRIA_PROVIDER: AIProvider = {
 /**
  * Provider bawaan Nara Router (OpenAI-compatible).
  * Default utama untuk semua pengguna (respons super cepat, kuota 200 chat / hari).
+ * API key diinjeksi secara aman di sisi server.
  */
 export const BUILTIN_NARA_PROVIDER: AIProvider = {
   id: "builtin-nara",
   name: "Nara Router",
   type: "openai-compatible",
   baseUrl: "https://router.bynara.id/v1",
-  apiKey: "sk-nry-sgXTu4Sl3NdCFsL7V3c4t4Og7bjlXvEgXk1Tq39Vs4I",
+  apiKey: "",
   model: "combo/waguriapp",
   imageModel: "gemini-3.1-flash-lite-image",
   isBuiltin: true,

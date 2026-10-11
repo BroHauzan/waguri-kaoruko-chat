@@ -22,7 +22,6 @@ export default async function handler(req, res) {
     return res.status(500).json({
       error: "Failed to summarize chat",
       details: err?.message || String(err),
-      stack: err?.stack
     });
   }
 }

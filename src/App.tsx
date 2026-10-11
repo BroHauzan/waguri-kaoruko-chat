@@ -17,6 +17,7 @@ import { UpdateChangelogModal } from "./components/UpdateChangelogModal";
 import { hasSeenLatestUpdate, markLatestUpdateAsSeen } from "./lib/appUpdates";
 import { OnboardingModal } from "./components/OnboardingModal";
 import { checkAndExecuteScheduledRoutines } from "./lib/routineService";
+import { StarredMessagesScreen } from "./components/StarredMessagesScreen";
 
 export default function App() {
   const [characters, setCharacters] = useState<Character[]>([]);
@@ -35,11 +36,13 @@ export default function App() {
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [showOnboardingModal, setShowOnboardingModal] = useState(false);
   const [isArchivedView, setIsArchivedView] = useState(false);
+  const [isStarredView, setIsStarredView] = useState(false);
 
   const activeCharacterRef = useRef<Character | null>(null);
   const editingCharacterRef = useRef<Character | null>(null);
   const currentTabRef = useRef<NavTab>("chats");
   const isArchivedViewRef = useRef(false);
+  const isStarredViewRef = useRef(false);
 
   useEffect(() => {
     activeCharacterRef.current = activeCharacter;
@@ -56,6 +59,10 @@ export default function App() {
   useEffect(() => {
     isArchivedViewRef.current = isArchivedView;
   }, [isArchivedView]);
+
+  useEffect(() => {
+    isStarredViewRef.current = isStarredView;
+  }, [isStarredView]);
 
   // Theme — resolves `auto` against the OS preference, live.
   useTheme(settings.theme || "dark");
@@ -152,9 +159,16 @@ export default function App() {
         setActiveCharacter(null);
         if (state?.screen === "archived") {
           setIsArchivedView(true);
+          setIsStarredView(false);
+        } else if (state?.screen === "starred") {
+          setIsStarredView(true);
+          setIsArchivedView(false);
         } else {
           setIsArchivedView(false);
+          setIsStarredView(false);
         }
+      } else if (isStarredViewRef.current) {
+        setIsStarredView(false);
       } else if (isArchivedViewRef.current) {
         setIsArchivedView(false);
       } else if (editingCharacterRef.current) {
@@ -174,6 +188,8 @@ export default function App() {
         .addListener("backButton", ({ canGoBack }: { canGoBack: boolean }) => {
           if (activeCharacterRef.current) {
             handleCloseChat();
+          } else if (isStarredViewRef.current) {
+            handleCloseStarred();
           } else if (isArchivedViewRef.current) {
             handleCloseArchived();
           } else if (editingCharacterRef.current) {
@@ -199,6 +215,7 @@ export default function App() {
 
   const handleOpenArchived = () => {
     setIsArchivedView(true);
+    setIsStarredView(false);
     if (!isDesktop) {
       window.history.pushState({ screen: "archived" }, "");
     }
@@ -209,6 +226,22 @@ export default function App() {
       window.history.back();
     } else {
       setIsArchivedView(false);
+    }
+  };
+
+  const handleOpenStarred = () => {
+    setIsStarredView(true);
+    setIsArchivedView(false);
+    if (!isDesktop) {
+      window.history.pushState({ screen: "starred" }, "");
+    }
+  };
+
+  const handleCloseStarred = () => {
+    if (window.history.state?.screen === "starred") {
+      window.history.back();
+    } else {
+      setIsStarredView(false);
     }
   };
 
@@ -379,6 +412,31 @@ export default function App() {
     setCharacters(storage.getCharacters());
   };
 
+  const handleUnstarMessage = (characterId: string, messageId: string) => {
+    const chat = chats[characterId];
+    if (!chat) return;
+    const updatedMessages = chat.messages.map((m) =>
+      m.id === messageId ? { ...m, isStarred: false } : m
+    );
+    const updatedChat: Chat = {
+      ...chat,
+      messages: updatedMessages,
+      updatedAt: Date.now(),
+    };
+    handleUpdateChat(updatedChat);
+  };
+
+  const handleSelectCharacterAndMessage = (char: Character, messageId: string) => {
+    handleSelectCharacter(char);
+    // Tunggu sebentar sampai ChatScreen me-render pesan, lalu scroll ke elemen
+    setTimeout(() => {
+      const el = document.getElementById(`msg-${messageId}`);
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "center" });
+      }
+    }, 300);
+  };
+
   const handleSaveCharacterForm = (char: Character) => {
     storage.saveCharacter(char);
     const updated = storage.getCharacters();
@@ -451,7 +509,7 @@ export default function App() {
     <div className="flex-1 flex flex-col">
       {/* Page transition — keyed so it re-runs on tab change */}
       <div key={currentTab} className="flex-1 flex flex-col animate-page-in">
-        {currentTab === "chats" && (
+        {currentTab === "chats" && !isStarredView && (
           <ChatsListScreen
             characters={characters}
             chats={chats}
@@ -466,6 +524,19 @@ export default function App() {
             onTogglePinCharacter={handleTogglePinCharacter}
             onToggleArchiveCharacter={handleToggleArchiveCharacter}
             onCreateNew={() => setCurrentTab("create")}
+            onOpenStarredMessages={handleOpenStarred}
+            language={settings.language || "id"}
+            hapticFeedback={settings.hapticFeedback !== false}
+          />
+        )}
+
+        {currentTab === "chats" && isStarredView && (
+          <StarredMessagesScreen
+            characters={characters}
+            chats={chats}
+            onSelectCharacterAndMessage={handleSelectCharacterAndMessage}
+            onUnstarMessage={handleUnstarMessage}
+            onBack={handleCloseStarred}
             language={settings.language || "id"}
             hapticFeedback={settings.hapticFeedback !== false}
           />
@@ -497,6 +568,7 @@ export default function App() {
         onTabChange={(tab) => {
           setEditingCharacter(null);
           setIsArchivedView(false);
+          setIsStarredView(false);
           setCurrentTab(tab);
         }}
         activeChatsCount={activeChatsCount}
@@ -520,7 +592,9 @@ export default function App() {
 
   const offlineBanner = isOffline ? (
     <div className="fixed top-0 left-0 right-0 z-50 bg-[#F5B838] text-neutral-900 text-xs font-bold px-4 py-2 text-center shadow-md animate-fade-in">
-      Koneksi terputus. Pesan akan terkirim otomatis saat online.
+      {settings.language === "en"
+        ? "Connection lost. Messages will send automatically when back online."
+        : "Koneksi terputus. Pesan akan terkirim otomatis saat online."}
     </div>
   ) : null;
 
