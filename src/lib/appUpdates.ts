@@ -33,10 +33,92 @@ const STORAGE_KEY = "waguri_last_seen_update_id";
  */
 export const APP_UPDATES: AppUpdateInfo[] = [
   {
+    id: "2026.10.13-security-patch-and-ui-bugfixes",
+    version: "v1.9.3",
+    date: "13 Oktober 2026",
+    badge: "Terbaru",
+    bannerGradient: "from-amber-500 via-yellow-500 to-amber-600",
+    bannerImage: "/waguri-pfp.jpg",
+    title: {
+      id: "Peningkatan Keamanan API, Patch SSRF & 15 Perbaikan Bug UI/UX",
+      en: "API Security Hardening, SSRF Patch & 15 UI/UX Bug Fixes",
+    },
+    subtitle: {
+      id: "Pembaruan arsitektur keamanan backend & proteksi SSRF, hashing kode VIP, tombol voice note interaktif, kontras warna bubble gelap, dan perbaikan tata letak tablet.",
+      en: "Backend security hardening & SSRF protection, VIP activation hashing, interactive voice note buttons, dark bubble theme contrast, and tablet layout polish.",
+    },
+    highlights: {
+      id: [
+        {
+          title: "Proteksi Keamanan API & Patch SSRF",
+          description:
+            "Validasi domain ketat untuk endpoint model AI, pencegahan serangan SSRF, serta migrasi penuh kredensial API ke environment variable yang terisolasi.",
+          tag: "Keamanan",
+        },
+        {
+          title: "Tombol Kontrol Pesan Suara",
+          description:
+            "Perekam suara kini dilengkapi tombol eksplisit 'Kirim Suara' dan 'Batal' untuk kemudahan navigasi selain gestur geser.",
+          tag: "Fitur Suara",
+        },
+        {
+          title: "Kontras Teks Tema Bubble Gelap",
+          description:
+            "Kutipan balasan pesan, jam pesan, dan icon centang status kini otomatis menyesuaikan keterbacaan teks putih kontras tinggi pada bubble tema gelap.",
+          tag: "Tampilan",
+        },
+        {
+          title: "Perbaikan Menu Konteks & Tata Letak Tablet",
+          description:
+            "Menu konteks pesan tidak lagi tergencet pada pesan pendek, serta bilah navigasi melayang kini selalu terpusat rapi di layar tablet/desktop.",
+          tag: "Desain",
+        },
+        {
+          title: "Stabilitas Antrean Latar & Sinkronisasi Rutin",
+          description:
+            "Pesan foto dan proses berpikir AI kini tersimpan utuh saat tab berada di latar belakang, dan tombol jalankan rutin langsung ter-refresh seketika.",
+          tag: "Stabilitas",
+        },
+      ],
+      en: [
+        {
+          title: "API Security & SSRF Protection",
+          description:
+            "Strict domain whitelist for AI endpoints, comprehensive SSRF hardening, and secure environment variable isolation for all API credentials.",
+          tag: "Security",
+        },
+        {
+          title: "Explicit Voice Note Controls",
+          description:
+            "The voice recorder now includes dedicated 'Send Voice' and 'Cancel' buttons alongside the slide-to-cancel gesture.",
+          tag: "Voice Feature",
+        },
+        {
+          title: "High-Contrast Dark Bubble Themes",
+          description:
+            "Reply quotes, timestamps, and read ticks now automatically adopt high-contrast light typography on dark bubble color themes.",
+          tag: "Design",
+        },
+        {
+          title: "Context Menu & Tablet Layout Polish",
+          description:
+            "Context menus no longer collapse on short messages, and the floating navigation bar remains neatly centered on tablet and wide screens.",
+          tag: "Layout",
+        },
+        {
+          title: "Background Queue & Routine Sync",
+          description:
+            "Photo attachments and thinking processes are preserved during background turns, and routine test executions update open chats instantly.",
+          tag: "Stability",
+        },
+      ],
+    },
+  },
+  {
     id: "2026.10.10-bugfixes-archive-lock-inline-provider",
     version: "v1.9.2",
     date: "10 Oktober 2026",
-    badge: "Terbaru",
+    badge: "Pembaruan",
     bannerGradient: "from-amber-500 via-yellow-500 to-amber-600",
     bannerImage: "/waguri-pfp.jpg",
     title: {

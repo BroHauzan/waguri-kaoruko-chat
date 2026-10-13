@@ -15,7 +15,7 @@ export const UpdateNoticeBanner: React.FC<UpdateNoticeBannerProps> = ({
 }) => {
   const [isDismissed, setIsDismissed] = useState<boolean>(() => {
     try {
-      const stored = localStorage.getItem("waguri_update_banner_dismissed_v191");
+      const stored = localStorage.getItem("waguri_update_banner_dismissed_v193");
       return stored === "true";
     } catch {
       return false;
@@ -28,7 +28,7 @@ export const UpdateNoticeBanner: React.FC<UpdateNoticeBannerProps> = ({
     e.stopPropagation();
     try {
       haptics.light();
-      localStorage.setItem("waguri_update_banner_dismissed_v191", "true");
+      localStorage.setItem("waguri_update_banner_dismissed_v193", "true");
     } catch {}
     setIsDismissed(true);
   };
