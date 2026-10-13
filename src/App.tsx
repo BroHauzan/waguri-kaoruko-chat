@@ -107,7 +107,7 @@ export default function App() {
       }));
 
       // If user is not currently inside that specific chat, show unread and in-app banner
-      if (activeCharacter?.id !== data.characterId) {
+      if (activeCharacterRef.current?.id !== data.characterId) {
         setUnreadCharacterIds((prev) => new Set([...prev, data.characterId]));
         setActiveNotification({
           character: data.character,
@@ -571,7 +571,7 @@ export default function App() {
           setIsStarredView(false);
           setCurrentTab(tab);
         }}
-        activeChatsCount={activeChatsCount}
+        activeChatsCount={unreadCharacterIds.size}
         language={settings.language || "id"}
       />
     </div>

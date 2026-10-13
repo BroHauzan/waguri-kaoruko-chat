@@ -116,8 +116,15 @@ export const EmojiPicker: React.FC<EmojiPickerProps> = ({ onPick, onClose }) => 
   const shown = searchResults ?? activeEmojis;
 
   return (
-    <div className="fixed inset-x-0 bottom-0 z-50 max-w-md mx-auto px-3 pb-3 animate-slide-up">
-      <div className="bg-white dark:bg-[#16171B] rounded-3xl border border-black/10 dark:border-white/10 shadow-2xl overflow-hidden flex flex-col max-h-[52vh]">
+    <>
+      {/* Outside click backdrop */}
+      <div
+        className="fixed inset-0 z-40"
+        onClick={onClose}
+        aria-hidden="true"
+      />
+      <div className="fixed inset-x-0 bottom-0 z-50 max-w-md mx-auto px-3 pb-3 animate-slide-up">
+        <div className="bg-white dark:bg-[#16171B] rounded-3xl border border-black/10 dark:border-white/10 shadow-2xl overflow-hidden flex flex-col max-h-[52vh]">
         {/* Header */}
         <div className="px-4 pt-3 pb-2 flex items-center gap-2 border-b border-black/5 dark:border-white/10">
           <div className="flex-1 bg-[#F0F1F5] dark:bg-white/[0.06] rounded-full px-3 h-9 flex items-center gap-2">
@@ -180,5 +187,6 @@ export const EmojiPicker: React.FC<EmojiPickerProps> = ({ onPick, onClose }) => 
         </div>
       </div>
     </div>
-  );
+  </>
+);
 };

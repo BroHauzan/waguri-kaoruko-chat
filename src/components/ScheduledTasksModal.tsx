@@ -8,12 +8,14 @@ interface ScheduledTasksModalProps {
   isOpen: boolean;
   onClose: () => void;
   character: Character;
+  onUpdateChat?: (updatedChat: any) => void;
 }
 
 export const ScheduledTasksModal: React.FC<ScheduledTasksModalProps> = ({
   isOpen,
   onClose,
   character,
+  onUpdateChat,
 }) => {
   const [tasks, setTasks] = useState<ScheduledTask[]>([]);
   const [showAddForm, setShowAddForm] = useState(false);
@@ -35,7 +37,7 @@ export const ScheduledTasksModal: React.FC<ScheduledTasksModalProps> = ({
     setErrorNotice(null);
     setSuccessNotice(null);
     try {
-      const ok = await executeSingleScheduledTask(task, undefined, true);
+      const ok = await executeSingleScheduledTask(task, onUpdateChat, true);
       if (ok) {
         setSuccessNotice(`Pesan jadwal "${task.title}" berhasil dikirim ke riwayat chat!`);
         setTimeout(() => setSuccessNotice(null), 3500);

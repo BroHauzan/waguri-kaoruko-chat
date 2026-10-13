@@ -57,7 +57,7 @@ export const QuotaModal: React.FC<QuotaModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleActivate = (e: React.FormEvent) => {
+  const handleActivate = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage(null);
     setSuccessMessage(null);
@@ -74,7 +74,7 @@ export const QuotaModal: React.FC<QuotaModalProps> = ({
     }
 
     setIsSubmitting(true);
-    const result = activatePaidMode(trimmed);
+    const result = await activatePaidMode(trimmed);
     setIsSubmitting(false);
 
     if (result.success) {

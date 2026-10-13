@@ -344,8 +344,39 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
         </span>
       </div>
 
+      {/* Explicit control buttons for accessibility and clear UX */}
+      <div className="flex items-center gap-2 mt-2">
+        <button
+          type="button"
+          onClick={() => {
+            cancelledRef.current = true;
+            if (mediaRecorderRef.current?.state === "recording") {
+              mediaRecorderRef.current.stop();
+            } else {
+              cleanup();
+              onCancel();
+            }
+          }}
+          className="flex-1 py-2 rounded-full text-xs font-semibold text-neutral-600 dark:text-[#8A8A93] bg-[#F0F1F5] dark:bg-white/[0.06] hover:bg-neutral-200 dark:hover:bg-white/[0.12] transition-colors cursor-pointer"
+        >
+          Batal
+        </button>
+        <button
+          type="button"
+          onClick={() => {
+            cancelledRef.current = false;
+            if (mediaRecorderRef.current?.state === "recording") {
+              mediaRecorderRef.current.stop();
+            }
+          }}
+          className="flex-1 py-2 rounded-full text-xs font-bold text-neutral-950 bg-[#F5B838] hover:bg-[#E5A929] transition-colors cursor-pointer shadow-xs"
+        >
+          Kirim Suara
+        </button>
+      </div>
+
       <p
-        className={`text-center text-[11px] mt-2 font-medium transition-colors ${
+        className={`text-center text-[11px] mt-1.5 font-medium transition-colors ${
           isCancelling
             ? "text-red-500"
             : "text-neutral-500 dark:text-[#8A8A93]"
@@ -353,7 +384,7 @@ export const VoiceRecorder: React.FC<VoiceRecorderProps> = ({
       >
         {isCancelling
           ? "Lepas untuk membatalkan"
-          : "Geser ke kiri untuk membatalkan · lepas untuk kirim"}
+          : "Geser ke kiri untuk membatalkan · atau klik Kirim Suara"}
       </p>
     </div>
   );

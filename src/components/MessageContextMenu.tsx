@@ -138,6 +138,24 @@ export const MessageContextMenu: React.FC<MessageContextMenuProps> = ({
     Math.min(anchorRect.left, VIEWPORT_WIDTH - bubbleWidth - EDGE_PADDING)
   );
 
+  const menuWidth = Math.min(
+    Math.max(bubbleWidth, 230),
+    VIEWPORT_WIDTH - EDGE_PADDING * 2
+  );
+
+  const menuLeft = isUser
+    ? Math.max(
+        EDGE_PADDING,
+        Math.min(
+          anchorRect.left + anchorRect.width - menuWidth,
+          VIEWPORT_WIDTH - menuWidth - EDGE_PADDING
+        )
+      )
+    : Math.max(
+        EDGE_PADDING,
+        Math.min(anchorRect.left, VIEWPORT_WIDTH - menuWidth - EDGE_PADDING)
+      );
+
   return (
     <motion.div
       className="fixed inset-0 z-[60]"
@@ -201,8 +219,8 @@ export const MessageContextMenu: React.FC<MessageContextMenuProps> = ({
           style={{
             position: "fixed",
             top: menuTop,
-            left: bubbleLeft,
-            width: bubbleWidth,
+            left: menuLeft,
+            width: menuWidth,
             transformOrigin: isUser ? "top right" : "top left",
           }}
           className="bg-white/95 dark:bg-[#1C1D22]/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-black/10 dark:border-white/10 overflow-hidden"

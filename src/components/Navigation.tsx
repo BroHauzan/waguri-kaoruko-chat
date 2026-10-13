@@ -47,8 +47,9 @@ export const Navigation: React.FC<NavigationProps> = ({
 
   return (
     <nav className="fixed bottom-4 inset-x-0 z-50 pointer-events-none pb-safe flex justify-center px-4">
-      {/* Floating Tab Bar — restrained translucent pill */}
-      <div className="liquid-glass-nav rounded-full h-[58px] px-2.5 flex items-center gap-1 pointer-events-auto shadow-md">
+      <div className="w-full max-w-md flex justify-center pointer-events-none">
+        {/* Floating Tab Bar — restrained translucent pill */}
+        <div className="liquid-glass-nav rounded-full h-[58px] px-2.5 flex items-center gap-1 pointer-events-auto shadow-md">
         {navItems.map((item) => {
           const isActive = currentTab === item.id;
           const Icon = item.icon;
@@ -108,6 +109,7 @@ export const Navigation: React.FC<NavigationProps> = ({
             </button>
           );
         })}
+        </div>
       </div>
     </nav>
   );

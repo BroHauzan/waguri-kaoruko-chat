@@ -81,16 +81,17 @@ export const StarredMessagesScreen: React.FC<StarredMessagesScreenProps> = ({
 
   const handleVerifyPin = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    const isMatch = await verifyPin(pinInput, settings.archivePin);
+    const currentSettings = storage.getSettings();
+    const isMatch = await verifyPin(pinInput, currentSettings.archivePin);
     if (isMatch) {
       // Migrasi otomatis jika PIN lama masih berupa plaintext
       if (
-        settings.archivePin &&
-        settings.archivePin.length < 64 &&
-        !settings.archivePin.startsWith("hash_")
+        currentSettings.archivePin &&
+        currentSettings.archivePin.length < 64 &&
+        !currentSettings.archivePin.startsWith("hash_")
       ) {
-        const hashed = await hashPin(settings.archivePin);
-        storage.saveSettings({ ...settings, archivePin: hashed });
+        const hashed = await hashPin(currentSettings.archivePin);
+        storage.saveSettings({ ...currentSettings, archivePin: hashed });
       }
 
       haptics.light(hapticFeedback);

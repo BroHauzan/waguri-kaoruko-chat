@@ -7,6 +7,8 @@ interface MessageTicksProps {
   state: ReadState;
   /** `onBubble` = berada di dalam bubble berwarna, `onCanvas` = di latar biasa. */
   tone?: "onBubble" | "onCanvas";
+  /** Menandakan apakah bubble user berlatar gelap (text-white) */
+  isDarkBubble?: boolean;
 }
 
 /**
@@ -23,14 +25,21 @@ interface MessageTicksProps {
 export const MessageTicks: React.FC<MessageTicksProps> = ({
   state,
   tone = "onCanvas",
+  isDarkBubble = false,
 }) => {
-  // Di atas bubble amber, warna harus gelap agar kontras. Di latar biasa,
-  // abu-abu redup untuk "terkirim" dan amber untuk "dibaca".
+  // Di atas bubble, sesuaikan warna dengan keterbacaan (terang vs gelap)
   const sentClass =
     tone === "onBubble"
-      ? "text-neutral-900/55"
+      ? isDarkBubble
+        ? "text-white/60"
+        : "text-neutral-900/55"
       : "text-neutral-400 dark:text-[#71717A]";
-  const readClass = tone === "onBubble" ? "text-neutral-900" : "text-[#E5A929]";
+  const readClass =
+    tone === "onBubble"
+      ? isDarkBubble
+        ? "text-white"
+        : "text-neutral-900"
+      : "text-[#E5A929]";
 
   if (state === "sending") {
     return (

@@ -1258,18 +1258,10 @@ async function callGemini(
 // OpenAI-compatible provider
 // ---------------------------------------------------------------------------
 
-export const ATRIA_API_KEYS = [
-  "atr_HlXNzlKb09Mi3a9eM8hWBaN1DrT5uzu7",
-  "atr_LpDwanXdzDf0-j_hkBfPzU9aH_XFX7xp",
-  "atr_Rl-b8A40ryFcTwIQvJEOsEKyLi66KcED",
-  "atr_tsM2na9EhSG6uol7QFVsqGRYwe2rwPi7",
-  "atr_3gqX1egrAg5F0DCmMvUUzby4sxnMURQA",
-  "atr_pm48VZ6kW6Uw0wlX5r--drfsiT6s1zzB",
-  "atr_xuEX2NUa4iNw4u-32AyM7aBQJISESurv",
-  "atr_RVP95pol_56B-5PaQ_IMigE0zWavGlIB",
-  "atr_uBraTieXmzZRrNq_zb_gS6UmO0nqLfKU",
-  "atr_QwtaE8p5g0AUMZlo9D3dv8iZ5IN0lmcy",
-];
+export const ATRIA_API_KEYS: string[] = (process.env.ATRIA_API_KEYS || "")
+  .split(",")
+  .map((k) => k.trim())
+  .filter(Boolean);
 
 export function validateBaseUrl(urlStr: string): string {
   const clean = (urlStr || "").trim().replace(/\/+$/, "");
@@ -1289,15 +1281,24 @@ export function validateBaseUrl(urlStr: string): string {
   }
 
   const hostname = parsed.hostname.toLowerCase();
-  // Cegah SSRF ke localhost, link-local, dan private networks
+  // Cegah SSRF ke localhost, link-local, private networks, IPv6, dan cloud metadata
   if (
     hostname === "localhost" ||
     hostname === "127.0.0.1" ||
     hostname === "0.0.0.0" ||
+    hostname === "::1" ||
+    hostname === "[::1]" ||
     hostname === "169.254.169.254" ||
+    hostname === "metadata.google.internal" ||
     hostname.startsWith("10.") ||
     hostname.startsWith("192.168.") ||
-    /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname)
+    /^172\.(1[6-9]|2[0-9]|3[0-1])\./.test(hostname) ||
+    hostname.startsWith("::ffff:") ||
+    hostname.startsWith("[::ffff:") ||
+    hostname.endsWith(".internal") ||
+    hostname.endsWith(".nip.io") ||
+    hostname.endsWith(".sslip.io") ||
+    hostname.endsWith(".xip.io")
   ) {
     throw new Error("Akses ke host lokal / private network tidak diizinkan.");
   }
@@ -1318,12 +1319,16 @@ async function callOpenAICompatible(
     throw new Error("Nama model provider belum diisi.");
   }
 
-  const isOfficialAtria = baseUrl.startsWith("https://api.atria-asi.ai");
-  const isOfficialNara = baseUrl.startsWith("https://router.bynara.id");
+  const parsedBase = new URL(baseUrl);
+  const isOfficialAtria = parsedBase.hostname === "api.atria-asi.ai";
+  const isOfficialNara = parsedBase.hostname === "router.bynara.id";
 
   // Susun daftar API key yang akan dicoba (hanya suntikkan key sistem jika domain resmi)
   let candidateKeys: string[];
   if (isOfficialAtria) {
+    if (ATRIA_API_KEYS.length === 0) {
+      throw new Error("ATRIA_API_KEYS belum dikonfigurasi di environment variables.");
+    }
     const startIdx = Math.floor(Math.random() * ATRIA_API_KEYS.length);
     candidateKeys = [
       ...ATRIA_API_KEYS.slice(startIdx),
@@ -1333,8 +1338,11 @@ async function callOpenAICompatible(
       candidateKeys.unshift(cfg.apiKey.trim());
     }
   } else if (isOfficialNara) {
-    const defaultNaraKey = (process.env.NARA_API_KEY || "sk-nry-sgXTu4Sl3NdCFsL7V3c4t4Og7bjlXvEgXk1Tq39Vs4I").trim();
-    candidateKeys = [cfg.apiKey?.trim() || defaultNaraKey];
+    const naraKey = (process.env.NARA_API_KEY || "").trim();
+    if (!naraKey) {
+      throw new Error("NARA_API_KEY belum dikonfigurasi di environment variables.");
+    }
+    candidateKeys = [cfg.apiKey?.trim() || naraKey];
   } else {
     // Custom domain provider: DILARANG menyuntikkan key sistem internal!
     const directKey = (cfg.apiKey || "").trim();
@@ -1678,14 +1686,17 @@ Task: Write a concise 2-4 sentence summary of what was discussed, personal detai
       }
       const apiKey = (cfg.apiKey || "").trim();
       const model = (cfg.model || "").trim();
-      const isOfficialAtria = baseUrl.startsWith("https://api.atria-asi.ai");
-      const isOfficialNara = baseUrl.startsWith("https://router.bynara.id");
+      const isOfficialAtria = new URL(baseUrl).hostname === "api.atria-asi.ai";
+      const isOfficialNara = new URL(baseUrl).hostname === "router.bynara.id";
 
       let resolvedApiKey = apiKey;
       if (isOfficialAtria && (!apiKey || apiKey.startsWith("sk-") || apiKey.includes("MY_"))) {
+        if (ATRIA_API_KEYS.length === 0) return { summary: req.existingSummary || "" };
         resolvedApiKey = ATRIA_API_KEYS[0];
       } else if (isOfficialNara && !apiKey) {
-        resolvedApiKey = (process.env.NARA_API_KEY || "sk-nry-sgXTu4Sl3NdCFsL7V3c4t4Og7bjlXvEgXk1Tq39Vs4I").trim();
+        const naraKey = (process.env.NARA_API_KEY || "").trim();
+        if (!naraKey) return { summary: req.existingSummary || "" };
+        resolvedApiKey = naraKey;
       }
 
       if (!baseUrl || !resolvedApiKey || !model) {

@@ -521,7 +521,7 @@ export const ChatsListScreen: React.FC<ChatsListScreenProps> = ({
                     didLongPress.current = false;
                     return;
                   }
-                  onSelectCharacter(item.character);
+                  handleSelectCharacterWithLock(item.character);
                 }}
                 className={`group flex items-start px-4 py-3.5 transition-colors cursor-pointer select-none relative ${
                   item.character.id === activeCharacterId

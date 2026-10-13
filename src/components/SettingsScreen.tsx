@@ -72,7 +72,7 @@ export const SettingsScreen: React.FC<SettingsScreenProps> = ({
   onSaveSettings,
   onClearAllData,
 }) => {
-  const [userName, setUserName] = useState(settings.userName || "Hauzan");
+  const [userName, setUserName] = useState(settings.userName || "Rizky");
   const [userPersona, setUserPersona] = useState(settings.userPersona || "");
   const [model] = useState(settings.model || "gemini-3.1-flash-lite");
   const [temperature, setTemperature] = useState(settings.temperature ?? 0.8);

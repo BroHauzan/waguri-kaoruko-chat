@@ -214,6 +214,11 @@ export async function sendMessageToGemini({
       signal: controller.signal,
     });
   } catch (err: any) {
+    if (signal?.aborted || err?.name === "AbortError" && signal?.aborted) {
+      const abortErr = new Error("Request dibatalkan");
+      abortErr.name = "AbortError";
+      throw abortErr;
+    }
     if (err?.name === "AbortError") {
       throw new Error(
         `Server tidak merespons dalam ${Math.round(

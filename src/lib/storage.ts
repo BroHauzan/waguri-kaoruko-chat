@@ -536,22 +536,22 @@ export const storage = {
       let strippedAny = false;
 
       for (let i = 0; i < messages.length; i++) {
-        if (messages[i].image) {
-          messages[i] = { ...messages[i], image: undefined };
+        if (messages[i].image || messages[i].audio) {
+          messages[i] = { ...messages[i], image: undefined, audio: undefined };
           strippedAny = true;
           allChats[chat.characterId] = { ...chat, messages };
           try {
             localStorage.setItem(STORAGE_KEYS.CHATS, JSON.stringify(allChats));
-            console.warn("Kuota localStorage penuh — gambar lama dilepas untuk menghemat ruang.");
+            console.warn("Kuota localStorage penuh — media lampiran lama (gambar/audio) dilepas untuk menghemat ruang.");
             return true;
           } catch {
-            // Lanjutkan melepas gambar berikutnya jika masih belum cukup
+            // Lanjutkan melepas media berikutnya jika masih belum cukup
           }
         }
       }
 
       if (!strippedAny) {
-        console.error("localStorage penuh dan tidak ada gambar untuk dilepas", e);
+        console.error("localStorage penuh dan tidak ada media lampiran untuk dilepas", e);
       }
       return false;
     }

@@ -153,6 +153,17 @@ class BackgroundQueueProcessor {
             id: `msg_char_${Date.now()}_${idx}`,
             role: "char",
             text,
+            thinkingProcess: idx === 0 ? response.thinkingProcess : undefined,
+            image:
+              response.photo?.dataUrl && idx === 0
+                ? {
+                    id: `img_${Date.now()}`,
+                    dataUrl: response.photo.dataUrl,
+                    base64: response.photo.dataUrl.split(",")[1] || "",
+                    mimeType: "image/jpeg",
+                    size: Math.round((response.photo.dataUrl.length * 3) / 4),
+                  }
+                : undefined,
             emotion: response.emotion || currentTask.character.defaultMood,
             intensity: response.intensity || 6,
             timestamp: Date.now() + idx * 10,

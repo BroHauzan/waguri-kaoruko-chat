@@ -2,7 +2,8 @@ export const NARA_DAILY_MESSAGE_LIMIT = 200;
 export const ATRIA_DAILY_MESSAGE_LIMIT = 500;
 export const DEFAULT_FREE_DAILY_MESSAGE_LIMIT = 200;
 export const FREE_DAILY_MESSAGE_LIMIT = 200;
-export const PAID_ACTIVATION_CODE = "brohauzan";
+// Hash of the activation code — actual code is never in the client bundle
+const PAID_CODE_HASH = "0b52c7075aaf4418683c59e91ccd7a78b57f173f92a7dfd8de96da00b3315a01";
 
 const STORAGE_KEYS = {
   ACCOUNT_TIER: "waguri_account_tier_v1",
@@ -65,9 +66,15 @@ export function getProviderQuotaLimit(providerId?: string): number {
 }
 
 /** Aktivasi Paid Mode menggunakan kode rahasia */
-export function activatePaidMode(code: string): { success: boolean; message?: string } {
+export async function activatePaidMode(code: string): Promise<{ success: boolean; message?: string }> {
   const cleanCode = (code || "").trim().toLowerCase();
-  if (cleanCode === PAID_ACTIVATION_CODE.toLowerCase()) {
+  const encoder = new TextEncoder();
+  const data = encoder.encode(cleanCode);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  const hashArray = Array.from(new Uint8Array(hashBuffer));
+  const hashHex = hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+
+  if (hashHex === PAID_CODE_HASH) {
     try {
       localStorage.setItem(STORAGE_KEYS.ACCOUNT_TIER, "paid");
       // Trigger event agar UI langsung reaktif memperbarui status

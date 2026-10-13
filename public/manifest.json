@@ -6,8 +6,8 @@
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
-  "background_color": "#0b141a",
-  "theme_color": "#0b141a",
+  "background_color": "#0B0C0F",
+  "theme_color": "#0B0C0F",
   "icons": [
     {
       "src": "/waguri-pfp.jpg",

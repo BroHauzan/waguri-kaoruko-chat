@@ -198,8 +198,30 @@ export const SpotifyShareModal: React.FC<SpotifyShareModalProps> = ({
         ctx.fillText(websiteUrl.replace(/^https?:\/\//, ""), width - 80, footerY + 26);
         ctx.textAlign = "left";
 
-        const dataUrl = canvas.toDataURL("image/png");
-        if (isMounted) {
+        let dataUrl: string | null = null;
+        try {
+          dataUrl = canvas.toDataURL("image/png");
+        } catch (canvasErr) {
+          console.warn("Canvas tainted by avatar URL; generating fallback card:", canvasErr);
+          // Redraw avatar box as solid gradient placeholder if image tainted the canvas
+          ctx.save();
+          ctx.beginPath();
+          ctx.roundRect(imgX, imgY, imgW, imgH, radius);
+          ctx.clip();
+          const fallbackGrad = ctx.createLinearGradient(imgX, imgY, imgX + imgW, imgY + imgH);
+          fallbackGrad.addColorStop(0, "#F5B838");
+          fallbackGrad.addColorStop(1, "#E5A929");
+          ctx.fillStyle = fallbackGrad;
+          ctx.fillRect(imgX, imgY, imgW, imgH);
+          ctx.fillStyle = "#1E1E24";
+          ctx.font = "bold 96px -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif";
+          ctx.textAlign = "center";
+          ctx.fillText(character.name.charAt(0).toUpperCase(), imgX + imgW / 2, imgY + imgH / 2 + 35);
+          ctx.restore();
+          dataUrl = canvas.toDataURL("image/png");
+        }
+
+        if (isMounted && dataUrl) {
           setPreviewDataUrl(dataUrl);
           setIsGeneratingImage(false);
         }

@@ -177,6 +177,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
     settings.bubbleTheme || "amber",
     moodTheme.userBubbleBg
   );
+  const isDarkUserBubble = userBubbleBg.includes("text-white");
   const [showDetailSheet, setShowDetailSheet] = useState(false);
   const [showActionMenu, setShowActionMenu] = useState(false);
   const [showCustomInstructions, setShowCustomInstructions] = useState(false);
@@ -1742,7 +1743,9 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                           style={!isUser ? { borderLeftColor: moodTheme.accentColor } : undefined}
                           className={`flex flex-col gap-0.5 mb-1.5 pl-2 py-1 rounded-r-md border-l-[3px] cursor-pointer hover:opacity-85 active:scale-[0.99] transition-transform ${
                             isUser
-                              ? "border-neutral-900/40 bg-neutral-900/[0.07]"
+                              ? isDarkUserBubble
+                                ? "border-white/50 bg-white/15"
+                                : "border-neutral-900/40 bg-neutral-900/[0.07]"
                               : "border-[#F5B838] bg-black/[0.04] dark:bg-white/[0.05]"
                           }`}
                           title="Klik untuk melihat pesan yang dibalas"
@@ -1751,7 +1754,9 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                             style={!isUser ? { color: moodTheme.accentHover || moodTheme.accentColor } : undefined}
                             className={`text-[11px] font-semibold ${
                               isUser
-                                ? "text-neutral-900/80"
+                                ? isDarkUserBubble
+                                  ? "text-white/90"
+                                  : "text-neutral-900/80"
                                 : "text-[#E5A929]"
                             }`}
                           >
@@ -1762,7 +1767,9 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                         <span
                           className={`text-[12px] line-clamp-2 leading-snug break-words [overflow-wrap:anywhere] ${
                             isUser
-                              ? "text-neutral-900/70"
+                              ? isDarkUserBubble
+                                ? "text-white/80"
+                                : "text-neutral-900/70"
                               : "text-neutral-500 dark:text-[#9B9BA3]"
                           }`}
                         >
@@ -1810,7 +1817,11 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                         mengalir di samping teks terakhir. */}
                     <div
                       className={`flex items-center justify-end gap-1 mt-0.5 -mb-0.5 ${
-                        isUser ? "text-neutral-900/55" : "text-neutral-400 dark:text-[#A6A6B0]"
+                        isUser
+                          ? isDarkUserBubble
+                            ? "text-white/60"
+                            : "text-neutral-900/55"
+                          : "text-neutral-400 dark:text-[#A6A6B0]"
                       }`}
                     >
                       {message.isStarred && (
@@ -1828,6 +1839,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
                         <MessageTicks
                           state={message.readByCharacter ? "read" : "sent"}
                           tone="onBubble"
+                          isDarkBubble={isDarkUserBubble}
                         />
                       )}
                     </div>
@@ -2303,6 +2315,7 @@ export const ChatScreen: React.FC<ChatScreenProps> = ({
         isOpen={showScheduledTasksModal}
         onClose={() => setShowScheduledTasksModal(false)}
         character={character}
+        onUpdateChat={onUpdateChat}
       />
 
       {/* Custom Instructions Modal */}
